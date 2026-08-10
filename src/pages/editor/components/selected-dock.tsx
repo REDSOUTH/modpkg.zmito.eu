@@ -1,0 +1,420 @@
+import { Package, Download, Trash2, Pin, PinOff, Box, Paintbrush, Glasses, FileBraces, FileText, Layers, Braces, Map, PlusCircle } from "lucide-react";
+import { useState } from "react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Separator } from "@/components/ui/separator";
+import { motion, AnimatePresence } from "framer-motion";
+import { usePack } from "@/context/pack-context";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+export type ContentType = "mod" | "resourcepack" | "shader" | "datapack" | "world" | "override" | string;
+export type ProviderType = "modrinth" | "curseforge" | "custom" | "local_override" | "all";
+
+export default function SelectedDock() {
+  const { installedContent, removeContent } = usePack();
+  const [isHovered, setIsHovered] = useState<boolean>(false);
+  
+  // Persist pinned state in localStorage
+  const [isPinned, setIsPinned] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem("modpkg_dock_pinned");
+      return saved === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const [filterType, setFilterType] = useState<ContentType | "all">("all");
+
+  const togglePin = () => {
+    setIsPinned(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem("modpkg_dock_pinned", String(next));
+      } catch (e) {
+        console.warn("Failed to save dock pinned state", e);
+      }
+      return next;
+    });
+  };
+
+  const removeItem = (id: string) => {
+    removeContent(id);
+  };
+
+  const isExpanded = isHovered || isPinned;
+
+  // Breakdown statistics
+  const modsCount = installedContent.filter(i => i.contentType === "mod").length;
+  const resourcePacksCount = installedContent.filter(i => i.contentType === "resourcepack" || i.contentType === "textures").length;
+  const datapacksCount = installedContent.filter(i => i.contentType === "datapack" || i.contentType === "datapacks").length;
+  const shadersCount = installedContent.filter(i => i.contentType === "shader" || i.contentType === "shaders").length;
+  const worldsCount = installedContent.filter(i => i.contentType === "world" || i.contentType === "worlds").length;
+  const overridesCount = installedContent.filter(i => i.contentType === "override").length;
+  
+  const modrinthCount = installedContent.filter(i => i.provider === "modrinth").length;
+  const curseforgeCount = installedContent.filter(i => i.provider === "curseforge").length;
+  const customCount = installedContent.filter(i => i.provider === "custom").length;
+  const localOverrideCount = installedContent.filter(i => i.provider === "local_override").length;
+
+  const filteredItems = installedContent.filter(item => {
+    if (filterType === "all") return true;
+    if (filterType === "resourcepack") return item.contentType === "resourcepack" || item.contentType === "textures";
+    if (filterType === "datapack") return item.contentType === "datapack" || item.contentType === "datapacks";
+    if (filterType === "shader") return item.contentType === "shader" || item.contentType === "shaders";
+    if (filterType === "world") return item.contentType === "world" || item.contentType === "worlds";
+    return item.contentType === filterType;
+  });
+
+  const renderTypeIcon = (type: ContentType) => {
+    switch (type) {
+      case "mod":
+        return <Box className="w-3.5 h-3.5 text-[#FE5000] shrink-0" />;
+      case "resourcepack":
+        return <Paintbrush className="w-3.5 h-3.5 text-blue-400 shrink-0" />;
+      case "shader":
+        return <Glasses className="w-3.5 h-3.5 text-purple-400 shrink-0" />;
+      case "datapack":
+        return <Braces className="w-3.5 h-3.5 text-emerald-400 shrink-0" />;
+      case "world":
+        return <Map className="w-3.5 h-3.5 text-cyan-400 shrink-0" />;
+      case "override":
+        return <FileBraces className="w-3.5 h-3.5 text-amber-400 shrink-0" />;
+      default:
+        return <FileText className="w-3.5 h-3.5 text-white/50 shrink-0" />;
+    }
+  };
+
+  return (
+    <motion.aside
+      className="border-l border-[#1E1E1E] bg-black flex flex-col flex-shrink-0 z-30 overflow-hidden sticky top-[122px] h-[calc(100vh-122px)]"
+      initial={false}
+      animate={{ width: isExpanded ? 340 : 80 }}
+      transition={{ duration: 0.25, ease: "easeInOut" }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Header: MODPKG Overview */}
+      <div className="h-14 flex items-center shrink-0 relative border-b border-[#1E1E1E] w-full overflow-hidden">
+        {/* Fixed 80px icon container matching collapsed dock width */}
+        <div className="w-[80px] h-full flex items-center justify-center shrink-0">
+          <Package className="w-5 h-5 text-[#FE5000] shrink-0" />
+        </div>
+
+        {/* Title and items count */}
+        <AnimatePresence>
+          {isExpanded && (
+            <motion.div 
+              initial={{ opacity: 0, width: 0 }}
+              animate={{ opacity: 1, width: "auto" }}
+              exit={{ opacity: 0, width: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex flex-col whitespace-nowrap overflow-hidden pr-12"
+            >
+              <span className="font-bold text-white text-sm tracking-wide">MODPKG Overview</span>
+              <span className="text-[10px] text-white/40">{installedContent.length} total items</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
+        {/* Pin button */}
+        <AnimatePresence>
+          {isExpanded && (
+            <motion.button 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={togglePin}
+              title={isPinned ? "Unpin dock" : "Pin dock open"}
+              className={`h-8 w-8 rounded-xl border border-[#1E1E1E] flex items-center justify-center transition-all absolute right-6 ${
+                isPinned 
+                  ? 'border-[#FE5000] text-[#FE5000] bg-[#FE5000]/10' 
+                  : 'bg-[#1E1E1E] text-white/60 hover:border-[#FE5000] hover:text-[#FE5000] hover:bg-transparent'
+              }`}
+            >
+              {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
+            </motion.button>
+          )}
+        </AnimatePresence>
+      </div>
+
+      <TooltipProvider delayDuration={400}>
+        {/* Expanded Clickable Filter Tags Header */}
+        {isExpanded && (
+          <div className="pl-4 pr-6 py-4 border-b border-[#1E1E1E] flex flex-col gap-3 shrink-0">
+            {/* Clickable Filter Tags */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {/* ALL Tag */}
+              <button
+                onClick={() => setFilterType("all")}
+                className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer ${
+                  filterType === "all"
+                    ? "bg-[#FE5000] text-white shadow-md shadow-[#FE5000]/20"
+                    : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
+                }`}
+              >
+                <Layers className={`w-3.5 h-3.5 ${filterType === "all" ? "text-white" : "text-white/70"}`} />
+                <span>All ({installedContent.length})</span>
+              </button>
+
+              {/* MODS Tag */}
+              {modsCount > 0 && (
+                <button
+                  onClick={() => setFilterType("mod")}
+                  className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer ${
+                    filterType === "mod"
+                      ? "bg-[#FE5000] text-white shadow-md shadow-[#FE5000]/20"
+                      : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
+                  }`}
+                >
+                  <Box className={`w-3.5 h-3.5 ${filterType === "mod" ? "text-white" : "text-[#FE5000]"}`} />
+                  <span>{modsCount} Mods</span>
+                </button>
+              )}
+
+              {/* RESOURCE PACKS Tag */}
+              {resourcePacksCount > 0 && (
+                <button
+                  onClick={() => setFilterType("resourcepack")}
+                  className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer ${
+                    filterType === "resourcepack"
+                      ? "bg-[#FE5000] text-white shadow-md shadow-[#FE5000]/20"
+                      : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
+                  }`}
+                >
+                  <Paintbrush className={`w-3.5 h-3.5 ${filterType === "resourcepack" ? "text-white" : "text-blue-400"}`} />
+                  <span>{resourcePacksCount} Textures</span>
+                </button>
+              )}
+
+              {/* DATAPACKS Tag */}
+              {datapacksCount > 0 && (
+                <button
+                  onClick={() => setFilterType("datapack")}
+                  className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer ${
+                    filterType === "datapack"
+                      ? "bg-[#FE5000] text-white shadow-md shadow-[#FE5000]/20"
+                      : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
+                  }`}
+                >
+                  <Braces className={`w-3.5 h-3.5 ${filterType === "datapack" ? "text-white" : "text-emerald-400"}`} />
+                  <span>{datapacksCount} Datapacks</span>
+                </button>
+              )}
+
+              {/* SHADERS Tag */}
+              {shadersCount > 0 && (
+                <button
+                  onClick={() => setFilterType("shader")}
+                  className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer ${
+                    filterType === "shader"
+                      ? "bg-[#FE5000] text-white shadow-md shadow-[#FE5000]/20"
+                      : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
+                  }`}
+                >
+                  <Glasses className={`w-3.5 h-3.5 ${filterType === "shader" ? "text-white" : "text-purple-400"}`} />
+                  <span>{shadersCount} Shaders</span>
+                </button>
+              )}
+
+              {/* WORLDS Tag */}
+              {worldsCount > 0 && (
+                <button
+                  onClick={() => setFilterType("world")}
+                  className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer ${
+                    filterType === "world"
+                      ? "bg-[#FE5000] text-white shadow-md shadow-[#FE5000]/20"
+                      : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
+                  }`}
+                >
+                  <Map className={`w-3.5 h-3.5 ${filterType === "world" ? "text-white" : "text-cyan-400"}`} />
+                  <span>{worldsCount} Worlds</span>
+                </button>
+              )}
+
+              {/* OVERRIDES Tag */}
+              {overridesCount > 0 && (
+                <button
+                  onClick={() => setFilterType("override")}
+                  className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer ${
+                    filterType === "override"
+                      ? "bg-[#FE5000] text-white shadow-md shadow-[#FE5000]/20"
+                      : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
+                  }`}
+                >
+                  <FileBraces className={`w-3.5 h-3.5 ${filterType === "override" ? "text-white" : "text-amber-400"}`} />
+                  <span>{overridesCount} Overrides</span>
+                </button>
+              )}
+            </div>
+
+            {/* Provider Breakdown Row */}
+            <div className="flex items-center justify-between text-[11px] text-white/40 pt-1.5 border-t border-[#1E1E1E] h-6 shrink-0">
+              <span className="font-semibold uppercase tracking-wider text-[10px]">Sources</span>
+              <div className="flex items-center gap-3">
+                {modrinthCount > 0 && (
+                  <span className="flex items-center gap-1.5 text-[#45D66F]" title="Modrinth">
+                    <img src="/social/modrinth.svg" alt="Modrinth" className="w-3.5 h-3.5 min-w-[14px] min-h-[14px] max-w-[14px] max-h-[14px] object-contain shrink-0 select-none pointer-events-none" draggable={false} />
+                    <span className="font-medium">{modrinthCount}</span>
+                  </span>
+                )}
+                {curseforgeCount > 0 && (
+                  <span className="flex items-center gap-1.5 text-[#F16436]" title="CurseForge">
+                    <img src="/social/curseforge.svg" alt="CurseForge" className="w-3.5 h-3.5 min-w-[14px] min-h-[14px] max-w-[14px] max-h-[14px] object-contain shrink-0 select-none pointer-events-none" draggable={false} />
+                    <span className="font-medium">{curseforgeCount}</span>
+                  </span>
+                )}
+                {customCount > 0 && (
+                  <span className="flex items-center gap-1.5 text-blue-400" title="Custom Source">
+                    <PlusCircle className="w-3.5 h-3.5 min-w-[14px] min-h-[14px] shrink-0" />
+                    <span className="font-medium">{customCount}</span>
+                  </span>
+                )}
+                {localOverrideCount > 0 && (
+                  <span className="flex items-center gap-1.5 text-amber-400" title="Local Overrides">
+                    <FileBraces className="w-3.5 h-3.5 min-w-[14px] min-h-[14px] shrink-0" />
+                    <span className="font-medium">{localOverrideCount}</span>
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Scrollable Content Items */}
+        <ScrollArea className="flex-1 min-h-0">
+          <div className={`flex flex-col gap-2 transition-all ${isExpanded ? "pl-4 pr-6 py-4" : "py-4 px-0 items-center"}`}>
+          <AnimatePresence>
+            {filteredItems.map(item => {
+              const isOverride = item.contentType === "override";
+
+              return (
+                <motion.div
+                  key={item.id}
+                  layout="position"
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ 
+                    duration: 0.25,
+                    delay: 0.12,
+                    ease: [0.16, 1, 0.3, 1],
+                    opacity: { duration: 0.2, delay: 0.08 }
+                  }}
+                  className={`flex items-center rounded-xl transition-colors group relative ${
+                    isExpanded 
+                      ? "gap-3 p-2.5 bg-[#141414] border border-[#1E1E1E] hover:bg-[#1E1E1E]" 
+                      : "justify-center p-1 w-11 h-11 shrink-0 border border-transparent hover:bg-[#1E1E1E]/80 hover:border-[#1E1E1E]"
+                  }`}
+                >
+                  {/* Item Image / Avatar */}
+                  {isOverride ? (
+                    <div className="w-10 h-10 min-w-[40px] min-h-[40px] max-w-[40px] max-h-[40px] rounded-lg bg-[#1E1E1E] flex items-center justify-center text-amber-400 shrink-0 border border-white/5 select-none pointer-events-none">
+                      <FileBraces className="w-5 h-5 text-amber-400 shrink-0" />
+                    </div>
+                  ) : (
+                    <img 
+                      src={item.iconUrl || "/logo.svg"} 
+                      alt={item.name} 
+                      className="w-10 h-10 min-w-[40px] min-h-[40px] max-w-[40px] max-h-[40px] rounded-lg bg-black shrink-0 object-cover border border-white/5 select-none pointer-events-none" 
+                      draggable={false}
+                    />
+                  )}
+
+                  {isExpanded && (
+                    <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+                      {/* Name with Tooltip on Hover */}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="font-medium text-sm text-white block w-full truncate cursor-pointer hover:text-[#FE5000] transition-colors text-left">
+                            {item.name}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="bg-[#1E1E1E] text-white border border-[#333] shadow-xl text-xs rounded-lg p-2 max-w-xs">
+                          <p className="font-semibold">{item.name}</p>
+                          <p className="text-[10px] text-white/50">{isOverride ? item.path : (item.versionName || item.versionId)}</p>
+                        </TooltipContent>
+                      </Tooltip>
+
+                      {/* Sub-line: [version/size] · [Provider Logo] (only if not override) · [Type Icon with color] */}
+                      <div className="flex items-center gap-1.5 text-[10px] leading-none text-white/40 mt-1 min-w-0 w-full h-4">
+                        <span className="truncate block max-w-[110px] shrink-0 leading-none">{isOverride ? "Local Override" : (item.versionName || item.versionId)}</span>
+                        
+                        {!isOverride && (
+                          <>
+                            <span className="text-white/20 select-none shrink-0 leading-none flex items-center">•</span>
+                            {item.provider === "modrinth" && (
+                              <div className="shrink-0 flex items-center justify-center h-3.5 w-3.5">
+                                <img src="/social/modrinth.svg" alt="Modrinth" title="Modrinth" className="w-3.5 h-3.5 min-w-[14px] min-h-[14px] max-w-[14px] max-h-[14px] object-contain shrink-0 select-none pointer-events-none" draggable={false} />
+                              </div>
+                            )}
+                            {item.provider === "curseforge" && (
+                              <div className="shrink-0 flex items-center justify-center h-3.5 w-3.5">
+                                <img src="/social/curseforge.svg" alt="CurseForge" title="CurseForge" className="w-3.5 h-3.5 min-w-[14px] min-h-[14px] max-w-[14px] max-h-[14px] object-contain shrink-0 select-none pointer-events-none" draggable={false} />
+                              </div>
+                            )}
+                            {item.provider === "custom" && (
+                              <span title="Custom Source" className="shrink-0 flex items-center justify-center h-3.5 w-3.5">
+                                <PlusCircle className="w-3.5 h-3.5 min-w-[14px] min-h-[14px] text-blue-400 shrink-0" />
+                              </span>
+                            )}
+                          </>
+                        )}
+
+                        <span className="text-white/20 select-none shrink-0 leading-none flex items-center">•</span>
+
+                        {/* Type Icon with specific color */}
+                        <div className="shrink-0 flex items-center justify-center h-3.5 w-3.5">
+                          {renderTypeIcon(item.contentType)}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Unified Corporate Trash Action Button (Compact h-8 w-8) */}
+                  {isExpanded && (
+                    <button 
+                      onClick={() => removeItem(item.id)}
+                      title="Remove item"
+                      className="flex opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 rounded-xl border border-[#1E1E1E] bg-[#1E1E1E] text-white hover:border-[#FE5000] hover:text-[#FE5000] hover:bg-transparent items-center justify-center shrink-0 ml-1"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+
+          {filteredItems.length === 0 && isExpanded && (
+            <div className="text-center text-white/40 text-xs py-8">
+              No items in this category filter.
+            </div>
+          )}
+          </div>
+        </ScrollArea>
+      </TooltipProvider>
+
+      <Separator className="bg-[#1E1E1E]" />
+
+      {/* Export button */}
+      <div className={`bg-black shrink-0 border-t border-[#1E1E1E] w-full sticky bottom-0 z-50 transition-all ${isExpanded ? "pl-4 pr-6 py-4" : "p-4 flex justify-center"}`}>
+        <button className={`h-12 flex items-center justify-center bg-[#FE5000] hover:bg-[#E04700] text-white font-semibold rounded-xl transition-all outline outline-2 outline-transparent hover:outline-[#FE5000] hover:outline-offset-[3px] active:scale-95 duration-200 overflow-hidden ${isExpanded ? "w-full gap-2" : "w-12 shrink-0"}`}>
+          <Download className="w-5 h-5 flex-shrink-0" />
+          <AnimatePresence>
+            {isExpanded && (
+              <motion.span
+                initial={{ opacity: 0, width: 0, marginLeft: 0 }}
+                animate={{ opacity: 1, width: "auto", marginLeft: 8 }}
+                exit={{ opacity: 0, width: 0, marginLeft: 0 }}
+                className="whitespace-nowrap"
+              >
+                Download Modpack
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </button>
+      </div>
+
+    </motion.aside>
+  );
+}

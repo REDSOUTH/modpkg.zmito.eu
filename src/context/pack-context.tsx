@@ -159,8 +159,8 @@ export function PackProvider({ children }: { children: ReactNode }) {
     setInstalledContent(prev => {
       // Check if already installed
       if (prev.some(i => i.id === item.id)) {
-        // If it exists, we might want to update the versionId
-        return prev.map(i => i.id === item.id ? { ...i, versionId: item.versionId } : i);
+        // If it exists, update versionId, versionName, etc.
+        return prev.map(i => i.id === item.id ? { ...i, ...item } : i);
       }
       return [...prev, item];
     });

@@ -302,7 +302,7 @@ export default function SelectedDock() {
                   }}
                   className={`flex items-center rounded-xl transition-colors group relative ${
                     isExpanded 
-                      ? "gap-3 p-2.5 bg-[#141414] border border-[#1E1E1E] hover:bg-[#1E1E1E]" 
+                      ? "w-full min-w-0 overflow-hidden gap-3 p-2.5 bg-[#141414] border border-[#1E1E1E] hover:bg-[#1E1E1E]" 
                       : "justify-center p-1 w-11 h-11 shrink-0 border border-transparent hover:bg-[#1E1E1E]/80 hover:border-[#1E1E1E]"
                   }`}
                 >
@@ -325,7 +325,7 @@ export default function SelectedDock() {
                       {/* Name with Tooltip on Hover */}
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className="font-medium text-sm text-white block w-full truncate cursor-pointer hover:text-[#FE5000] transition-colors text-left">
+                          <span className="font-medium text-sm text-white inline-block w-fit max-w-full truncate cursor-pointer hover:text-[#FE5000] transition-colors text-left align-bottom">
                             {item.name}
                           </span>
                         </TooltipTrigger>
@@ -337,7 +337,7 @@ export default function SelectedDock() {
 
                       {/* Sub-line: [version/size] · [Provider Logo] (only if not override) · [Type Icon with color] */}
                       <div className="flex items-center gap-1.5 text-[10px] leading-none text-white/40 mt-1 min-w-0 w-full h-4">
-                        <span className="truncate block max-w-[110px] shrink-0 leading-none">{isOverride ? "Local Override" : (item.versionName || item.versionId)}</span>
+                        <span className="truncate min-w-0 shrink leading-none">{isOverride ? "Local Override" : (item.versionName || item.versionId)}</span>
                         
                         {!isOverride && (
                           <>

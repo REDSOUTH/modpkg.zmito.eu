@@ -185,7 +185,7 @@ export default function ModGrid({
       {/* Header */}
       <div className="flex items-center justify-between mb-4 mt-0 z-10 bg-black">
         <div>
-          <h2 className="text-3xl font-bold text-white">Add {currentLabel}</h2>
+          <h2 className="text-3xl font-bold text-white">Browse {currentLabel}</h2>
         </div>
         
         {/* Sort/Filters summary */}

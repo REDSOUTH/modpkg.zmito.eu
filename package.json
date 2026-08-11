@@ -1,6 +1,6 @@
 {
-  "name": "modpkg-2",
-  "version": "0.0.0",
+  "name": "modpkg",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

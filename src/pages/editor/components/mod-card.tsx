@@ -15,6 +15,7 @@ export interface ModItemData {
   id?: string;
   name: string;
   author: string;
+  authorUrl?: string;
   iconUrl: string;
   description: string;
   categories: string[];
@@ -23,6 +24,8 @@ export interface ModItemData {
   versions?: string[];
   curseforgeId?: string | number;
   modrinthId?: string;
+  slug?: string;
+  websiteUrl?: string;
 }
 
 export interface ModCardComponentProps {
@@ -85,6 +88,37 @@ export default function ModCard({ mod, onCategoryClick }: ModCardComponentProps)
     }
   };
 
+  const getProjectUrl = () => {
+    if (mod.websiteUrl) return mod.websiteUrl;
+    const provider = normalizeProvider(mod.provider || "modrinth");
+    const identifier = mod.slug || mod.id || mod.name.toLowerCase().replace(/ /g, "");
+    
+    if (provider === "curseforge") {
+      return `https://www.curseforge.com/minecraft/mc-mods/${identifier}`;
+    }
+    return `https://modrinth.com/mod/${identifier}`;
+  };
+
+  const getAuthorUrl = () => {
+    if (mod.authorUrl) return mod.authorUrl;
+    const provider = normalizeProvider(mod.provider || "modrinth");
+    
+    if (provider === "curseforge") {
+      return `https://www.curseforge.com/members/${mod.author}/projects`;
+    }
+    return `https://modrinth.com/user/${mod.author}`;
+  };
+
+  const handleOpenProject = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    window.open(getProjectUrl(), '_blank');
+  };
+
+  const handleOpenAuthor = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    window.open(getAuthorUrl(), '_blank');
+  };
+
   return (
     <motion.div 
       onClick={handleAddAction}
@@ -98,36 +132,37 @@ export default function ModCard({ mod, onCategoryClick }: ModCardComponentProps)
             alt={mod.name} 
             className="w-14 h-14 rounded-xl bg-black object-cover transition-colors select-none cursor-pointer"
             draggable={false}
-            onClick={(e) => {
-              e.stopPropagation();
-              window.open(`https://modrinth.com/project/${mod.name.toLowerCase().replace(/ /g, '-')}`, '_blank');
-            }}
+            onClick={handleOpenProject}
             onMouseEnter={() => setIsTitleHovered(true)}
             onMouseLeave={() => setIsTitleHovered(false)}
           />
           <div className="flex flex-col justify-center gap-0.5">
-            <div 
-              className="flex items-center gap-1.5 cursor-pointer w-fit"
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(`https://modrinth.com/project/${mod.name.toLowerCase().replace(/ /g, '-')}`, '_blank');
-              }}
-              onMouseEnter={() => setIsTitleHovered(true)}
-              onMouseLeave={() => setIsTitleHovered(false)}
-            >
-              <h4 className={`text-white font-semibold text-base line-clamp-1 transition-colors group-hover:text-[#FE5000] ${isTitleHovered ? 'text-[#FE5000] underline' : ''}`}>
-                {mod.name}
-              </h4>
-              <ExternalLink className={`w-3.5 h-3.5 text-[#FE5000] transition-opacity shrink-0 ${isTitleHovered ? 'opacity-100' : 'opacity-0'}`} />
-            </div>
+            <TooltipProvider delayDuration={400}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div 
+                    className="flex items-center gap-1.5 cursor-pointer w-fit"
+                    onClick={handleOpenProject}
+                    onMouseEnter={() => setIsTitleHovered(true)}
+                    onMouseLeave={() => setIsTitleHovered(false)}
+                  >
+                    <h4 className={`font-semibold text-base line-clamp-1 transition-colors ${isTitleHovered ? 'text-[#FE5000] underline' : 'text-white'}`}>
+                      {mod.name}
+                    </h4>
+                    <ExternalLink className={`w-3.5 h-3.5 text-[#FE5000] transition-opacity shrink-0 ${isTitleHovered ? 'opacity-100' : 'opacity-0'}`} />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="bg-[#1E1E1E] text-white border border-[#333] shadow-xl text-xs rounded-lg p-2 max-w-xs z-50">
+                  <p className="font-semibold">{mod.name}</p>
+                  <p className="text-[10px] text-white/50">{mod.author}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             
             {/* Subline: Author */}
             <div 
               className="flex items-center gap-1.5 text-white/40 text-xs w-fit group/author cursor-pointer mt-0.5"
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(`https://modrinth.com/user/${mod.author}`, '_blank');
-              }}
+              onClick={handleOpenAuthor}
             >
               <span className="truncate transition-colors group-hover/author:text-[#FE5000] group-hover/author:underline">
                 {mod.author}
@@ -142,7 +177,7 @@ export default function ModCard({ mod, onCategoryClick }: ModCardComponentProps)
           className={`absolute top-0 right-0 flex items-center ml-2 rounded-full overflow-hidden border border-transparent transition-all flex-shrink-0 shadow-sm z-30 ${
             isAdded 
               ? "bg-[#FE5000] text-white" 
-              : "bg-black text-white group-hover:bg-[#FE5000] group-hover:text-white"
+              : "bg-black text-white"
           }`}
           onClick={(e) => e.stopPropagation()} // Prevent card click when interacting with buttons
         >
@@ -221,7 +256,7 @@ export default function ModCard({ mod, onCategoryClick }: ModCardComponentProps)
         </div>
       </div>
 
-      <p className="text-sm text-white/60 line-clamp-2 relative z-10 mt-1 leading-relaxed">
+      <p className="text-sm text-white/60 line-clamp-2 break-words relative z-10 mt-1 leading-relaxed">
         {mod.description}
       </p>
 

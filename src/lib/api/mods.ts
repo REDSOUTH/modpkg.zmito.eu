@@ -116,17 +116,24 @@ async function searchModrinth(
     const res = await fetch(url.toString());
     if (!res.ok) return [];
     const json = await res.json();
-    return json.hits.map((hit: any) => ({
-      id: hit.slug || hit.project_id,
-      modrinthId: hit.project_id,
-      name: hit.title,
-      author: hit.author,
-      description: hit.description,
-      iconUrl: hit.icon_url || "",
-      categories: hit.display_categories || hit.categories || [],
-      provider: "modrinth",
-      type: contentType
-    }));
+    return json.hits.map((hit: any) => {
+      const slug = hit.slug || hit.project_id;
+      const typePath = hit.project_type || "mod";
+      return {
+        id: slug,
+        slug: slug,
+        modrinthId: hit.project_id,
+        name: hit.title,
+        author: hit.author,
+        authorUrl: `https://modrinth.com/user/${hit.author}`,
+        websiteUrl: `https://modrinth.com/${typePath}/${slug}`,
+        description: hit.description,
+        iconUrl: hit.icon_url || "",
+        categories: hit.display_categories || hit.categories || [],
+        provider: "modrinth",
+        type: contentType
+      };
+    });
   } catch (err) {
     console.error("Modrinth search failed", err);
     return [];
@@ -194,15 +201,21 @@ async function searchCurseForge(
     const data = json.data || [];
 
     return data.map((mod: any) => {
-      const author = mod.authors && mod.authors.length > 0 ? mod.authors[0].name : "Unknown";
+      const authorObj = mod.authors && mod.authors.length > 0 ? mod.authors[0] : null;
+      const author = authorObj ? authorObj.name : "Unknown";
+      const authorUrl = authorObj?.url || (author !== "Unknown" ? `https://www.curseforge.com/members/${author}/projects` : undefined);
       const iconUrl = mod.logo ? mod.logo.thumbnailUrl : "";
       const catNames = (mod.categories || []).map((c: any) => c.name);
+      const websiteUrl = mod.links?.websiteUrl || `https://www.curseforge.com/minecraft/mc-mods/${mod.slug || mod.id}`;
 
       return {
         id: mod.id.toString(),
+        slug: mod.slug || mod.id.toString(),
         curseforgeId: mod.id,
         name: mod.name,
         author: author,
+        authorUrl: authorUrl,
+        websiteUrl: websiteUrl,
         description: mod.summary,
         iconUrl: iconUrl,
         categories: catNames,

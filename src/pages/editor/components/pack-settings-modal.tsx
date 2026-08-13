@@ -135,7 +135,7 @@ export default function PackSettingsModal({ isOpen, onClose, focusField }: PackS
             <Settings className="w-8 h-8 text-[#FE5000] shrink-0" />
             <div className="flex flex-col text-left justify-center -mt-[2px]">
               <DialogTitle className="text-white text-lg font-bold leading-tight">Pack Settings</DialogTitle>
-              <p className="text-xs text-white/50 mt-0.5">Ajustes principales y gestión de versiones del modpack</p>
+              <p className="text-xs text-white/50 mt-0.5">Main configuration and version management for your modpack</p>
             </div>
           </DialogHeader>
 
@@ -316,7 +316,7 @@ export default function PackSettingsModal({ isOpen, onClose, focusField }: PackS
                     className="border-[#333333] data-[state=checked]:bg-[#FE5000] data-[state=checked]:border-[#FE5000]"
                   />
                   <label htmlFor="show-all-mc" className="text-[11px] text-white/50 cursor-pointer select-none">
-                    Mostrar todas las versiones
+                    Show all Minecraft versions
                   </label>
                 </div>
               </div>
@@ -347,7 +347,7 @@ export default function PackSettingsModal({ isOpen, onClose, focusField }: PackS
                     className="border-[#333333] data-[state=checked]:bg-[#FE5000] data-[state=checked]:border-[#FE5000]"
                   />
                   <label htmlFor="show-all-loaders" className="text-[11px] text-white/50 cursor-pointer select-none">
-                    Mostrar todos los loaders
+                    Show all loaders
                   </label>
                 </div>
               </div>

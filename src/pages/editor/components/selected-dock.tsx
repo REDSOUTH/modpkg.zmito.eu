@@ -1,4 +1,7 @@
 import { Package, Download, Trash2, Pin, PinOff, Box, Paintbrush, Glasses, FileBraces, FileText, Layers, Braces, Map, PlusCircle } from "lucide-react";
+import { ContentTypeFilterBadges, FilterBadgeItem } from "@/components/common/content-type-filter-badges";
+import { ContentTypeIcon } from "@/components/common/content-type-icon";
+import { ProviderIcon } from "@/components/common/provider-icon";
 import { useState } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
@@ -141,111 +144,20 @@ export default function SelectedDock() {
         {/* Expanded Clickable Filter Tags Header */}
         {isExpanded && (
           <div className="pl-4 pr-6 py-4 border-b border-[#1E1E1E] flex flex-col gap-3 shrink-0">
-            {/* Clickable Filter Tags */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {/* ALL Tag */}
-              <button
-                onClick={() => setFilterType("all")}
-                className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer ${
-                  filterType === "all"
-                    ? "bg-[#FE5000] text-white shadow-md shadow-[#FE5000]/20"
-                    : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
-                }`}
-              >
-                <Layers className={`w-3.5 h-3.5 ${filterType === "all" ? "text-white" : "text-white/70"}`} />
-                <span>All ({installedContent.length})</span>
-              </button>
-
-              {/* MODS Tag */}
-              {modsCount > 0 && (
-                <button
-                  onClick={() => setFilterType("mod")}
-                  className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer ${
-                    filterType === "mod"
-                      ? "bg-[#FE5000] text-white shadow-md shadow-[#FE5000]/20"
-                      : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
-                  }`}
-                >
-                  <Box className={`w-3.5 h-3.5 ${filterType === "mod" ? "text-white" : "text-[#FE5000]"}`} />
-                  <span>{modsCount} Mods</span>
-                </button>
-              )}
-
-              {/* RESOURCE PACKS Tag */}
-              {resourcePacksCount > 0 && (
-                <button
-                  onClick={() => setFilterType("resourcepack")}
-                  className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer ${
-                    filterType === "resourcepack"
-                      ? "bg-[#FE5000] text-white shadow-md shadow-[#FE5000]/20"
-                      : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
-                  }`}
-                >
-                  <Paintbrush className={`w-3.5 h-3.5 ${filterType === "resourcepack" ? "text-white" : "text-blue-400"}`} />
-                  <span>{resourcePacksCount} Textures</span>
-                </button>
-              )}
-
-              {/* DATAPACKS Tag */}
-              {datapacksCount > 0 && (
-                <button
-                  onClick={() => setFilterType("datapack")}
-                  className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer ${
-                    filterType === "datapack"
-                      ? "bg-[#FE5000] text-white shadow-md shadow-[#FE5000]/20"
-                      : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
-                  }`}
-                >
-                  <Braces className={`w-3.5 h-3.5 ${filterType === "datapack" ? "text-white" : "text-emerald-400"}`} />
-                  <span>{datapacksCount} Datapacks</span>
-                </button>
-              )}
-
-              {/* SHADERS Tag */}
-              {shadersCount > 0 && (
-                <button
-                  onClick={() => setFilterType("shader")}
-                  className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer ${
-                    filterType === "shader"
-                      ? "bg-[#FE5000] text-white shadow-md shadow-[#FE5000]/20"
-                      : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
-                  }`}
-                >
-                  <Glasses className={`w-3.5 h-3.5 ${filterType === "shader" ? "text-white" : "text-purple-400"}`} />
-                  <span>{shadersCount} Shaders</span>
-                </button>
-              )}
-
-              {/* WORLDS Tag */}
-              {worldsCount > 0 && (
-                <button
-                  onClick={() => setFilterType("world")}
-                  className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer ${
-                    filterType === "world"
-                      ? "bg-[#FE5000] text-white shadow-md shadow-[#FE5000]/20"
-                      : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
-                  }`}
-                >
-                  <Map className={`w-3.5 h-3.5 ${filterType === "world" ? "text-white" : "text-cyan-400"}`} />
-                  <span>{worldsCount} Worlds</span>
-                </button>
-              )}
-
-              {/* OVERRIDES Tag */}
-              {overridesCount > 0 && (
-                <button
-                  onClick={() => setFilterType("override")}
-                  className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer ${
-                    filterType === "override"
-                      ? "bg-[#FE5000] text-white shadow-md shadow-[#FE5000]/20"
-                      : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
-                  }`}
-                >
-                  <FileBraces className={`w-3.5 h-3.5 ${filterType === "override" ? "text-white" : "text-amber-400"}`} />
-                  <span>{overridesCount} Overrides</span>
-                </button>
-              )}
-            </div>
+            <ContentTypeFilterBadges
+              showLabel={false}
+              value={filterType}
+              onValueChange={setFilterType}
+              items={[
+                { id: "all", type: "all", label: "All", count: installedContent.length },
+                ...(modsCount > 0 ? [{ id: "mod", type: "mod", label: "Mods", count: modsCount }] : []),
+                ...(resourcePacksCount > 0 ? [{ id: "resourcepack", type: "resourcepack", label: "Textures", count: resourcePacksCount }] : []),
+                ...(datapacksCount > 0 ? [{ id: "datapack", type: "datapack", label: "Datapacks", count: datapacksCount }] : []),
+                ...(shadersCount > 0 ? [{ id: "shader", type: "shader", label: "Shaders", count: shadersCount }] : []),
+                ...(worldsCount > 0 ? [{ id: "world", type: "world", label: "Worlds", count: worldsCount }] : []),
+                ...(overridesCount > 0 ? [{ id: "override", type: "override", label: "Overrides", count: overridesCount }] : []),
+              ]}
+            />
 
             {/* Provider Breakdown Row */}
             <div className="flex items-center justify-between text-[11px] text-white/40 pt-1.5 border-t border-[#1E1E1E] h-6 shrink-0">
@@ -342,30 +254,14 @@ export default function SelectedDock() {
                         {!isOverride && (
                           <>
                             <span className="text-white/20 select-none shrink-0 leading-none flex items-center">•</span>
-                            {item.provider === "modrinth" && (
-                              <div className="shrink-0 flex items-center justify-center h-3.5 w-3.5">
-                                <img src="/social/modrinth.svg" alt="Modrinth" title="Modrinth" className="w-3.5 h-3.5 min-w-[14px] min-h-[14px] max-w-[14px] max-h-[14px] object-contain shrink-0 select-none pointer-events-none" draggable={false} />
-                              </div>
-                            )}
-                            {item.provider === "curseforge" && (
-                              <div className="shrink-0 flex items-center justify-center h-3.5 w-3.5">
-                                <img src="/social/curseforge.svg" alt="CurseForge" title="CurseForge" className="w-3.5 h-3.5 min-w-[14px] min-h-[14px] max-w-[14px] max-h-[14px] object-contain shrink-0 select-none pointer-events-none" draggable={false} />
-                              </div>
-                            )}
-                            {item.provider === "custom" && (
-                              <span title="Custom Source" className="shrink-0 flex items-center justify-center h-3.5 w-3.5">
-                                <PlusCircle className="w-3.5 h-3.5 min-w-[14px] min-h-[14px] text-blue-400 shrink-0" />
-                              </span>
-                            )}
+                            <ProviderIcon provider={item.provider} size="sm" />
                           </>
                         )}
 
                         <span className="text-white/20 select-none shrink-0 leading-none flex items-center">•</span>
 
                         {/* Type Icon with specific color */}
-                        <div className="shrink-0 flex items-center justify-center h-3.5 w-3.5">
-                          {renderTypeIcon(item.contentType)}
-                        </div>
+                        <ContentTypeIcon type={item.contentType} />
                       </div>
                     </div>
                   )}

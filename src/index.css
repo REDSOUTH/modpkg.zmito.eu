@@ -78,10 +78,6 @@ button {
   &::-webkit-scrollbar-thumb {
     background: white;
     border-radius: 10px;
-    transition: background 0.2s;
-  }
-  &::-webkit-scrollbar-thumb:hover {
-    background: #FE5000;
   }
   &::-webkit-scrollbar-corner {
     background: transparent;

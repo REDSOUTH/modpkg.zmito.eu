@@ -1,13 +1,16 @@
-import { Search, Monitor, Server, Compass, Upload, FileUp, FileBraces, Globe, PlusCircle, Box, Paintbrush, Braces, Glasses, Map as MapIcon, Check } from "lucide-react";
-import { useState, useEffect, JSX } from "react";
+import { Search, Compass, FileUp, Globe, PlusCircle, Plus, Monitor, Server, Check, FileBraces, Upload } from "lucide-react";
+import { SearchInput } from "@/components/common/search-input";
+import { IconTabSelector, IconTabOption } from "@/components/common/icon-tab-selector";
+import { ContentTypeIcon } from "@/components/common/content-type-icon";
+import { useState, useEffect } from "react";
 import { fetchCategories, UnifiedCategory } from "@/lib/api/categories";
 import { CATEGORY_ICONS } from "@/lib/api/category-icons";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { InputGroup, InputGroupInput, InputGroupAddon } from "@/components/ui/input-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { AddCustomContentDialog } from "@/components/views/add-custom-content-dialog";
+import { PackageFileTree } from "./package-file-tree";
 
 interface EnvironmentItem {
   id: string;
@@ -41,9 +44,10 @@ export default function EditorSidebar({
   selectedEnvironments,
   setSelectedEnvironments
 }: EditorSidebarProps) {
-  const [activeView, setActiveView] = useState<string>("browse"); // "browse" | "overrides"
+  const [activeView, setActiveView] = useState<string>("browse");
   const [categories, setCategories] = useState<UnifiedCategory[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const [isAddCustomDialogOpen, setIsAddCustomDialogOpen] = useState<boolean>(false);
 
   useEffect(() => {
     let mounted = true;
@@ -52,8 +56,6 @@ export default function EditorSidebar({
       if (mounted) {
         setCategories(data);
         setIsLoadingCategories(false);
-        // Clean selected categories when filters change
-        // We do this here to avoid rapid state updates in tabs onClick
       }
     });
     return () => { mounted = false; };
@@ -73,63 +75,38 @@ export default function EditorSidebar({
     setSelectedEnvironments(next);
   };
 
-
-
   const environments: EnvironmentItem[] = [
     { id: "client", name: "Client", icon: Monitor, color: "text-blue-400" },
     { id: "server", name: "Server", icon: Server, color: "text-emerald-400" },
   ];
 
+  const viewOptions: IconTabOption[] = [
+    { id: "browse", label: "Browse & Add Content", icon: <Compass className="w-4 h-4 text-[#FE5000]" /> },
+    { id: "overrides", label: "Overrides & Custom Files", icon: <FileUp className="w-4 h-4 text-amber-400" /> },
+  ];
 
+  const providerOptions: IconTabOption[] = [
+    { id: "all", label: "All Sources", icon: <Globe className="w-4 h-4 text-white" /> },
+    { id: "modrinth", label: "Modrinth", icon: <img src="/social/modrinth.svg" alt="Modrinth" className="w-4 h-4 object-contain select-none pointer-events-none" draggable={false} />, activeColorClass: "text-[#45D66F]" },
+    { id: "curseforge", label: "CurseForge", icon: <img src="/social/curseforge.svg" alt="CurseForge" className="w-4 h-4 object-contain select-none pointer-events-none" draggable={false} />, activeColorClass: "text-[#F16436]" },
+    { id: "custom", label: "Custom", icon: <PlusCircle className="w-4 h-4 text-blue-400" />, activeColorClass: "text-blue-400" },
+  ];
+
+  const contentTypeOptions: IconTabOption[] = [
+    { id: "mods", label: "Mods", icon: <ContentTypeIcon type="mod" iconClassName="w-4 h-4" /> },
+    { id: "textures", label: "Resourcepacks", icon: <ContentTypeIcon type="resourcepack" iconClassName="w-4 h-4" /> },
+    { id: "shaders", label: "Shaders", icon: <ContentTypeIcon type="shader" iconClassName="w-4 h-4" /> },
+    { id: "datapacks", label: "Datapacks", icon: <ContentTypeIcon type="datapack" iconClassName="w-4 h-4" /> },
+    ...(provider !== "modrinth" ? [{ id: "worlds", label: "Worlds", icon: <ContentTypeIcon type="world" iconClassName="w-4 h-4" /> }] : []),
+  ];
 
   return (
     <aside className="w-80 border-r border-[#1E1E1E] bg-black flex flex-col flex-shrink-0 z-30 sticky top-[122px] h-[calc(100vh-122px)] overflow-hidden">
       
       <TooltipProvider delayDuration={200}>
         {/* VIEW Mode Switcher */}
-        <div className="p-5 pb-4 shrink-0 flex flex-col gap-3">
-          <h3 className="text-[11px] font-bold text-white/40 uppercase tracking-widest pl-1">View</h3>
-          <Tabs value={activeView} onValueChange={(val) => val && setActiveView(val)} className="w-full">
-            <TabsList className="bg-[#1E1E1E] border-0 rounded-xl p-1 gap-1 flex w-full h-11">
-              
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <TabsTrigger 
-                    value="browse" 
-                    className={`flex-1 h-9 rounded-lg transition-all duration-200 border-0 ${
-                      activeView === 'browse' 
-                        ? 'bg-[#333333] opacity-100 shadow-sm' 
-                        : 'bg-transparent opacity-40 hover:opacity-80'
-                    }`}
-                  >
-                    <Compass className="w-4 h-4 text-[#FE5000]" />
-                  </TabsTrigger>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={10} className="bg-[#1E1E1E] border-0 text-white font-medium shadow-xl">
-                  <p>Browse & Add Content</p>
-                </TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <TabsTrigger 
-                    value="overrides" 
-                    className={`flex-1 h-9 rounded-lg transition-all duration-200 border-0 ${
-                      activeView === 'overrides' 
-                        ? 'bg-[#333333] opacity-100 shadow-sm' 
-                        : 'bg-transparent opacity-40 hover:opacity-80'
-                    }`}
-                  >
-                    <FileUp className="w-4 h-4 text-amber-400" />
-                  </TabsTrigger>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={10} className="bg-[#1E1E1E] border-0 text-white font-medium shadow-xl">
-                  <p>Overrides & Custom Files</p>
-                </TooltipContent>
-              </Tooltip>
-
-            </TabsList>
-          </Tabs>
+        <div className="p-5 pb-4 shrink-0">
+          <IconTabSelector label="VIEW" value={activeView} onValueChange={setActiveView} options={viewOptions} />
         </div>
 
         <div className="px-5 shrink-0">
@@ -139,195 +116,29 @@ export default function EditorSidebar({
         {activeView === "browse" ? (
           <>
             {/* Source Provider */}
-            <div className="p-5 pb-4 shrink-0 flex flex-col gap-3">
-              <h3 className="text-[11px] font-bold text-white/40 uppercase tracking-widest pl-1">Source Provider</h3>
-              <Tabs value={provider} onValueChange={(val) => { 
-                if (val) { 
-                  setProvider(val); 
-                  setSelectedCategories([]); 
+            <div className="p-5 pb-4 shrink-0">
+              <IconTabSelector
+                label="SOURCE PROVIDER"
+                value={provider}
+                onValueChange={(val) => {
+                  setProvider(val);
+                  setSelectedCategories([]);
                   if (val === "modrinth" && contentType === "worlds") {
                     setContentType("mods");
                   }
-                } 
-              }} className="w-full">
-                <TabsList className="bg-[#1E1E1E] border-0 rounded-xl p-1 gap-1 flex w-full h-11">
-                  
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <TabsTrigger 
-                        value="all" 
-                        className={`flex-1 h-9 rounded-lg transition-all duration-200 border-0 ${
-                          provider === 'all' 
-                            ? 'bg-[#333333] opacity-100 shadow-sm' 
-                            : 'bg-transparent opacity-40 hover:opacity-80'
-                        }`}
-                      >
-                        <Globe className="w-4 h-4 text-white" />
-                      </TabsTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={10} className="bg-[#1E1E1E] border-0 text-white font-medium shadow-xl">
-                      <p>All Sources</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <TabsTrigger 
-                        value="modrinth" 
-                        className={`flex-1 h-9 rounded-lg transition-all duration-200 border-0 ${
-                          provider === 'modrinth' 
-                            ? 'bg-[#333333] opacity-100 shadow-sm' 
-                            : 'bg-transparent opacity-40 hover:opacity-80'
-                        }`}
-                      >
-                        <img src="/social/modrinth.svg" alt="Modrinth" className="w-4 h-4 object-contain select-none pointer-events-none" draggable={false} />
-                      </TabsTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={10} className="bg-[#1E1E1E] border-0 text-[#45D66F] font-medium shadow-xl">
-                      <p>Modrinth</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <TabsTrigger 
-                        value="curseforge" 
-                        className={`flex-1 h-9 rounded-lg transition-all duration-200 border-0 ${
-                          provider === 'curseforge' 
-                            ? 'bg-[#333333] opacity-100 shadow-sm' 
-                            : 'bg-transparent opacity-40 hover:opacity-80'
-                        }`}
-                      >
-                        <img src="/social/curseforge.svg" alt="CurseForge" className="w-4 h-4 object-contain select-none pointer-events-none" draggable={false} />
-                      </TabsTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={10} className="bg-[#1E1E1E] border-0 text-[#F16436] font-medium shadow-xl">
-                      <p>CurseForge</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <TabsTrigger 
-                        value="custom" 
-                        className={`flex-1 h-9 rounded-lg transition-all duration-200 border-0 ${
-                          provider === 'custom' 
-                            ? 'bg-[#333333] opacity-100 shadow-sm' 
-                            : 'bg-transparent opacity-40 hover:opacity-80'
-                        }`}
-                      >
-                        <PlusCircle className="w-4 h-4 text-blue-400" />
-                      </TabsTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={10} className="bg-[#1E1E1E] border-0 text-blue-400 font-medium shadow-xl">
-                      <p>Custom</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                </TabsList>
-              </Tabs>
+                }}
+                options={providerOptions}
+              />
             </div>
 
             {/* Content Type */}
-            <div className="px-5 pb-4 shrink-0 flex flex-col gap-3">
-              <h3 className="text-[11px] font-bold text-white/40 uppercase tracking-widest pl-1">Content Type</h3>
-              <Tabs value={contentType} onValueChange={(val) => val && setContentType(val)} className="w-full">
-                <TabsList className="bg-[#1E1E1E] border-0 rounded-xl p-1 gap-1 flex w-full h-11">
-                  
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <TabsTrigger 
-                        value="mods" 
-                        className={`flex-1 h-9 rounded-lg transition-all duration-200 border-0 ${
-                          contentType === 'mods' 
-                            ? 'bg-[#333333] opacity-100 shadow-sm' 
-                            : 'bg-transparent opacity-40 hover:opacity-80'
-                        }`}
-                      >
-                        <Box className="w-4 h-4 text-[#FE5000]" />
-                      </TabsTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={10} className="bg-[#1E1E1E] border-0 text-white font-medium shadow-xl">
-                      <p>Mods</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <TabsTrigger 
-                        value="textures" 
-                        className={`flex-1 h-9 rounded-lg transition-all duration-200 border-0 ${
-                          contentType === 'textures' 
-                            ? 'bg-[#333333] opacity-100 shadow-sm' 
-                            : 'bg-transparent opacity-40 hover:opacity-80'
-                        }`}
-                      >
-                        <Paintbrush className="w-4 h-4 text-blue-400" />
-                      </TabsTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={10} className="bg-[#1E1E1E] border-0 text-white font-medium shadow-xl">
-                      <p>Resource Packs</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <TabsTrigger 
-                        value="datapacks" 
-                        className={`flex-1 h-9 rounded-lg transition-all duration-200 border-0 ${
-                          contentType === 'datapacks' 
-                            ? 'bg-[#333333] opacity-100 shadow-sm' 
-                            : 'bg-transparent opacity-40 hover:opacity-80'
-                        }`}
-                      >
-                        <Braces className="w-4 h-4 text-emerald-400" />
-                      </TabsTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={10} className="bg-[#1E1E1E] border-0 text-white font-medium shadow-xl">
-                      <p>Datapacks</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <TabsTrigger 
-                        value="shaders" 
-                        className={`flex-1 h-9 rounded-lg transition-all duration-200 border-0 ${
-                          contentType === 'shaders' 
-                            ? 'bg-[#333333] opacity-100 shadow-sm' 
-                            : 'bg-transparent opacity-40 hover:opacity-80'
-                        }`}
-                      >
-                        <Glasses className="w-4 h-4 text-purple-400" />
-                      </TabsTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={10} className="bg-[#1E1E1E] border-0 text-white font-medium shadow-xl">
-                      <p>Shaders</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  {provider !== "modrinth" && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <TabsTrigger 
-                          value="worlds" 
-                          className={`flex-1 h-9 rounded-lg transition-all duration-200 border-0 ${
-                            contentType === 'worlds' 
-                              ? 'bg-[#333333] opacity-100 shadow-sm' 
-                              : 'bg-transparent opacity-40 hover:opacity-80'
-                          }`}
-                        >
-                          <MapIcon className="w-4 h-4 text-cyan-400" />
-                        </TabsTrigger>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" sideOffset={10} className="bg-[#1E1E1E] border-0 text-white font-medium shadow-xl">
-                        <p>Worlds</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
-
-                </TabsList>
-              </Tabs>
+            <div className="px-5 pb-4 shrink-0">
+              <IconTabSelector
+                label="CONTENT TYPE"
+                value={contentType}
+                onValueChange={setContentType}
+                options={contentTypeOptions}
+              />
             </div>
 
             {/* Separator under Source & Content Type */}
@@ -338,20 +149,31 @@ export default function EditorSidebar({
             {/* Scrollable Content */}
             <ScrollArea className="flex-1 min-h-0">
               <div className="flex flex-col gap-6 p-5">
+                
                 {/* Search */}
                 <div className="flex flex-col gap-2">
-                  <InputGroup>
-                    <InputGroupAddon align="inline-start">
-                      <Search className="w-4 h-4" />
-                    </InputGroupAddon>
-                    <InputGroupInput
-                      type="text"
-                      placeholder="Search mods..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9 h-10 bg-[#1E1E1E] border-transparent focus-visible:border-[#FE5000] rounded-xl text-sm"
-                    />
-                  </InputGroup>
+                  <SearchInput
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    placeholder={`Search ${contentType}...`}
+                    label="SEARCH"
+                  />
+
+                  {/* Add Custom Resource Button with section title (ONLY shown when Provider is Custom) */}
+                  {provider === "custom" && (
+                    <div className="flex flex-col gap-2 mt-1">
+                      <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider pl-1">
+                        CUSTOM RESOURCE
+                      </h3>
+                      <Button
+                        onClick={() => setIsAddCustomDialogOpen(true)}
+                        className="w-full bg-[#FE5000] hover:bg-[#E04700] text-white rounded-xl h-10 px-4 text-xs font-semibold transition-all gap-2 shadow-lg shadow-[#FE5000]/20"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Add Custom Resource</span>
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 {provider !== "custom" && (
@@ -453,45 +275,25 @@ export default function EditorSidebar({
                   </>
                 )}
 
-                {provider === "custom" && (
-                  <div className="text-sm text-white/50 text-center p-5 border-2 border-dashed border-[#1E1E1E] rounded-xl bg-[#1E1E1E]/20 mt-2">
-                    Add mods manually by providing their direct download links in the main view.
-                  </div>
-                )}
               </div>
             </ScrollArea>
           </>
         ) : (
-          /* Overrides View in Sidebar */
-          <div className="p-5 flex flex-col gap-4 flex-1">
-            <h3 className="text-[11px] font-bold text-white/40 uppercase tracking-widest pl-1">Override Folders</h3>
-            <div className="flex flex-col gap-1 text-sm text-white/60">
-              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#1E1E1E] text-white">
-                <FileBraces className="w-4 h-4 text-amber-400" />
-                <span className="font-medium">config/</span>
-              </div>
-              <div className="flex items-center gap-2 p-2.5 rounded-xl hover:bg-[#1E1E1E]/50 transition-colors cursor-pointer">
-                <FileBraces className="w-4 h-4 text-white/40" />
-                <span>defaultconfigs/</span>
-              </div>
-              <div className="flex items-center gap-2 p-2.5 rounded-xl hover:bg-[#1E1E1E]/50 transition-colors cursor-pointer">
-                <FileBraces className="w-4 h-4 text-white/40" />
-                <span>kubejs/</span>
-              </div>
-              <div className="flex items-center gap-2 p-2.5 rounded-xl hover:bg-[#1E1E1E]/50 transition-colors cursor-pointer">
-                <FileBraces className="w-4 h-4 text-white/40" />
-                <span>options.txt</span>
-              </div>
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="p-5 flex flex-col gap-4">
+              <PackageFileTree />
             </div>
-
-            <Button className="w-full bg-[#1E1E1E] hover:bg-white/10 text-white gap-2 rounded-xl h-10 mt-2">
-              <Upload className="w-4 h-4 text-amber-400" />
-              Upload Custom File
-            </Button>
-          </div>
+          </ScrollArea>
         )}
       </TooltipProvider>
 
+      {/* Add Custom Content Dialog */}
+      <AddCustomContentDialog
+        isOpen={isAddCustomDialogOpen}
+        onClose={() => setIsAddCustomDialogOpen(false)}
+        defaultAddToPackage={true}
+        defaultSaveAsCommon={true}
+      />
     </aside>
   );
 }

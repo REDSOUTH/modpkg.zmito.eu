@@ -29,6 +29,7 @@ export default function Header() {
   const navLinks = [
     { name: "Home", path: "/" },
     { name: "Editor", path: "/editor" },
+    { name: "My Resources", path: "/my-resources" },
     { name: "My MODPKGs", path: "/dashboard" },
     { name: "Discover", path: "/discover" },
     { name: "Docs", path: "/docs" },

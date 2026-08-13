@@ -3,6 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { LayoutGroup, AnimatePresence, motion } from "framer-motion";
 import Header from "./header";
 import Footer from "./footer";
+import { PackProvider } from "@/context/pack-context";
 
 export default function RootLayout() {
   const location = useLocation();
@@ -14,8 +15,9 @@ export default function RootLayout() {
   }, [location.pathname]);
 
   return (
-    <LayoutGroup>
-      <div className="flex flex-col bg-black text-white font-['Poppins'] min-h-[100dvh]">
+    <PackProvider>
+      <LayoutGroup>
+        <div className="flex flex-col bg-black text-white font-['Poppins'] min-h-[100dvh]">
         <Header />
         <main className="flex-1 flex flex-col relative">
           <Outlet />
@@ -57,5 +59,6 @@ export default function RootLayout() {
         <Footer />
       </div>
     </LayoutGroup>
+    </PackProvider>
   );
 }

@@ -29,6 +29,37 @@ export interface InstalledItem {
   path?: string; // Optional path for overrides
 }
 
+export type CustomStorageLocation = "local_browser" | "account_cloud";
+
+export type CustomFileType = "config" | "script" | "data" | "image" | "other";
+export type ConfigFileType = CustomFileType;
+
+export interface CustomFileItem {
+  id: string;
+  name: string;           // "Mis ajustes de gráficos"
+  targetPath: string;     // "/" por defecto (raíz del paquete)
+  type: CustomFileType;
+  content?: string;       // texto inline editado con Monaco
+  sourceUrl?: string;     // URL externa descargable (alternativa a content)
+  storageLocation: CustomStorageLocation;
+  createdAt: string;
+  updatedAt: string;
+}
+export type ConfigFileItem = CustomFileItem;
+
+export interface CustomContentItem {
+  id: string;
+  name: string;
+  contentType: string; // mod, resourcepack, shader, datapack, world, override
+  downloadUrl: string;
+  author?: string;
+  mcVersion?: string;
+  loader?: string;
+  targetPath?: string;
+  storageLocation: CustomStorageLocation;
+  createdAt: string;
+}
+
 export interface ModVersion {
   id: string;
   name: string;

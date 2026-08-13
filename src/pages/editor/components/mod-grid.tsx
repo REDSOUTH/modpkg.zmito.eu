@@ -1,6 +1,6 @@
-import ModCard, { ModItemData } from "./mod-card";
+import ModCard, { ModItemData, CardContentType, CardProviderType } from "./mod-card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Hash, SearchX, Settings2, X } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,7 +8,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { searchMods } from "@/lib/api/mods";
 import { usePack } from "@/context/pack-context";
 import { Button } from "@/components/ui/button";
-import { Hash, SearchX, Settings2, X } from "lucide-react";
+import { getCustomContentItems } from "@/lib/storage/custom-content-storage";
 import {
   Empty,
   EmptyContent,
@@ -40,8 +40,6 @@ export interface ModGridProps {
   onCategoryClick?: (category: string) => void;
 }
 
-
-
 const skeletonContainer = {
   hidden: { opacity: 1 },
   show: { opacity: 1 },
@@ -70,7 +68,6 @@ const contentItem = {
 
 const ModCardSkeleton = () => (
   <motion.div variants={skeletonItem} className="group relative bg-[#1E1E1E] rounded-2xl p-5 flex flex-col gap-4 overflow-hidden outline outline-3 outline-transparent h-full animate-pulse">
-    
     <div className="flex items-start justify-between relative z-10">
       <div className="flex gap-4 items-center">
         <Skeleton className="w-14 h-14 rounded-xl bg-white/5 shrink-0" />
@@ -87,12 +84,10 @@ const ModCardSkeleton = () => (
         <Skeleton className="w-[65px] h-[32px] rounded-full bg-white/5" />
       </div>
     </div>
-    
     <div className="mt-1 flex flex-col relative z-10 pt-[3px]">
       <Skeleton className="h-[14px] w-full bg-white/5" />
       <Skeleton className="h-[14px] w-5/6 bg-white/5 mt-[8px]" />
     </div>
-    
     <div className="flex items-end justify-between mt-auto pt-2 relative z-10 gap-2">
       <div className="flex flex-wrap gap-2">
         <Skeleton className="h-[20px] w-[75px] bg-white/5 rounded-md" />
@@ -103,7 +98,6 @@ const ModCardSkeleton = () => (
         <Skeleton className="w-6 h-6 rounded-md bg-white/5" />
       </div>
     </div>
-
   </motion.div>
 );
 
@@ -132,11 +126,9 @@ export default function ModGrid({
 
   const handlePageChange = (newPage: number | ((p: number) => number)) => {
     setPage(newPage);
-    // Scroll window to top on page change
     window.scrollTo({ top: 0 });
   };
 
-  // Reset page when filters change
   useEffect(() => {
     handlePageChange(1);
   }, [debouncedQuery, provider, contentType, selectedCategories, selectedEnvironments, sortBy, limit]);
@@ -144,9 +136,53 @@ export default function ModGrid({
   useEffect(() => {
     let mounted = true;
     setIsLoading(true);
-    
+
+    // Custom Provider logic: load custom resources from local storage & format as Cards!
+    if (provider === "custom") {
+      const customItems = getCustomContentItems();
+      const filteredCustom = customItems.filter((item) => {
+        // Content type filter
+        if (contentType === "mods" && item.contentType !== "mod") return false;
+        if (contentType === "textures" && item.contentType !== "resourcepack") return false;
+        if (contentType === "shaders" && item.contentType !== "shader") return false;
+        if (contentType === "datapacks" && item.contentType !== "datapack") return false;
+        if (contentType === "worlds" && item.contentType !== "world") return false;
+        if (contentType === "overrides" && item.contentType !== "override") return false;
+
+        // Search query
+        if (debouncedQuery.trim()) {
+          const q = debouncedQuery.toLowerCase();
+          return (
+            item.name.toLowerCase().includes(q) ||
+            (item.author && item.author.toLowerCase().includes(q)) ||
+            item.downloadUrl.toLowerCase().includes(q) ||
+            (item.targetPath && item.targetPath.toLowerCase().includes(q))
+          );
+        }
+        return true;
+      });
+
+      const formattedCards: ModItemData[] = filteredCustom.map((item) => ({
+        id: item.id,
+        name: item.name,
+        author: item.author || "Custom Provider",
+        iconUrl: "",
+        description: item.downloadUrl,
+        categories: [],
+        provider: "custom" as CardProviderType,
+        type: item.contentType as CardContentType,
+        websiteUrl: item.downloadUrl,
+      }));
+
+      if (mounted) {
+        setMods(formattedCards);
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    // Standard API search logic (and search custom items when provider === 'all')
     const offset = (page - 1) * parseInt(limit, 10);
-    
     searchMods(
       debouncedQuery,
       provider,
@@ -160,13 +196,52 @@ export default function ModGrid({
       loader
     ).then((data) => {
       if (mounted) {
-        setMods(data);
+        if (provider === "all" || !provider) {
+          // Find matching local custom items and prepend to search results
+          const customItems = getCustomContentItems();
+          const matchingCustom = customItems
+            .filter((item) => {
+              if (contentType === "mods" && item.contentType !== "mod") return false;
+              if (contentType === "textures" && item.contentType !== "resourcepack") return false;
+              if (contentType === "shaders" && item.contentType !== "shader") return false;
+              if (contentType === "datapacks" && item.contentType !== "datapack") return false;
+              if (contentType === "worlds" && item.contentType !== "world") return false;
+              if (contentType === "overrides" && item.contentType !== "override") return false;
+
+              if (debouncedQuery.trim()) {
+                const q = debouncedQuery.toLowerCase();
+                return (
+                  item.name.toLowerCase().includes(q) ||
+                  (item.author && item.author.toLowerCase().includes(q)) ||
+                  item.downloadUrl.toLowerCase().includes(q) ||
+                  (item.targetPath && item.targetPath.toLowerCase().includes(q))
+                );
+              }
+              return true;
+            })
+            .map((item) => ({
+              id: item.id,
+              name: item.name,
+              author: item.author || "Custom Provider",
+              iconUrl: "",
+              description: item.downloadUrl,
+              categories: [],
+              provider: "custom" as CardProviderType,
+              type: item.contentType as CardContentType,
+              websiteUrl: item.downloadUrl,
+            }));
+
+          setMods([...matchingCustom, ...data]);
+        } else {
+          setMods(data);
+        }
         setIsLoading(false);
       }
     });
 
     return () => { mounted = false; };
   }, [debouncedQuery, provider, contentType, selectedCategories, selectedEnvironments, sortBy, limit, page, mcVersion, loader]);
+
   const contentTypeLabels: Record<string, string> = {
     mods: "Mods",
     textures: "Resource Packs",
@@ -180,17 +255,16 @@ export default function ModGrid({
 
   return (
     <div ref={scrollRef} className="flex-1 min-w-0">
-      <div className="flex flex-col px-6 pt-3 pb-6 min-h-full">
+      <div className="flex flex-col px-6 pt-3 pb-6">
       
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4 mt-0 z-10 bg-black">
+      {/* Header - Uniform across all providers */}
+      <div className="flex items-center justify-between mb-4 mt-0 z-10 bg-black flex-wrap gap-3">
         <div>
           <h2 className="text-3xl font-bold text-white">Browse {currentLabel}</h2>
         </div>
         
-        {/* Sort/Filters summary */}
+        {/* Controls - Uniform Amount & Sort by */}
         <div className="flex items-center gap-3">
-          
           <div className="flex items-center gap-3">
             <span className="text-xs font-semibold text-white/40 uppercase tracking-wider flex items-center gap-1.5">
               <Hash className="w-3.5 h-3.5 text-white/40" />
@@ -250,7 +324,7 @@ export default function ModGrid({
           </motion.div>
         ) : (
           <motion.div 
-            key={`content-${contentType}`}
+            key={`content-${contentType}-${provider}`}
             variants={contentContainer}
             initial="hidden"
             animate="show"
@@ -263,25 +337,29 @@ export default function ModGrid({
                 </motion.div>
               ))
             ) : (
-              <div className="col-span-full py-16 flex flex-col items-center justify-center">
-                <Empty className="w-full max-w-2xl mx-auto py-16">
+              <div className="col-span-full py-6 flex flex-col items-center justify-center">
+                <Empty className="w-full max-w-xl mx-auto py-4">
                   <EmptyHeader>
                     <EmptyMedia variant="icon" className="bg-[#FE5000]/10 text-[#FE5000]">
-                      <SearchX className="w-10 h-10" />
+                      <SearchX className="w-8 h-8" />
                     </EmptyMedia>
-                    <EmptyTitle className="text-white text-2xl font-bold">Sin resultados</EmptyTitle>
-                    <EmptyDescription className="text-white/60 max-w-md mx-auto text-base">
-                      No hemos encontrado {currentLabel.toLowerCase()} para <strong className="text-white">{mcVersion}</strong> en <strong className="text-white capitalize">{loader}</strong> con los filtros actuales.
+                    <EmptyTitle className="text-white text-xl font-bold">
+                      {provider === "custom" ? "No custom resources found" : "No results found"}
+                    </EmptyTitle>
+                    <EmptyDescription className="text-white/60 max-w-md mx-auto text-sm">
+                      {provider === "custom"
+                        ? `You haven't added any custom ${currentLabel.toLowerCase()} yet. Use the '+ Add Custom Resource' button in the sidebar.`
+                        : `We couldn't find any ${currentLabel.toLowerCase()} matching your current filters.`}
                     </EmptyDescription>
                   </EmptyHeader>
-                  <EmptyContent className="flex-row justify-center gap-4 mt-4">
+                  <EmptyContent className="flex-row justify-center gap-3 mt-2">
                     <Button 
                       variant="ghost" 
                       className="text-white/60 hover:text-white hover:bg-[#1E1E1E] rounded-xl h-9 px-4 text-sm font-medium transition-all"
                       onClick={onOpenSettings}
                     >
                       <Settings2 className="w-4 h-4 mr-2" />
-                      Ajustes del proyecto
+                      Package Settings
                     </Button>
                     <Button 
                       variant="ghost" 
@@ -289,7 +367,7 @@ export default function ModGrid({
                       onClick={onClearFilters}
                     >
                       <X className="w-4 h-4 mr-2" />
-                      Limpiar filtros
+                      Clear Filters
                     </Button>
                   </EmptyContent>
                 </Empty>
@@ -300,7 +378,7 @@ export default function ModGrid({
       </AnimatePresence>
       
       {/* Pagination Controls */}
-      {mods.length > 0 && !isLoading && (
+      {mods.length > 0 && !isLoading && provider !== "custom" && (
         <div className="pt-4 pb-8 relative z-10">
           <Pagination>
             <PaginationContent>

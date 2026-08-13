@@ -35,7 +35,7 @@ export default function EditorPage() {
   }, []);
 
   return (
-    <PackProvider>
+    <>
       {/* Fixed topbar always at viewport top */}
       <EditorTopbar onOpenSettings={handleOpenSettings} />
 
@@ -75,6 +75,6 @@ export default function EditorPage() {
           focusField={focusField}
         />
       </div>
-    </PackProvider>
+    </>
   );
 }

@@ -27,11 +27,18 @@ export interface InstalledItem {
   versionName?: string; // Human-readable version name
   contentType: string;
   path?: string; // Optional path for overrides
+  downloadUrl?: string;
+  author?: string;
+  mcVersion?: string;
+  loader?: string;
+  targetPath?: string;
+  storageLocation?: CustomStorageLocation;
+  isPackageOnly?: boolean;
 }
 
 export type CustomStorageLocation = "local_browser" | "account_cloud";
 
-export type CustomFileType = "config" | "script" | "data" | "image" | "other";
+export type CustomFileType = "config" | "script" | "data" | "multimedia" | "other";
 export type ConfigFileType = CustomFileType;
 
 export interface CustomFileItem {
@@ -87,6 +94,11 @@ export interface ModrinthLoaderTag {
 
 export interface PackContextType {
   packSettings: PackSettings;
+  packagesList: PackSettings[];
+  activePackId: string | null;
+  createPack: (packData: Omit<PackSettings, "id" | "versions" | "currentVersion"> & { id?: string; version?: string }) => PackSettings;
+  switchPack: (packId: string) => void;
+  deletePack: (packId: string) => void;
   updatePackSettings: (newSettings: Partial<PackSettings>) => void;
   createNewVersion: (versionName: string, copyFromVersion?: string) => void;
   deleteVersion: (versionToDelete: string) => void;
@@ -97,6 +109,12 @@ export interface PackContextType {
   installedContent: InstalledItem[];
   addContent: (item: InstalledItem) => void;
   removeContent: (id: string) => void;
+  customFiles: CustomFileItem[];
+  addCustomFile: (file: CustomFileItem) => void;
+  updateCustomFile: (file: CustomFileItem) => void;
+  removeCustomFile: (id: string) => void;
+  isCreatePackModalOpen: boolean;
+  setIsCreatePackModalOpen: (open: boolean) => void;
 }
 
 // ==========================================
@@ -107,10 +125,11 @@ export interface PackSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   focusField?: FocusField;
+  isCreateMode?: boolean;
 }
 
 export interface EditorTopbarProps {
-  onOpenSettings: (field?: FocusField) => void;
+  onOpenSettings: (field?: FocusField, isCreate?: boolean) => void;
 }
 
 export interface FieldLabelProps {

@@ -24,6 +24,10 @@ const router = createBrowserRouter([
         element: <MyResourcesPage />,
       },
       {
+        path: "/dashboard",
+        element: <Navigate to="/editor" replace />,
+      },
+      {
         path: "/custom-content",
         element: <Navigate to="/my-resources" replace />,
       },

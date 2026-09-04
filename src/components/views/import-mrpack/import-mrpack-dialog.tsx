@@ -28,6 +28,7 @@ export default function ImportMrpackDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent
+        hideClose
         className="bg-[#1E1E1E] border-0 rounded-xl text-white p-0 w-full max-w-[1000px] max-h-[600px] h-[90dvh] flex flex-col gap-0 [&>button]:hidden"
       >
         {/* Title bar */}

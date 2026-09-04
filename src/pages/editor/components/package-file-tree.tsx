@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { 
   Folder, 
   FolderOpen, 
@@ -11,257 +11,331 @@ import {
   ChevronRight, 
   ChevronDown, 
   Plus, 
-  FolderPlus, 
-  FilePlus, 
-  Upload, 
   Trash2, 
-  X, 
-  Check,
-  Download
+  Download,
+  Search
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { SearchInput } from "@/components/common/search-input";
 import { ImportConfigFileDialog } from "@/components/views/import-config-file-dialog";
-import { ConfigFileItem } from "@/types";
-import { 
-  OverrideNode, 
-  getPackageOverrides, 
-  savePackageOverrides 
-} from "@/lib/storage/package-overrides-storage";
+import { DeleteConfirmDialog } from "@/components/common/delete-confirm-dialog";
+import { usePack } from "@/context/pack-context";
+import { CustomFileItem } from "@/types";
+import { detectFileType } from "@/lib/storage/config-files-storage";
+import { cn } from "@/lib/utils";
 
-export function PackageFileTree() {
-  const [tree, setTree] = useState<OverrideNode[]>(() => getPackageOverrides());
-  const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({
-    "folder-config": true,
-    "folder-kubejs": true,
-  });
+export interface PackageFileTreeProps {
+  selectedFileId: string | null;
+  onSelectFile: (id: string | null) => void;
+  onOpenAddDialog: (initialPath?: string) => void;
+}
 
-  const [newItemParentId, setNewItemParentId] = useState<string | null>(null);
-  const [newItemType, setNewItemType] = useState<"file" | "folder" | null>(null);
-  const [newItemName, setNewItemName] = useState<string>("");
-  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+interface TreeNode {
+  id: string;
+  name: string;
+  type: "file" | "folder";
+  path: string; // Full relative path like "config/options.txt"
+  fileItem?: CustomFileItem;
+  children?: TreeNode[];
+  childrenMap?: Record<string, TreeNode>;
+}
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+// Helper to sort tree: folders first (A-Z), followed by root/loose files (A-Z), recursively
+function sortTreeNodes(nodes: TreeNode[]): TreeNode[] {
+  const folders = nodes.filter((n) => n.type === "folder");
+  const files = nodes.filter((n) => n.type === "file");
 
-  const persistTree = (newTree: OverrideNode[]) => {
-    setTree(newTree);
-    savePackageOverrides(newTree);
-  };
+  folders.sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { sensitivity: "base", numeric: true })
+  );
+  files.sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { sensitivity: "base", numeric: true })
+  );
 
-  const toggleFolder = (id: string) => {
-    setExpandedFolders((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
+  const sortedFolders = folders.map((folder) => ({
+    ...folder,
+    children: folder.children ? sortTreeNodes(folder.children) : [],
+  }));
 
-  const handleStartAdd = (parentId: string | null, type: "file" | "folder") => {
-    setNewItemParentId(parentId);
-    setNewItemType(type);
-    setNewItemName("");
-    if (parentId && !expandedFolders[parentId]) {
-      setExpandedFolders((prev) => ({ ...prev, [parentId]: true }));
-    }
-  };
+  return [...sortedFolders, ...files];
+}
 
-  const handleCreateNode = () => {
-    if (!newItemName.trim() || !newItemType) return;
-    const name = newItemName.trim();
-    const id = `${newItemType}-${Date.now()}`;
+export function PackageFileTree({
+  selectedFileId,
+  onSelectFile,
+  onOpenAddDialog,
+}: PackageFileTreeProps) {
+  const { customFiles, addCustomFile, removeCustomFile } = usePack();
 
-    const newNode: OverrideNode = {
-      id,
-      name,
-      type: newItemType,
-      path: name,
-      size: newItemType === "file" ? "1.0 KB" : undefined,
-      children: newItemType === "folder" ? [] : undefined,
-    };
+  // Track collapsed folders (default all folders expanded)
+  const [collapsedFolders, setCollapsedFolders] = useState<Record<string, boolean>>({});
+  const [searchQuery, setSearchQuery] = useState("");
 
-    if (newItemParentId === null) {
-      // Root creation
-      persistTree([...tree, newNode]);
-    } else {
-      // Recursive insertion into parent folder
-      const insertRecursive = (nodes: OverrideNode[]): OverrideNode[] => {
-        return nodes.map((node) => {
-          if (node.id === newItemParentId && node.type === "folder") {
-            return {
-              ...node,
-              children: [...(node.children || []), { ...newNode, path: `${node.path}/${name}` }],
-            };
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState<boolean>(false);
+  const [itemToDelete, setItemToDelete] = useState<{ id: string; name: string; type: "file" | "folder"; path: string } | null>(null);
+
+  // Build hierarchical tree purely from customFiles
+  const tree = useMemo(() => {
+    const rootNodes: Record<string, TreeNode> = {};
+
+    customFiles.forEach((file) => {
+      let rawPath = file.targetPath ? file.targetPath.replace(/^\/+/, "").replace(/\/+$/, "") : "";
+      let parts: string[] = [];
+      let filename = file.name;
+
+      if (rawPath) {
+        const segments = rawPath.split("/").filter(Boolean);
+        if (segments.length > 1) {
+          filename = segments.pop() || file.name;
+          parts = segments;
+        } else if (segments.length === 1) {
+          if (file.targetPath.endsWith("/") || !segments[0].includes(".")) {
+            parts = [segments[0]];
+            filename = file.name;
+          } else {
+            filename = segments[0];
+            parts = [];
           }
-          if (node.children) {
-            return { ...node, children: insertRecursive(node.children) };
-          }
-          return node;
-        });
+        }
+      }
+
+      let currentLevel = rootNodes;
+      let accPath = "";
+
+      // Ensure intermediate folders exist
+      parts.forEach((part) => {
+        accPath = accPath ? `${accPath}/${part}` : part;
+        if (!currentLevel[part]) {
+          currentLevel[part] = {
+            id: `folder-${accPath}`,
+            name: part,
+            type: "folder",
+            path: accPath,
+            children: [],
+            childrenMap: {},
+          };
+        }
+        const node = currentLevel[part];
+        if (!node.childrenMap) {
+          node.childrenMap = {};
+        }
+        currentLevel = node.childrenMap;
+      });
+
+      // Insert file node
+      const filePath = accPath ? `${accPath}/${filename}` : filename;
+      currentLevel[filename] = {
+        id: file.id,
+        name: filename,
+        type: "file",
+        path: filePath,
+        fileItem: file,
       };
-      persistTree(insertRecursive(tree));
+    });
+
+    // Convert childrenMap recursively to children array
+    const convertNode = (node: TreeNode): TreeNode => {
+      if (node.type === "folder") {
+        const childNodes = node.childrenMap ? Object.values(node.childrenMap).map(convertNode) : [];
+        return {
+          id: node.id,
+          name: node.name,
+          type: "folder",
+          path: node.path,
+          children: childNodes,
+        };
+      }
+      return node;
+    };
+
+    const initialNodes = Object.values(rootNodes).map(convertNode);
+    return sortTreeNodes(initialNodes);
+  }, [customFiles]);
+
+  const isSearching = searchQuery.trim().length > 0;
+
+  // Filter tree based on search query
+  const filteredTree = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return tree;
+
+    const filterNode = (node: TreeNode): TreeNode | null => {
+      if (node.type === "file") {
+        const matches = node.name.toLowerCase().includes(q) || node.path.toLowerCase().includes(q);
+        return matches ? node : null;
+      }
+
+      // Folder
+      const folderMatches = node.name.toLowerCase().includes(q) || node.path.toLowerCase().includes(q);
+      const matchingChildren = (node.children || [])
+        .map(filterNode)
+        .filter((child): child is TreeNode => child !== null);
+
+      if (folderMatches || matchingChildren.length > 0) {
+        return {
+          ...node,
+          children: folderMatches ? (node.children || []) : matchingChildren,
+        };
+      }
+
+      return null;
+    };
+
+    const filtered = tree.map(filterNode).filter((node): node is TreeNode => node !== null);
+    return sortTreeNodes(filtered);
+  }, [tree, searchQuery]);
+
+  const toggleFolder = (path: string) => {
+    setCollapsedFolders((prev) => ({ ...prev, [path]: !prev[path] }));
+  };
+
+  const handleConfirmDelete = () => {
+    if (!itemToDelete) return;
+    if (itemToDelete.type === "file") {
+      removeCustomFile(itemToDelete.id);
+      if (selectedFileId === itemToDelete.id) {
+        onSelectFile(null);
+      }
+    } else {
+      // Folder deletion: remove all custom files inside this folder path
+      customFiles.forEach((file) => {
+        const clean = file.targetPath.replace(/^\/+/, "");
+        if (clean === itemToDelete.path || clean.startsWith(`${itemToDelete.path}/`)) {
+          removeCustomFile(file.id);
+          if (selectedFileId === file.id) {
+            onSelectFile(null);
+          }
+        }
+      });
+    }
+    setItemToDelete(null);
+  };
+
+  // Import from My Resources
+  const handleImportConfigFile = (item: CustomFileItem, overridePath: string) => {
+    const cleanPath = overridePath.startsWith("/") ? overridePath : `/${overridePath}`;
+    const importedFile: CustomFileItem = {
+      id: `file-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
+      name: item.name,
+      targetPath: cleanPath,
+      type: item.type,
+      content: item.content,
+      sourceUrl: item.sourceUrl,
+      storageLocation: "local_browser",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    addCustomFile(importedFile);
+    onSelectFile(importedFile.id);
+  };
+
+  const getFileIcon = (filename: string, fileType?: string) => {
+    if (fileType) {
+      if (fileType === "multimedia") return <Image className="w-3.5 h-3.5 text-pink-400 shrink-0" />;
+      if (fileType === "config") return <FileText className="w-3.5 h-3.5 text-blue-400 shrink-0" />;
+      if (fileType === "script") return <FileCode className="w-3.5 h-3.5 text-purple-400 shrink-0" />;
+      if (fileType === "data") return <FileJson className="w-3.5 h-3.5 text-emerald-400 shrink-0" />;
     }
 
-    setNewItemParentId(null);
-    setNewItemType(null);
-    setNewItemName("");
-  };
-
-  const handleDeleteNode = (id: string) => {
-    const deleteRecursive = (nodes: OverrideNode[]): OverrideNode[] => {
-      return nodes
-        .filter((node) => node.id !== id)
-        .map((node) => ({
-          ...node,
-          children: node.children ? deleteRecursive(node.children) : undefined,
-        }));
-    };
-    persistTree(deleteRecursive(tree));
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const newNodes: OverrideNode[] = Array.from(files).map((f) => ({
-      id: `file-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      name: f.name,
-      type: "file",
-      path: f.name,
-      size: `${(f.size / 1024).toFixed(1)} KB`,
-    }));
-
-    persistTree([...tree, ...newNodes]);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  const handleImportConfigFile = (item: ConfigFileItem, overridePath: string) => {
-    // Build a flat path from the overridePath (strip leading /)
-    const cleanPath = overridePath.replace(/^\//, "");
-    const filename = cleanPath.split("/").pop() ?? item.name;
-    const newNode: OverrideNode = {
-      id: `file-${Date.now()}`,
-      name: filename,
-      type: "file",
-      path: cleanPath,
-      size: item.content ? `${(item.content.length / 1024).toFixed(1)} KB` : undefined,
-    };
-    persistTree([...tree, newNode]);
-  };
-
-  const getFileIcon = (filename: string) => {
     const ext = filename.split(".").pop()?.toLowerCase();
-    if (ext === "json") return <FileJson className="w-4 h-4 text-amber-400 shrink-0" />;
-    if (ext === "js" || ext === "ts") return <FileCode className="w-4 h-4 text-amber-300 shrink-0" />;
-    if (ext === "txt" || ext === "cfg" || ext === "toml" || ext === "properties") return <FileText className="w-4 h-4 text-blue-400 shrink-0" />;
-    if (ext === "png" || ext === "jpg" || ext === "svg") return <Image className="w-4 h-4 text-purple-400 shrink-0" />;
-    if (ext === "zip" || ext === "tar" || ext === "gz" || ext === "jar") return <Archive className="w-4 h-4 text-emerald-400 shrink-0" />;
-    return <File className="w-4 h-4 text-white/50 shrink-0" />;
+    if (ext === "json") return <FileJson className="w-3.5 h-3.5 text-emerald-400 shrink-0" />;
+    if (["js", "ts", "lua", "py", "sh", "zs"].includes(ext || "")) return <FileCode className="w-3.5 h-3.5 text-purple-400 shrink-0" />;
+    if (["cfg", "toml", "txt", "ini", "conf", "properties"].includes(ext || "")) {
+      return <FileText className="w-3.5 h-3.5 text-blue-400 shrink-0" />;
+    }
+    if (["yaml", "yml", "xml", "nbt", "dat"].includes(ext || "")) {
+      return <FileJson className="w-3.5 h-3.5 text-emerald-400 shrink-0" />;
+    }
+    if (["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "ico", "tiff", "mp4", "webm", "mp3", "wav", "ogg"].includes(ext || "")) {
+      return <Image className="w-3.5 h-3.5 text-pink-400 shrink-0" />;
+    }
+    if (["zip", "tar", "gz", "jar"].includes(ext || "")) {
+      return <Archive className="w-3.5 h-3.5 text-amber-400 shrink-0" />;
+    }
+    return <File className="w-3.5 h-3.5 text-white/50 shrink-0" />;
   };
 
-  const renderTreeNodes = (nodes: OverrideNode[], level: number = 0) => {
+  // Recursive tree node renderer
+  const renderTreeNodes = (nodes: TreeNode[], level: number = 0) => {
     return nodes.map((node) => {
       const isFolder = node.type === "folder";
-      const isExpanded = expandedFolders[node.id];
+      const isExpanded = isSearching ? true : !collapsedFolders[node.path];
+      const isSelected = !isFolder && node.id === selectedFileId;
 
       return (
-        <div key={node.id} className="flex flex-col">
+        <div key={node.id} className="flex flex-col w-full min-w-0">
           <div 
-            className={`group flex items-center justify-between px-2 py-1.5 rounded-xl hover:bg-[#1E1E1E] transition-all cursor-pointer select-none text-xs ${
-              level > 0 ? "ml-3 border-l border-white/5 pl-2" : ""
-            }`}
-            onClick={() => isFolder && toggleFolder(node.id)}
+            className={cn(
+              "group flex items-center justify-between px-1.5 py-1 rounded-lg transition-all cursor-pointer select-none text-xs min-w-0",
+              isSelected
+                ? "bg-[#1E1E1E] text-amber-400 border border-amber-400/40 shadow-sm"
+                : "text-white/80 hover:bg-[#1E1E1E] hover:text-white border border-transparent"
+            )}
+            onClick={() => {
+              if (isFolder) {
+                toggleFolder(node.path);
+              } else {
+                onSelectFile(node.id);
+              }
+            }}
           >
-            <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
               {isFolder ? (
                 <>
                   {isExpanded ? (
-                    <ChevronDown className="w-3.5 h-3.5 text-white/40 shrink-0" />
+                    <ChevronDown className="w-3 h-3 text-white/40 shrink-0" />
                   ) : (
-                    <ChevronRight className="w-3.5 h-3.5 text-white/40 shrink-0" />
+                    <ChevronRight className="w-3 h-3 text-white/40 shrink-0" />
                   )}
                   {isExpanded ? (
-                    <FolderOpen className="w-4 h-4 text-[#FE5000] shrink-0" />
+                    <FolderOpen className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                   ) : (
-                    <Folder className="w-4 h-4 text-[#FE5000]/80 shrink-0" />
+                    <Folder className="w-3.5 h-3.5 text-amber-400/80 shrink-0" />
                   )}
                 </>
               ) : (
                 <>
-                  <span className="w-3.5 shrink-0" />
-                  {getFileIcon(node.name)}
+                  <span className="w-3 shrink-0" />
+                  {getFileIcon(node.name, node.fileItem?.type)}
                 </>
               )}
 
-              <span className={`truncate font-medium ${isFolder ? "text-white font-semibold" : "text-white/80"}`}>
+              <span 
+                className={cn(
+                  "truncate font-medium min-w-0",
+                  isFolder ? "text-white font-semibold" : isSelected ? "text-amber-400 font-semibold" : "text-white/80"
+                )}
+                title={node.name}
+              >
                 {node.name}
               </span>
             </div>
 
             {/* Hover Actions */}
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-              {isFolder && (
-                <>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleStartAdd(node.id, "file");
-                    }}
-                    title="Add file inside"
-                    className="p-1 text-white/50 hover:text-white hover:bg-white/10 rounded-md transition-colors"
-                  >
-                    <FilePlus className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleStartAdd(node.id, "folder");
-                    }}
-                    title="Add folder inside"
-                    className="p-1 text-white/50 hover:text-white hover:bg-white/10 rounded-md transition-colors"
-                  >
-                    <FolderPlus className="w-3.5 h-3.5" />
-                  </button>
-                </>
-              )}
-
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-1">
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleDeleteNode(node.id);
+                  setItemToDelete({
+                    id: node.id,
+                    name: node.name,
+                    type: node.type,
+                    path: node.path,
+                  });
                 }}
-                title="Delete"
-                className="p-1 text-red-400/70 hover:text-red-400 hover:bg-white/10 rounded-md transition-colors"
+                title={isFolder ? "Delete folder" : "Delete file"}
+                className="p-1 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors shrink-0"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
 
-          {/* Render children if folder is expanded */}
+          {/* Children if folder is expanded */}
           {isFolder && isExpanded && node.children && node.children.length > 0 && (
-            <div className="flex flex-col mt-0.5">
+            <div className="flex flex-col mt-0.5 min-w-0 ml-[12px] pl-1.5 border-l border-white/10 hover:border-white/20 transition-colors">
               {renderTreeNodes(node.children, level + 1)}
-            </div>
-          )}
-
-          {/* Inline creation input inside this folder */}
-          {isFolder && isExpanded && newItemParentId === node.id && (
-            <div className={`flex items-center gap-2 px-2 py-1.5 mt-1 rounded-xl bg-[#1E1E1E] ${level > 0 ? "ml-5" : "ml-2"}`}>
-              {newItemType === "folder" ? <Folder className="w-4 h-4 text-[#FE5000] shrink-0" /> : <File className="w-4 h-4 text-blue-400 shrink-0" />}
-              <Input
-                autoFocus
-                value={newItemName}
-                onChange={(e) => setNewItemName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleCreateNode();
-                  if (e.key === "Escape") setNewItemParentId(null);
-                }}
-                placeholder={newItemType === "folder" ? "folder_name" : "filename.txt"}
-                className="h-7 text-xs bg-black text-white border-white/10 px-2 rounded-lg focus-visible:ring-0 focus-visible:border-[#FE5000]"
-              />
-              <button onClick={handleCreateNode} className="p-1 text-emerald-400 hover:bg-white/10 rounded-md">
-                <Check className="w-3.5 h-3.5" />
-              </button>
-              <button onClick={() => setNewItemParentId(null)} className="p-1 text-white/50 hover:bg-white/10 rounded-md">
-                <X className="w-3.5 h-3.5" />
-              </button>
             </div>
           )}
         </div>
@@ -270,104 +344,89 @@ export function PackageFileTree() {
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      
+    <div className="flex flex-col gap-4 w-full min-w-0 overflow-hidden">
       {/* Top Toolbar */}
-      <div className="flex flex-col gap-2 bg-[#1E1E1E]/50 p-3 rounded-2xl border border-white/5">
+      <div className="flex flex-col gap-2.5 bg-[#1E1E1E] p-3.5 rounded-2xl">
         <div className="flex items-center justify-between pl-1 pr-1">
           <span className="text-[11px] font-bold text-white/40 uppercase tracking-widest">
-            Package Directory
+            Custom Files
           </span>
-          <span className="text-[10px] text-white/40 font-mono">/overrides</span>
         </div>
 
-        <div className="grid grid-cols-3 gap-1.5 mt-1">
+        {/* Primary Action Buttons */}
+        <div className="flex flex-col gap-2 mt-0.5">
           <Button
-            variant="ghost"
-            onClick={() => handleStartAdd(null, "file")}
-            className="h-8 text-xs font-semibold text-white/70 hover:text-white hover:bg-[#1E1E1E] rounded-xl px-2 gap-1 border border-white/5"
+            onClick={() => onOpenAddDialog()}
+            className="w-full bg-amber-400 hover:bg-amber-300 text-black rounded-xl h-10 px-4 text-xs font-semibold gap-2 border-0 active:scale-95 transition-all duration-200 cursor-pointer shadow-none"
           >
-            <FilePlus className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-            <span>+ File</span>
+            <Plus className="w-4 h-4" />
+            <span>Add Custom File</span>
           </Button>
 
-          <Button
-            variant="ghost"
-            onClick={() => handleStartAdd(null, "folder")}
-            className="h-8 text-xs font-semibold text-white/70 hover:text-white hover:bg-[#1E1E1E] rounded-xl px-2 gap-1 border border-white/5"
-          >
-            <FolderPlus className="w-3.5 h-3.5 text-[#FE5000] shrink-0" />
-            <span>+ Folder</span>
-          </Button>
-
-          <Button
-            variant="ghost"
-            onClick={() => fileInputRef.current?.click()}
-            className="h-8 text-xs font-semibold text-white/70 hover:text-white hover:bg-[#1E1E1E] rounded-xl px-2 gap-1 border border-white/5"
-          >
-            <Upload className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            <span>Upload</span>
-          </Button>
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileUpload}
-            multiple
-            className="hidden"
-          />
           <Button
             variant="ghost"
             onClick={() => setIsImportDialogOpen(true)}
-            className="col-span-3 h-8 text-xs font-semibold text-white/70 hover:text-amber-400 hover:bg-amber-400/10 rounded-xl px-2 gap-1.5 border border-white/5"
+            className="w-full h-9 text-xs font-semibold text-white/80 hover:text-amber-400 hover:bg-white/5 rounded-xl px-3 gap-2 border border-white/5 transition-all cursor-pointer"
           >
             <Download className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-            <span>Import Custom File</span>
+            <span>Import from My Resources</span>
           </Button>
         </div>
       </div>
 
-      {/* Root creation input */}
-      {newItemParentId === null && newItemType && (
-        <div className="flex items-center gap-2 p-2 rounded-xl bg-[#1E1E1E] border border-white/10">
-          {newItemType === "folder" ? <Folder className="w-4 h-4 text-[#FE5000] shrink-0" /> : <File className="w-4 h-4 text-blue-400 shrink-0" />}
-          <Input
-            autoFocus
-            value={newItemName}
-            onChange={(e) => setNewItemName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleCreateNode();
-              if (e.key === "Escape") setNewItemType(null);
-            }}
-            placeholder={newItemType === "folder" ? "folder_name" : "filename.txt"}
-            className="h-7 text-xs bg-black text-white border-white/10 px-2 rounded-lg focus-visible:ring-0 focus-visible:border-[#FE5000]"
-          />
-          <button onClick={handleCreateNode} className="p-1 text-emerald-400 hover:bg-white/10 rounded-md">
-            <Check className="w-3.5 h-3.5" />
-          </button>
-          <button onClick={() => setNewItemType(null)} className="p-1 text-white/50 hover:bg-white/10 rounded-md">
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
+      {/* Search Bar */}
+      <SearchInput
+        value={searchQuery}
+        onChange={setSearchQuery}
+        placeholder="Search files or folders..."
+        label="SEARCH"
+      />
 
-      {/* Directory File Tree View */}
-      <div className="flex flex-col gap-1">
-        {tree.length === 0 ? (
-          <div className="text-center py-6 text-xs text-white/40">
-            Directory is empty. Create a folder or upload a file.
+      {/* Directory Explorer Header */}
+      <div className="flex items-center justify-between pl-1 pr-1 pt-1">
+        <span className="text-[11px] font-bold text-white/40 uppercase tracking-widest">
+          Directory Explorer
+        </span>
+        <span className="text-[10px] text-white/40 font-mono">/</span>
+      </div>
+
+      {/* Tree Node Hierarchy */}
+      <div className="flex flex-col gap-0.5 w-full min-w-0 overflow-hidden">
+        {isSearching && filteredTree.length === 0 ? (
+          <div className="text-center py-8 text-xs text-white/40 flex flex-col items-center gap-2">
+            <Search className="w-5 h-5 text-white/20" />
+            <span>No files found</span>
+            <span className="text-[11px] text-white/30">No files or folders match "{searchQuery}"</span>
+          </div>
+        ) : tree.length === 0 ? (
+          <div className="text-center py-8 text-xs text-white/40 flex flex-col items-center gap-2">
+            <Folder className="w-6 h-6 text-white/20" />
+            <span>Directory is empty</span>
+            <span className="text-[11px] text-white/30">Add a file or import from My Resources to build your structure.</span>
           </div>
         ) : (
-          renderTreeNodes(tree)
+          renderTreeNodes(filteredTree)
         )}
       </div>
 
-      {/* Import Config File Dialog */}
+      {/* Import from My Resources Dialog */}
       <ImportConfigFileDialog
         isOpen={isImportDialogOpen}
         onClose={() => setIsImportDialogOpen(false)}
         onImport={handleImportConfigFile}
       />
 
+      {/* Delete Confirmation Dialog */}
+      {itemToDelete && (
+        <DeleteConfirmDialog
+          isOpen={!!itemToDelete}
+          onClose={() => setItemToDelete(null)}
+          onConfirm={handleConfirmDelete}
+          title={itemToDelete.type === "folder" ? "Delete Folder" : "Delete Custom File"}
+          itemName={itemToDelete.name}
+          description={itemToDelete.type === "folder" ? `Are you sure you want to delete folder "${itemToDelete.name}" and all files inside it? This action cannot be undone.` : undefined}
+        />
+      )}
     </div>
   );
 }

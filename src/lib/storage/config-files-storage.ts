@@ -1,41 +1,15 @@
 import { CustomFileItem, CustomFileType, ConfigFileItem, ConfigFileType } from "@/types";
+import { getPackData, savePackData, GLOBAL_CUSTOM_FILES_KEY } from "./package-storage";
 
-const STORAGE_KEY = "modpkg_config_file_items";
-
-const INITIAL_CONFIG_FILES: CustomFileItem[] = [
-  {
-    id: "cfg-options-1",
-    name: "My Graphics Settings",
-    targetPath: "/options.txt",
-    type: "config",
-    content: `# Minecraft Options\ngamma:1.0\nrenderDistance:12\nfancyGraphics:true\nao:2\nfullscreen:false`,
-    storageLocation: "local_browser",
-    createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
-    updatedAt: new Date(Date.now() - 86400000 * 3).toISOString(),
-  },
-  {
-    id: "cfg-kubejs-1",
-    name: "Custom KubeJS Recipes",
-    targetPath: "/kubejs/server_scripts/custom_recipes.js",
-    type: "script",
-    content: `// KubeJS Custom Recipes\nServerEvents.recipes(event => {\n  // Add custom recipes here\n});`,
-    storageLocation: "local_browser",
-    createdAt: new Date(Date.now() - 86400000 * 7).toISOString(),
-    updatedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-  },
-];
+const STORAGE_KEY = GLOBAL_CUSTOM_FILES_KEY;
 
 export function getCustomFileItems(): CustomFileItem[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_CONFIG_FILES));
-      return INITIAL_CONFIG_FILES;
-    }
-    return JSON.parse(raw);
+    return raw ? JSON.parse(raw) : [];
   } catch (e) {
     console.error("Failed to load custom file items", e);
-    return INITIAL_CONFIG_FILES;
+    return [];
   }
 }
 export const getConfigFileItems = getCustomFileItems;
@@ -75,11 +49,55 @@ export function deleteCustomFileItem(id: string): void {
 }
 export const deleteConfigFileItem = deleteCustomFileItem;
 
+// Package-exclusive custom files storage (stored inside per-modpkg JSON object: modpkg_pack_${packId})
+export function getPackageCustomFileItems(packId: string): CustomFileItem[] {
+  const packData = getPackData(packId);
+  return packData.customFiles || [];
+}
+
+export function savePackageCustomFileItem(
+  packId: string,
+  payload: Omit<CustomFileItem, "id" | "createdAt" | "updatedAt">
+): CustomFileItem {
+  const packData = getPackData(packId);
+  const now = new Date().toISOString();
+  const newItem: CustomFileItem = {
+    ...payload,
+    id: `cfg-pkg-${Math.random().toString(36).substring(2, 9)}`,
+    createdAt: now,
+    updatedAt: now,
+  };
+  packData.customFiles = [newItem, ...(packData.customFiles || [])];
+  savePackData(packId, packData);
+  return newItem;
+}
+
+export function updatePackageCustomFileItem(
+  packId: string,
+  id: string,
+  updates: Partial<CustomFileItem>
+): CustomFileItem | null {
+  const packData = getPackData(packId);
+  const items = packData.customFiles || [];
+  const index = items.findIndex(i => i.id === id);
+  if (index === -1) return null;
+  items[index] = { ...items[index], ...updates, updatedAt: new Date().toISOString() };
+  packData.customFiles = items;
+  savePackData(packId, packData);
+  return items[index];
+}
+
+export function deletePackageCustomFileItem(packId: string, id: string): void {
+  const packData = getPackData(packId);
+  packData.customFiles = (packData.customFiles || []).filter(i => i.id !== id);
+  savePackData(packId, packData);
+}
+
 export const CUSTOM_FILE_TYPES: { value: CustomFileType; label: string }[] = [
   { value: "config", label: "Config" },
   { value: "script", label: "Script" },
   { value: "data", label: "Data" },
-  { value: "image", label: "Image" },
+  { value: "multimedia", label: "Multimedia" },
   { value: "other", label: "Other" },
 ];
 export const CONFIG_FILE_TYPES = CUSTOM_FILE_TYPES;
@@ -89,7 +107,7 @@ export function detectFileType(filename: string): CustomFileType {
   if (["cfg", "toml", "txt", "ini", "conf", "properties"].includes(ext)) return "config";
   if (["js", "ts", "lua", "py", "sh", "zs"].includes(ext)) return "script";
   if (["json", "yaml", "yml", "xml", "nbt", "dat"].includes(ext)) return "data";
-  if (["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(ext)) return "image";
+  if (["png", "jpg", "jpeg", "gif", "webp", "svg", "mp4", "webm", "mp3", "wav", "ogg"].includes(ext)) return "multimedia";
   return "other";
 }
 

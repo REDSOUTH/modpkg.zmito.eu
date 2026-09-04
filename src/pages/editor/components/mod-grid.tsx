@@ -1,6 +1,6 @@
 import ModCard, { ModItemData, CardContentType, CardProviderType } from "./mod-card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowUpDown, Hash, SearchX, Settings2, X } from "lucide-react";
+import { ArrowUpDown, Hash, SearchX, Settings2, X, PlusCircle, Plus } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,7 +8,9 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { searchMods } from "@/lib/api/mods";
 import { usePack } from "@/context/pack-context";
 import { Button } from "@/components/ui/button";
-import { getCustomContentItems } from "@/lib/storage/custom-content-storage";
+import { getCustomContentItems, getPackageCustomContentItems, getHiddenCustomItemIds } from "@/lib/storage/custom-content-storage";
+import { AddCustomContentDialog } from "@/components/views/add-custom-content-dialog";
+import { CustomContentItem } from "@/types";
 import {
   Empty,
   EmptyContent,
@@ -118,11 +120,22 @@ export default function ModGrid({
   const [limit, setLimit] = useState<string>("20");
   const [page, setPage] = useState<number>(1);
 
-  const { packSettings } = usePack();
+  const { packSettings, installedContent } = usePack();
   const { mcVersion, loader } = packSettings;
 
   const debouncedQuery = useDebounce(searchQuery, 400);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [customStorageVersion, setCustomStorageVersion] = useState<number>(0);
+  const [editingCustomItem, setEditingCustomItem] = useState<CustomContentItem | null>(null);
+  const [isAddCustomModalOpen, setIsAddCustomModalOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    const handleCustomStorageChanged = () => {
+      setCustomStorageVersion(v => v + 1);
+    };
+    window.addEventListener("modpkg-custom-storage-changed", handleCustomStorageChanged);
+    return () => window.removeEventListener("modpkg-custom-storage-changed", handleCustomStorageChanged);
+  }, []);
 
   const handlePageChange = (newPage: number | ((p: number) => number)) => {
     setPage(newPage);
@@ -137,10 +150,32 @@ export default function ModGrid({
     let mounted = true;
     setIsLoading(true);
 
+    // Helper for loader & MC version package compatibility & pack-level blacklisting
+    const hiddenIds = getHiddenCustomItemIds(packSettings.id);
+    const isCustomContentCompatible = (item: any) => {
+      if (item.id && hiddenIds.includes(item.id)) return false;
+      const isMcCompat = !item.mcVersion || item.mcVersion === "Any" || item.mcVersion.split(",").map((v: string) => v.trim()).includes(mcVersion);
+      const isLoaderCompat = !item.loader || item.loader === "Any" || item.loader.split(",").map((l: string) => l.trim().toLowerCase()).includes(loader.toLowerCase());
+      return isMcCompat && isLoaderCompat;
+    };
+
     // Custom Provider logic: load custom resources from local storage & format as Cards!
     if (provider === "custom") {
-      const customItems = getCustomContentItems();
-      const filteredCustom = customItems.filter((item) => {
+      const globalCustomItems = getCustomContentItems();
+      const packageCustomItems = getPackageCustomContentItems(packSettings.id);
+
+      // Combine package-exclusive custom items and global custom items
+      const allCustomItems = [...packageCustomItems];
+      globalCustomItems.forEach(gItem => {
+        if (!allCustomItems.some(p => p.id === gItem.id)) {
+          allCustomItems.push(gItem);
+        }
+      });
+
+      const filteredCustom = allCustomItems.filter((item) => {
+        // Must match active package's MC version and loader
+        if (!isCustomContentCompatible(item)) return false;
+
         // Content type filter
         if (contentType === "mods" && item.contentType !== "mod") return false;
         if (contentType === "textures" && item.contentType !== "resourcepack") return false;
@@ -172,6 +207,11 @@ export default function ModGrid({
         provider: "custom" as CardProviderType,
         type: item.contentType as CardContentType,
         websiteUrl: item.downloadUrl,
+        mcVersion: item.mcVersion,
+        loader: item.loader,
+        targetPath: item.targetPath,
+        storageLocation: item.storageLocation,
+        customItem: item,
       }));
 
       if (mounted) {
@@ -197,41 +237,57 @@ export default function ModGrid({
     ).then((data) => {
       if (mounted) {
         if (provider === "all" || !provider) {
-          // Find matching local custom items and prepend to search results
-          const customItems = getCustomContentItems();
-          const matchingCustom = customItems
-            .filter((item) => {
-              if (contentType === "mods" && item.contentType !== "mod") return false;
-              if (contentType === "textures" && item.contentType !== "resourcepack") return false;
-              if (contentType === "shaders" && item.contentType !== "shader") return false;
-              if (contentType === "datapacks" && item.contentType !== "datapack") return false;
-              if (contentType === "worlds" && item.contentType !== "world") return false;
-              if (contentType === "overrides" && item.contentType !== "override") return false;
+          // Find matching local custom items ONLY when there is an active search query and they are compatible
+          if (debouncedQuery.trim()) {
+            const globalCustomItems = getCustomContentItems();
+            const packageCustomItems = getPackageCustomContentItems(packSettings.id);
+            const allCustomItems = [...packageCustomItems];
+            globalCustomItems.forEach(gItem => {
+              if (!allCustomItems.some(p => p.id === gItem.id)) {
+                allCustomItems.push(gItem);
+              }
+            });
 
-              if (debouncedQuery.trim()) {
-                const q = debouncedQuery.toLowerCase();
+            const q = debouncedQuery.toLowerCase();
+            const matchingCustom = allCustomItems
+              .filter((item) => {
+                if (!isCustomContentCompatible(item)) return false;
+
+                if (contentType === "mods" && item.contentType !== "mod") return false;
+                if (contentType === "textures" && item.contentType !== "resourcepack") return false;
+                if (contentType === "shaders" && item.contentType !== "shader") return false;
+                if (contentType === "datapacks" && item.contentType !== "datapack") return false;
+                if (contentType === "worlds" && item.contentType !== "world") return false;
+                if (contentType === "overrides" && item.contentType !== "override") return false;
+
                 return (
                   item.name.toLowerCase().includes(q) ||
                   (item.author && item.author.toLowerCase().includes(q)) ||
                   item.downloadUrl.toLowerCase().includes(q) ||
                   (item.targetPath && item.targetPath.toLowerCase().includes(q))
                 );
-              }
-              return true;
-            })
-            .map((item) => ({
-              id: item.id,
-              name: item.name,
-              author: item.author || "Custom Provider",
-              iconUrl: "",
-              description: item.downloadUrl,
-              categories: [],
-              provider: "custom" as CardProviderType,
-              type: item.contentType as CardContentType,
-              websiteUrl: item.downloadUrl,
-            }));
+              })
+              .map((item) => ({
+                id: item.id,
+                name: item.name,
+                author: item.author || "Custom Provider",
+                iconUrl: "",
+                description: item.downloadUrl,
+                categories: [],
+                provider: "custom" as CardProviderType,
+                type: item.contentType as CardContentType,
+                websiteUrl: item.downloadUrl,
+                mcVersion: item.mcVersion,
+                loader: item.loader,
+                targetPath: item.targetPath,
+                storageLocation: item.storageLocation,
+                customItem: item,
+              }));
 
-          setMods([...matchingCustom, ...data]);
+            setMods([...matchingCustom, ...data]);
+          } else {
+            setMods(data);
+          }
         } else {
           setMods(data);
         }
@@ -240,7 +296,7 @@ export default function ModGrid({
     });
 
     return () => { mounted = false; };
-  }, [debouncedQuery, provider, contentType, selectedCategories, selectedEnvironments, sortBy, limit, page, mcVersion, loader]);
+  }, [debouncedQuery, provider, contentType, selectedCategories, selectedEnvironments, sortBy, limit, page, mcVersion, loader, customStorageVersion]);
 
   const contentTypeLabels: Record<string, string> = {
     mods: "Mods",
@@ -253,9 +309,17 @@ export default function ModGrid({
 
   const currentLabel = contentTypeLabels[contentType] || "Mods";
 
+  const isMax50 = provider === "all" || provider === "curseforge";
+
+  useEffect(() => {
+    if (isMax50 && parseInt(limit, 10) > 50) {
+      setLimit("50");
+    }
+  }, [provider, isMax50, limit]);
+
   return (
-    <div ref={scrollRef} className="flex-1 min-w-0">
-      <div className="flex flex-col px-6 pt-3 pb-6">
+    <div ref={scrollRef} className="flex-1 min-w-0 flex flex-col">
+      <div className="flex flex-col px-6 pt-3 pb-6 flex-1">
       
       {/* Header - Uniform across all providers */}
       <div className="flex items-center justify-between mb-4 mt-0 z-10 bg-black flex-wrap gap-3">
@@ -280,7 +344,9 @@ export default function ModGrid({
                 <SelectItem value="15" className="focus:bg-[#1E1E1E] focus:text-[#FE5000] text-sm">15</SelectItem>
                 <SelectItem value="20" className="focus:bg-[#1E1E1E] focus:text-[#FE5000] text-sm">20</SelectItem>
                 <SelectItem value="50" className="focus:bg-[#1E1E1E] focus:text-[#FE5000] text-sm">50</SelectItem>
-                <SelectItem value="100" className="focus:bg-[#1E1E1E] focus:text-[#FE5000] text-sm">100</SelectItem>
+                {!isMax50 && (
+                  <SelectItem value="100" className="focus:bg-[#1E1E1E] focus:text-[#FE5000] text-sm">100</SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -307,7 +373,7 @@ export default function ModGrid({
         </div>
       </div>
 
-      {/* Grid */}
+      {/* Grid or Centered Empty State */}
       <AnimatePresence mode="wait">
         {isLoading ? (
           <motion.div 
@@ -322,7 +388,7 @@ export default function ModGrid({
               <ModCardSkeleton key={i} />
             ))}
           </motion.div>
-        ) : (
+        ) : mods.length > 0 ? (
           <motion.div 
             key={`content-${contentType}-${provider}`}
             variants={contentContainer}
@@ -330,32 +396,72 @@ export default function ModGrid({
             animate="show"
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-6"
           >
-            {mods.length > 0 ? (
-              mods.map(mod => (
-                <motion.div key={mod.id} variants={contentItem}>
-                  <ModCard mod={mod} onCategoryClick={onCategoryClick} />
-                </motion.div>
-              ))
-            ) : (
-              <div className="col-span-full py-6 flex flex-col items-center justify-center">
-                <Empty className="w-full max-w-xl mx-auto py-4">
-                  <EmptyHeader>
-                    <EmptyMedia variant="icon" className="bg-[#FE5000]/10 text-[#FE5000]">
-                      <SearchX className="w-8 h-8" />
-                    </EmptyMedia>
-                    <EmptyTitle className="text-white text-xl font-bold">
-                      {provider === "custom" ? "No custom resources found" : "No results found"}
-                    </EmptyTitle>
-                    <EmptyDescription className="text-white/60 max-w-md mx-auto text-sm">
-                      {provider === "custom"
-                        ? `You haven't added any custom ${currentLabel.toLowerCase()} yet. Use the '+ Add Custom Resource' button in the sidebar.`
-                        : `We couldn't find any ${currentLabel.toLowerCase()} matching your current filters.`}
-                    </EmptyDescription>
-                  </EmptyHeader>
-                  <EmptyContent className="flex-row justify-center gap-3 mt-2">
+            {mods.map(mod => (
+              <motion.div key={mod.id} variants={contentItem}>
+                <ModCard 
+                  mod={mod} 
+                  onCategoryClick={onCategoryClick} 
+                  onEditCustomItem={(customItem) => setEditingCustomItem(customItem)}
+                />
+              </motion.div>
+            ))}
+          </motion.div>
+        ) : (
+          <motion.div 
+            key={`empty-${contentType}-${provider}`}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="flex-1 flex flex-col items-center justify-center w-full min-h-[460px] my-auto py-12 text-center"
+          >
+            <Empty className="w-full max-w-xl mx-auto flex flex-col items-center justify-center border-0 p-0">
+              <EmptyHeader className="max-w-md flex flex-col items-center text-center">
+                <EmptyMedia 
+                  variant="icon" 
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-3 ${
+                    provider === "custom" ? "bg-blue-500/10 text-blue-400" : "bg-[#FE5000]/10 text-[#FE5000]"
+                  }`}
+                >
+                  {provider === "custom" ? (
+                    <PlusCircle className="w-7 h-7" />
+                  ) : (
+                    <SearchX className="w-7 h-7" />
+                  )}
+                </EmptyMedia>
+                <EmptyTitle className="text-white text-xl font-bold">
+                  {provider === "custom" ? "No custom resources found" : "No results found"}
+                </EmptyTitle>
+                <EmptyDescription className="text-white/60 max-w-md mx-auto text-sm text-center">
+                  {provider === "custom"
+                    ? `You haven't added any custom ${currentLabel.toLowerCase()} yet. Use the '+ Add Custom Resource' button in the sidebar or click below.`
+                    : `We couldn't find any ${currentLabel.toLowerCase()} matching your current filters.`}
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent className="max-w-none flex flex-row items-center justify-center gap-3 mt-4">
+                {provider === "custom" ? (
+                  <>
+                    <Button 
+                      onClick={() => setIsAddCustomModalOpen(true)}
+                      className="bg-blue-500 hover:bg-blue-400 text-white rounded-xl h-10 px-5 text-sm font-semibold gap-2 border-0 outline outline-2 outline-transparent hover:outline-blue-500/50 hover:outline-offset-2 active:scale-95 transition-all shadow-lg shadow-blue-500/20 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Custom Content
+                    </Button>
                     <Button 
                       variant="ghost" 
-                      className="text-white/60 hover:text-white hover:bg-[#1E1E1E] rounded-xl h-9 px-4 text-sm font-medium transition-all"
+                      className="text-white/60 hover:text-white hover:bg-[#1E1E1E] rounded-xl h-10 px-4 text-sm font-medium transition-all cursor-pointer"
+                      onClick={onOpenSettings}
+                    >
+                      <Settings2 className="w-4 h-4 mr-2" />
+                      Package Settings
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button 
+                      variant="ghost" 
+                      className="text-white/60 hover:text-white hover:bg-[#1E1E1E] rounded-xl h-10 px-4 text-sm font-medium transition-all cursor-pointer"
                       onClick={onOpenSettings}
                     >
                       <Settings2 className="w-4 h-4 mr-2" />
@@ -363,16 +469,16 @@ export default function ModGrid({
                     </Button>
                     <Button 
                       variant="ghost" 
-                      className="text-white/60 hover:text-white hover:bg-[#1E1E1E] rounded-xl h-9 px-4 text-sm font-medium transition-all"
+                      className="text-white/60 hover:text-white hover:bg-[#1E1E1E] rounded-xl h-10 px-4 text-sm font-medium transition-all cursor-pointer"
                       onClick={onClearFilters}
                     >
                       <X className="w-4 h-4 mr-2" />
                       Clear Filters
                     </Button>
-                  </EmptyContent>
-                </Empty>
-              </div>
-            )}
+                  </>
+                )}
+              </EmptyContent>
+            </Empty>
           </motion.div>
         )}
       </AnimatePresence>
@@ -456,6 +562,25 @@ export default function ModGrid({
           </Pagination>
         </div>
       )}
+
+      {editingCustomItem && (
+        <AddCustomContentDialog
+          context="editor"
+          isOpen={!!editingCustomItem}
+          onClose={() => setEditingCustomItem(null)}
+          editItem={editingCustomItem}
+          defaultAddToPackage={installedContent.some(i => i.id === editingCustomItem.id)}
+          defaultSaveAsCommon={getCustomContentItems().some(i => i.id === editingCustomItem.id)}
+        />
+      )}
+
+      <AddCustomContentDialog
+        context="editor"
+        isOpen={isAddCustomModalOpen}
+        onClose={() => setIsAddCustomModalOpen(false)}
+        defaultAddToPackage={true}
+        defaultSaveAsCommon={true}
+      />
 
       </div>
     </div>

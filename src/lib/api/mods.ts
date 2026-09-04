@@ -85,11 +85,12 @@ async function searchModrinth(
   const facets: string[][] = [];
   facets.push([`project_type:${projectType}`]);
   
-  if (mcVersion) {
+  // For shaders, Modrinth shaders are version & loader agnostic (OptiFine/Iris/Sodium across versions)
+  if (mcVersion && projectType !== "shader") {
     facets.push([`versions:${mcVersion}`]);
   }
   
-  if (loader && (projectType === "mod" || projectType === "shader")) {
+  if (loader && projectType === "mod") {
     facets.push([`categories:${loader.toLowerCase()}`]);
   }
 
@@ -235,14 +236,15 @@ export async function getModVersions(
   provider: string,
   modId: string,
   mcVersion: string,
-  loader: string
+  loader: string,
+  contentType?: string
 ): Promise<ModVersion[]> {
   const targetProvider = provider === "all" ? "modrinth" : provider;
 
   if (targetProvider === "modrinth") {
-    return getModrinthVersions(modId, mcVersion, loader);
+    return getModrinthVersions(modId, mcVersion, loader, contentType);
   } else if (targetProvider === "curseforge") {
-    return getCurseForgeVersions(modId, mcVersion, loader);
+    return getCurseForgeVersions(modId, mcVersion, loader, contentType);
   }
   return [];
 }
@@ -250,21 +252,46 @@ export async function getModVersions(
 async function getModrinthVersions(
   modId: string,
   mcVersion: string,
-  loader: string
+  loader: string,
+  contentType?: string
 ): Promise<ModVersion[]> {
   const url = new URL(`https://api.modrinth.com/v2/project/${modId}/version`);
   
-  const loaders = [loader.toLowerCase()];
-  const gameVersions = [mcVersion];
+  const isShader = contentType === "shader" || contentType === "shaders";
+  const isResourcePack = contentType === "resourcepack" || contentType === "textures" || contentType === "resourcepacks";
+  const isDatapack = contentType === "datapack" || contentType === "datapacks";
+
+  // Shaders, Resource Packs, and Datapacks do NOT have mod loaders (Fabric/Forge/NeoForge)
+  if (!isShader && !isResourcePack && !isDatapack && loader && loader !== "Any") {
+    url.searchParams.set("loaders", JSON.stringify([loader.toLowerCase()]));
+  }
   
-  url.searchParams.set("loaders", JSON.stringify(loaders));
-  url.searchParams.set("game_versions", JSON.stringify(gameVersions));
+  // Shaders on Modrinth are shaderpacks (OptiFine/Iris/Oculus), independent of exact MC patch version.
+  // For other types, pass mcVersion if specified.
+  if (mcVersion && mcVersion !== "Any" && !isShader) {
+    url.searchParams.set("game_versions", JSON.stringify([mcVersion]));
+  }
 
   try {
-    const res = await fetch(url.toString());
-    if (!res.ok) return [];
-    const data = await res.json();
+    let res = await fetch(url.toString());
+    let data: any[] = [];
+    if (res.ok) {
+      data = await res.json();
+    }
     
+    // Fallback: If 0 versions found for resourcepacks or datapacks or shaders with strict version,
+    // fetch without game_versions so the user can still select versions of the resource!
+    if (data.length === 0 && mcVersion) {
+      const fallbackUrl = new URL(`https://api.modrinth.com/v2/project/${modId}/version`);
+      if (!isShader && !isResourcePack && !isDatapack && loader && loader !== "Any") {
+        fallbackUrl.searchParams.set("loaders", JSON.stringify([loader.toLowerCase()]));
+      }
+      const fallbackRes = await fetch(fallbackUrl.toString());
+      if (fallbackRes.ok) {
+        data = await fallbackRes.json();
+      }
+    }
+
     let foundRecommended = false;
     return data.map((v: any) => {
       const stable = v.version_type === "release";
@@ -289,28 +316,55 @@ async function getModrinthVersions(
 async function getCurseForgeVersions(
   modId: string,
   mcVersion: string,
-  loader: string
+  loader: string,
+  contentType?: string
 ): Promise<ModVersion[]> {
   const apiKey = import.meta.env.VITE_CURSEFORGE_API_KEY;
   if (!apiKey) return [];
 
+  const isShader = contentType === "shader" || contentType === "shaders";
+  const isResourcePack = contentType === "resourcepack" || contentType === "textures" || contentType === "resourcepacks";
+  const isDatapack = contentType === "datapack" || contentType === "datapacks";
+
   const url = new URL(`https://api.curseforge.com/v1/mods/${modId}/files`);
-  url.searchParams.set("gameVersion", mcVersion);
   
-  const modLoaderType = CF_LOADER_MAP[loader.toLowerCase()];
-  if (modLoaderType !== undefined) {
-    url.searchParams.set("modLoaderType", modLoaderType.toString());
+  // Shaders, Resource Packs, and Datapacks do NOT have mod loaders on CurseForge
+  if (!isShader && !isResourcePack && !isDatapack && loader && loader !== "Any") {
+    const modLoaderType = CF_LOADER_MAP[loader.toLowerCase()];
+    if (modLoaderType !== undefined) {
+      url.searchParams.set("modLoaderType", modLoaderType.toString());
+    }
+  }
+
+  // Shaders on Curseforge are often not tagged for exact minor mcVersion
+  if (mcVersion && mcVersion !== "Any" && !isShader) {
+    url.searchParams.set("gameVersion", mcVersion);
   }
 
   try {
-    const res = await fetch(url.toString(), {
+    let res = await fetch(url.toString(), {
       headers: {
         "x-api-key": apiKey
       }
     });
-    if (!res.ok) return [];
-    const json = await res.json();
-    const files = json.data || [];
+    let files: any[] = [];
+    if (res.ok) {
+      const json = await res.json();
+      files = json.data || [];
+    }
+
+    // Fallback: If 0 files found (e.g. for shaders, resource packs, or mods missing exact patch tag),
+    // query files without gameVersion or modLoaderType so files are returned
+    if (files.length === 0) {
+      const fallbackUrl = new URL(`https://api.curseforge.com/v1/mods/${modId}/files`);
+      const fallbackRes = await fetch(fallbackUrl.toString(), {
+        headers: { "x-api-key": apiKey }
+      });
+      if (fallbackRes.ok) {
+        const json = await fallbackRes.json();
+        files = json.data || [];
+      }
+    }
 
     let foundRecommended = false;
     return files.map((f: any) => {

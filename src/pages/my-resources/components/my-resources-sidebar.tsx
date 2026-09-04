@@ -1,10 +1,12 @@
-import { Layers, HardDrive, Plus, PlusCircle, FileSliders } from "lucide-react";
+import { Layers, Globe, HardDrive, Plus, PlusCircle, FileSliders } from "lucide-react";
 import { IconTabSelector, IconTabOption } from "@/components/common/icon-tab-selector";
 import { SearchInput } from "@/components/common/search-input";
 import { ContentTypeFilterBadges, FilterBadgeItem } from "@/components/common/content-type-filter-badges";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { CustomContentItem } from "@/types";
+
+import { cn } from "@/lib/utils";
 
 type ActiveTab = "custom-content" | "custom-files";
 
@@ -81,7 +83,15 @@ export function MyResourcesSidebar({
     },
   ];
 
-  // Derived filter data (same logic as CustomContentSidebar)
+  const isCustomContent = activeTab === "custom-content";
+
+  const storageOptions: { id: string; label: string; icon: React.ReactNode }[] = [
+    { id: "all",   label: "All Storage",      icon: <Layers className="w-4 h-4 text-white" /> },
+    { id: "local", label: "Local Browser",    icon: <HardDrive className={cn("w-4 h-4", isCustomContent ? "text-blue-400" : "text-amber-400")} /> },
+    { id: "cloud", label: "REDSOUTH Account", icon: <img src="/redsouth/logo-colored.svg" alt="REDSOUTH" className="w-4 h-4 object-contain" /> },
+  ];
+
+  // Derived filter data for Custom Content
   const contentTypeFilterItems: FilterBadgeItem[] = [
     { id: "all",       type: "all",         label: "All",          count: counts.all },
     { id: "mods",      type: "mod",         label: "Mods",         count: counts.mods },
@@ -90,6 +100,16 @@ export function MyResourcesSidebar({
     { id: "datapacks", type: "datapack",    label: "Datapacks",    count: counts.datapacks },
     { id: "worlds",    type: "world",       label: "Worlds",       count: counts.worlds },
   ].filter((item) => item.type === "all" || (item.count && item.count > 0));
+
+  // Derived filter data for Custom Files
+  const fileTypeFilterItems: FilterBadgeItem[] = [
+    { id: "all",        type: "all",        label: "All" },
+    { id: "config",     type: "config",     label: "Config" },
+    { id: "script",     type: "script",     label: "Script" },
+    { id: "data",       type: "data",       label: "Data" },
+    { id: "multimedia", type: "multimedia", label: "Multimedia" },
+    { id: "other",      type: "other",      label: "Other" },
+  ];
 
   const loaderCountsMap: Record<string, number> = {};
   items.forEach((item) => {
@@ -118,8 +138,6 @@ export function MyResourcesSidebar({
     id: k, label: k, count,
   }));
 
-  const isCustomContent = activeTab === "custom-content";
-
   return (
     <aside
       className="w-80 shrink-0 border-r border-[#1E1E1E] bg-black flex flex-col z-30 overflow-hidden sticky"
@@ -138,7 +156,7 @@ export function MyResourcesSidebar({
         {isCustomContent ? (
           <button
             onClick={onAddResource}
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all outline outline-2 outline-transparent hover:outline-blue-500/50 hover:outline-offset-2 active:scale-95 duration-200 flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/10"
+            className="w-full bg-blue-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl active:scale-95 transition-all duration-200 flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/10 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5 shrink-0" />
             <span>Add Custom Content</span>
@@ -146,7 +164,7 @@ export function MyResourcesSidebar({
         ) : (
           <button
             onClick={onAddConfigFile}
-            className="w-full bg-amber-400 hover:bg-amber-300 text-black text-xs font-semibold px-4 py-2.5 rounded-xl transition-all outline outline-2 outline-transparent hover:outline-amber-400/50 hover:outline-offset-2 active:scale-95 duration-200 flex items-center justify-center gap-1.5 shadow-md shadow-amber-400/10"
+            className="w-full bg-amber-400 text-black text-xs font-semibold px-4 py-2.5 rounded-xl active:scale-95 transition-all duration-200 flex items-center justify-center gap-1.5 shadow-md shadow-amber-400/10 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5 shrink-0" />
             <span>Add Custom File</span>
@@ -158,54 +176,92 @@ export function MyResourcesSidebar({
         <Separator className="bg-[#1E1E1E] w-full" />
       </div>
 
-      {/* Contextual filter content */}
-      {isCustomContent ? (
-        <>
-          {/* Storage Source Selector */}
-          <div className="px-5 pt-5 pb-4 shrink-0">
-            <IconTabSelector
-              label="STORAGE SOURCE"
-              value={selectedStorage}
-              onValueChange={setSelectedStorage}
-              options={STORAGE_OPTIONS}
-            />
+      {/* Scrollable filters — Search on top, followed by Storage Source Badges, Content/File Types, Loaders, and MC Versions */}
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="flex flex-col gap-6 p-5">
+
+          {/* 1. SEARCH */}
+          <SearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder={isCustomContent ? "Search custom content..." : "Search custom files..."}
+            label="SEARCH"
+          />
+
+          {/* 2. STORAGE SOURCE BADGES */}
+          <div className="flex flex-col gap-2.5 w-full">
+            <h3 className="text-[11px] font-bold text-white/40 uppercase tracking-widest pl-1">
+              STORAGE SOURCE
+            </h3>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {[
+                { id: "all", label: "All Storage" },
+                { id: "local", label: "Local Browser" },
+                { id: "cloud", label: "REDSOUTH Account" },
+              ].map((badge) => {
+                const isActive = selectedStorage === badge.id;
+                const isBlackActive = isActive && !isCustomContent;
+                const iconColor = isActive
+                  ? (isBlackActive ? "text-black" : "text-white")
+                  : "text-white/70";
+
+                const renderBadgeIcon = () => {
+                  if (badge.id === "all") {
+                    return <Layers className={cn("w-3.5 h-3.5 shrink-0", iconColor)} />;
+                  }
+                  if (badge.id === "local") {
+                    return <Globe className={cn("w-3.5 h-3.5 shrink-0", iconColor)} />;
+                  }
+                  return <img src="/redsouth/logo-colored.svg" alt="REDSOUTH" className="w-3.5 h-3.5 object-contain shrink-0" />;
+                };
+
+                return (
+                  <button
+                    key={badge.id}
+                    onClick={() => setSelectedStorage(badge.id)}
+                    className={cn(
+                      "flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer select-none",
+                      isActive
+                        ? isCustomContent
+                          ? "bg-blue-500 text-white shadow-md shadow-blue-500/20"
+                          : "bg-amber-400 text-black shadow-md shadow-amber-400/20"
+                        : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
+                    )}
+                  >
+                    {renderBadgeIcon()}
+                    <span>{badge.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="px-5 shrink-0">
-            <Separator className="bg-[#1E1E1E] w-full" />
-          </div>
-
-          {/* Scrollable filters */}
-          <ScrollArea className="flex-1 min-h-0">
-            <div className="flex flex-col gap-6 p-5">
-
-              <SearchInput
-                value={searchQuery}
-                onChange={setSearchQuery}
-                placeholder="Search resources..."
-                label="SEARCH"
-              />
-
+          {/* 3. CONTENT TYPE or FILE TYPE BADGES */}
+          {isCustomContent ? (
+            <>
               <ContentTypeFilterBadges
                 label="CONTENT TYPE"
                 value={selectedType}
                 onValueChange={setSelectedType}
                 items={contentTypeFilterItems}
+                activeColorClass="bg-blue-500 text-white shadow-md shadow-blue-500/20"
               />
 
               {availableLoaders.length > 0 && (
                 <div className="flex flex-col gap-2.5">
-                  <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider pl-1">LOADER</h3>
+                  <h3 className="text-[11px] font-bold text-white/40 uppercase tracking-widest pl-1">LOADER</h3>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <button
                       onClick={() => setSelectedLoader("all")}
-                      className={`text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer ${
+                      className={cn(
+                        "flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer select-none",
                         selectedLoader === "all"
                           ? "bg-blue-500 text-white shadow-md shadow-blue-500/20"
                           : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
-                      }`}
+                      )}
                     >
-                      All ({counts.all})
+                      <Layers className={cn("w-3.5 h-3.5 shrink-0", selectedLoader === "all" ? "text-white" : "text-white/70")} />
+                      <span>All ({counts.all})</span>
                     </button>
                     {availableLoaders.map((ldr) => (
                       <button
@@ -226,17 +282,19 @@ export function MyResourcesSidebar({
 
               {availableMcVersions.length > 0 && (
                 <div className="flex flex-col gap-2.5">
-                  <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider pl-1">MINECRAFT VERSION</h3>
+                  <h3 className="text-[11px] font-bold text-white/40 uppercase tracking-widest pl-1">MINECRAFT VERSION</h3>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <button
                       onClick={() => setSelectedMcVersion("all")}
-                      className={`text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer ${
+                      className={cn(
+                        "flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer select-none",
                         selectedMcVersion === "all"
                           ? "bg-blue-500 text-white shadow-md shadow-blue-500/20"
                           : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
-                      }`}
+                      )}
                     >
-                      All ({counts.all})
+                      <Layers className={cn("w-3.5 h-3.5 shrink-0", selectedMcVersion === "all" ? "text-white" : "text-white/70")} />
+                      <span>All ({counts.all})</span>
                     </button>
                     {availableMcVersions.map((ver) => (
                       <button
@@ -254,14 +312,19 @@ export function MyResourcesSidebar({
                   </div>
                 </div>
               )}
+            </>
+          ) : (
+            <ContentTypeFilterBadges
+              label="FILE TYPE"
+              value={selectedType}
+              onValueChange={setSelectedType}
+              items={fileTypeFilterItems}
+              activeColorClass="bg-amber-400 text-black shadow-md shadow-amber-400/20"
+            />
+          )}
 
-            </div>
-          </ScrollArea>
-        </>
-      ) : (
-        /* Config Files — sidebar is minimal, just tab+button above */
-        <div className="flex-1" />
-      )}
+        </div>
+      </ScrollArea>
     </aside>
   );
 }

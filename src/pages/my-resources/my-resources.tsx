@@ -80,14 +80,23 @@ export default function MyResourcesPage() {
     return true;
   });
 
+  const handleTabChange = (tab: ActiveTab) => {
+    setActiveTab(tab);
+    setSelectedType("all");
+    setSelectedStorage("all");
+    setSearchQuery("");
+    setSelectedLoader("all");
+    setSelectedMcVersion("all");
+  };
+
   return (
     <>
-      <div className="flex w-full max-w-[1920px] mx-auto bg-black min-h-screen">
+      <div className="flex w-full max-w-[1920px] mx-auto bg-black min-h-[calc(100vh-65px)]">
 
         {/* ── Single unified sidebar ── */}
         <MyResourcesSidebar
           activeTab={activeTab}
-          onTabChange={setActiveTab}
+          onTabChange={handleTabChange}
           items={items}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
@@ -119,8 +128,8 @@ export default function MyResourcesPage() {
               >
                 <div className="mb-4">
                   <h2 className="text-3xl font-bold text-white">Custom Content</h2>
-                  <p className="text-xs mt-1 text-blue-400/80">
-                    Showing {filteredItems.length} item{filteredItems.length === 1 ? "" : "s"}
+                  <p className="text-xs text-blue-400 font-semibold mt-1">
+                    Showing {filteredItems.length} item{filteredItems.length === 1 ? "" : "s"} in your library
                   </p>
                 </div>
 
@@ -166,7 +175,11 @@ export default function MyResourcesPage() {
                 transition={{ duration: 0.12 }}
                 className="flex-1"
               >
-                <ConfigFilesTab />
+                <ConfigFilesTab
+                  searchQuery={searchQuery}
+                  selectedStorage={selectedStorage}
+                  selectedType={selectedType}
+                />
               </motion.div>
             )}
 
@@ -181,6 +194,7 @@ export default function MyResourcesPage() {
         onAdded={handleAddedItem}
         onUpdated={handleUpdatedItem}
         editItem={editingItem}
+        context="standalone"
       />
     </>
   );

@@ -8,7 +8,17 @@ import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/
 import { Plus, FileSliders } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export function ConfigFilesTab() {
+export interface ConfigFilesTabProps {
+  searchQuery?: string;
+  selectedStorage?: string;
+  selectedType?: string;
+}
+
+export function ConfigFilesTab({
+  searchQuery = "",
+  selectedStorage = "all",
+  selectedType = "all",
+}: ConfigFilesTabProps) {
   const [items, setItems] = useState<CustomFileItem[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<CustomFileItem | null>(null);
@@ -51,6 +61,21 @@ export function ConfigFilesTab() {
     setEditingItem(null);
   };
 
+  const filteredItems = items.filter((item) => {
+    if (selectedStorage === "local" && item.storageLocation !== "local_browser") return false;
+    if (selectedStorage === "cloud" && item.storageLocation !== "account_cloud") return false;
+    if (selectedType !== "all" && item.type !== selectedType) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      return (
+        item.name.toLowerCase().includes(q) ||
+        item.targetPath.toLowerCase().includes(q) ||
+        (item.sourceUrl && item.sourceUrl.toLowerCase().includes(q))
+      );
+    }
+    return true;
+  });
+
   return (
     <>
       <div className="flex flex-col px-6 pt-5 pb-6">
@@ -58,17 +83,15 @@ export function ConfigFilesTab() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-3xl font-bold text-white">Custom Files</h2>
-            <p className="text-xs text-amber-400/80 mt-1">
-              {items.length === 0
-                ? "No custom files saved yet"
-                : `${items.length} custom file${items.length === 1 ? "" : "s"} in your library`}
+            <p className="text-xs text-amber-400 font-semibold mt-1">
+              Showing {filteredItems.length} item{filteredItems.length === 1 ? "" : "s"} in your library
             </p>
           </div>
         </div>
 
         {/* Table / Empty state */}
         <AnimatePresence mode="wait">
-          {items.length > 0 ? (
+          {filteredItems.length > 0 ? (
             <motion.div
               key="table"
               initial={{ opacity: 0 }}
@@ -76,7 +99,7 @@ export function ConfigFilesTab() {
               exit={{ opacity: 0 }}
               className="w-full pb-6"
             >
-              <ConfigFilesTable items={items} onDelete={handleDelete} onEdit={handleEdit} />
+              <ConfigFilesTable items={filteredItems} onDelete={handleDelete} onEdit={handleEdit} />
             </motion.div>
           ) : (
             <motion.div
@@ -115,6 +138,7 @@ export function ConfigFilesTab() {
         onAdded={handleAdded}
         onUpdated={handleUpdated}
         editItem={editingItem}
+        context="standalone"
       />
     </>
   );

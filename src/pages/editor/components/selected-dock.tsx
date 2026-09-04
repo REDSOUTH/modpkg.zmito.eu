@@ -13,8 +13,34 @@ export type ContentType = "mod" | "resourcepack" | "shader" | "datapack" | "worl
 export type ProviderType = "modrinth" | "curseforge" | "custom" | "local_override" | "all";
 
 export default function SelectedDock() {
-  const { installedContent, removeContent } = usePack();
+  const { packSettings, installedContent, customFiles, removeContent } = usePack();
   const [isHovered, setIsHovered] = useState<boolean>(false);
+
+  const handleExportModpack = () => {
+    const exportData = {
+      id: packSettings.id,
+      name: packSettings.name,
+      version: packSettings.currentVersion,
+      mcVersion: packSettings.mcVersion,
+      loader: packSettings.loader,
+      description: packSettings.description,
+      installedContent,
+      customFiles,
+      exportedAt: new Date().toISOString(),
+      generator: "MODPKG Web",
+    };
+
+    const jsonContent = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonContent], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${packSettings.id || "modpkg"}-${packSettings.currentVersion || "v1.0.0"}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
   
   // Persist pinned state in localStorage
   const [isPinned, setIsPinned] = useState<boolean>(() => {
@@ -89,7 +115,7 @@ export default function SelectedDock() {
 
   return (
     <motion.aside
-      className="border-l border-[#1E1E1E] bg-black flex flex-col flex-shrink-0 z-30 overflow-hidden sticky top-[122px] h-[calc(100vh-122px)]"
+      className="border-l border-[#1E1E1E] bg-black flex flex-col flex-shrink-0 z-30 overflow-hidden sticky top-[121px] h-[calc(100vh-121px)]"
       initial={false}
       animate={{ width: isExpanded ? 340 : 80 }}
       transition={{ duration: 0.25, ease: "easeInOut" }}
@@ -148,6 +174,7 @@ export default function SelectedDock() {
               showLabel={false}
               value={filterType}
               onValueChange={setFilterType}
+              activeColorClass="bg-[#FE5000] text-white shadow-md shadow-[#FE5000]/20"
               items={[
                 { id: "all", type: "all", label: "All", count: installedContent.length },
                 ...(modsCount > 0 ? [{ id: "mod", type: "mod", label: "Mods", count: modsCount }] : []),
@@ -193,8 +220,8 @@ export default function SelectedDock() {
         )}
 
         {/* Scrollable Content Items */}
-        <ScrollArea className="flex-1 min-h-0">
-          <div className={`flex flex-col gap-2 transition-all ${isExpanded ? "pl-4 pr-6 py-4" : "py-4 px-0 items-center"}`}>
+        <ScrollArea className="flex-1 min-h-0 w-full overflow-hidden [&>div>div]:!block [&>div]:!block">
+          <div className={`flex flex-col gap-2 transition-all w-full min-w-0 overflow-hidden ${isExpanded ? "pl-4 pr-6 py-4" : "py-4 px-0 items-center"}`}>
           <AnimatePresence>
             {filteredItems.map(item => {
               const isOverride = item.contentType === "override";
@@ -212,7 +239,7 @@ export default function SelectedDock() {
                     ease: [0.16, 1, 0.3, 1],
                     opacity: { duration: 0.2, delay: 0.08 }
                   }}
-                  className={`flex items-center rounded-xl transition-colors group relative ${
+                  className={`flex items-center rounded-xl transition-colors group relative max-w-full ${
                     isExpanded 
                       ? "w-full min-w-0 overflow-hidden gap-3 p-2.5 bg-[#141414] border border-[#1E1E1E] hover:bg-[#1E1E1E]" 
                       : "justify-center p-1 w-11 h-11 shrink-0 border border-transparent hover:bg-[#1E1E1E]/80 hover:border-[#1E1E1E]"
@@ -223,32 +250,47 @@ export default function SelectedDock() {
                     <div className="w-10 h-10 min-w-[40px] min-h-[40px] max-w-[40px] max-h-[40px] rounded-lg bg-[#1E1E1E] flex items-center justify-center text-amber-400 shrink-0 border border-white/5 select-none pointer-events-none">
                       <FileBraces className="w-5 h-5 text-amber-400 shrink-0" />
                     </div>
-                  ) : (
+                  ) : item.iconUrl && item.iconUrl !== "/logo.svg" ? (
                     <img 
-                      src={item.iconUrl || "/logo.svg"} 
+                      src={item.iconUrl} 
                       alt={item.name} 
                       className="w-10 h-10 min-w-[40px] min-h-[40px] max-w-[40px] max-h-[40px] rounded-lg bg-black shrink-0 object-cover border border-white/5 select-none pointer-events-none" 
                       draggable={false}
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = "none";
+                        const parent = (e.target as HTMLElement).parentElement;
+                        if (parent) {
+                          const fallback = document.createElement("div");
+                          fallback.className = "w-10 h-10 min-w-[40px] min-h-[40px] max-w-[40px] max-h-[40px] rounded-lg bg-[#181818] flex items-center justify-center shrink-0 border border-white/5 select-none pointer-events-none";
+                          parent.appendChild(fallback);
+                        }
+                      }}
                     />
+                  ) : (
+                    <div className="w-10 h-10 min-w-[40px] min-h-[40px] max-w-[40px] max-h-[40px] rounded-lg bg-[#141414] flex items-center justify-center shrink-0 border border-white/5 select-none pointer-events-none">
+                      <ContentTypeIcon type={item.contentType} iconClassName="w-5 h-5 text-neutral-400" />
+                    </div>
                   )}
 
                   {isExpanded && (
                     <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
                       {/* Name with Tooltip on Hover */}
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="font-medium text-sm text-white inline-block w-fit max-w-full truncate cursor-pointer hover:text-[#FE5000] transition-colors text-left align-bottom">
-                            {item.name}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="bg-[#1E1E1E] text-white border border-[#333] shadow-xl text-xs rounded-lg p-2 max-w-xs">
-                          <p className="font-semibold">{item.name}</p>
-                          <p className="text-[10px] text-white/50">{isOverride ? item.path : (item.versionName || item.versionId)}</p>
-                        </TooltipContent>
-                      </Tooltip>
+                      <div className="w-fit max-w-full">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="font-medium text-sm text-white inline-block max-w-full truncate cursor-pointer hover:text-[#FE5000] transition-colors text-left align-bottom">
+                              {item.name}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="bg-[#1E1E1E] text-white border border-[#333] shadow-xl text-xs rounded-lg p-2 max-w-xs">
+                            <p className="font-semibold">{item.name}</p>
+                            <p className="text-[10px] text-white/50">{isOverride ? item.path : (item.versionName || item.versionId)}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
 
                       {/* Sub-line: [version/size] · [Provider Logo] (only if not override) · [Type Icon with color] */}
-                      <div className="flex items-center gap-1.5 text-[10px] leading-none text-white/40 mt-1 min-w-0 w-full h-4">
+                      <div className="flex items-center gap-1.5 text-[10px] leading-none text-white/40 mt-1 min-w-0 w-full overflow-hidden h-4">
                         <span className="truncate min-w-0 shrink leading-none">{isOverride ? "Local Override" : (item.versionName || item.versionId)}</span>
                         
                         {!isOverride && (
@@ -282,8 +324,18 @@ export default function SelectedDock() {
           </AnimatePresence>
 
           {filteredItems.length === 0 && isExpanded && (
-            <div className="text-center text-white/40 text-xs py-8">
-              No items in this category filter.
+            <div className="flex flex-col items-center justify-center text-center py-16 px-4 my-auto">
+              <Package className="w-8 h-8 text-white/20 mb-2.5" />
+              <p className="text-white/50 text-xs font-medium">
+                {installedContent.length === 0 
+                  ? "No items in this package yet" 
+                  : "No items match this category"}
+              </p>
+              <p className="text-white/30 text-[11px] mt-1 max-w-[200px] leading-relaxed">
+                {installedContent.length === 0 
+                  ? "Browse content and click 'Add to Package' to start building." 
+                  : "Try selecting 'All' or a different filter tag above."}
+              </p>
             </div>
           )}
           </div>
@@ -294,7 +346,11 @@ export default function SelectedDock() {
 
       {/* Export button */}
       <div className={`bg-black shrink-0 border-t border-[#1E1E1E] w-full sticky bottom-0 z-50 transition-all ${isExpanded ? "pl-4 pr-6 py-4" : "p-4 flex justify-center"}`}>
-        <button className={`h-12 flex items-center justify-center bg-[#FE5000] hover:bg-[#E04700] text-white font-semibold rounded-xl transition-all outline outline-2 outline-transparent hover:outline-[#FE5000] hover:outline-offset-[3px] active:scale-95 duration-200 overflow-hidden ${isExpanded ? "w-full gap-2" : "w-12 shrink-0"}`}>
+        <button 
+          onClick={handleExportModpack}
+          title="Download Modpack configuration"
+          className={`h-12 flex items-center justify-center bg-[#FE5000] hover:bg-[#E04700] text-white font-semibold rounded-xl transition-all outline outline-2 outline-transparent hover:outline-[#FE5000] hover:outline-offset-[3px] active:scale-95 duration-200 overflow-hidden cursor-pointer ${isExpanded ? "w-full gap-2" : "w-12 shrink-0"}`}
+        >
           <Download className="w-5 h-5 flex-shrink-0" />
           <AnimatePresence>
             {isExpanded && (

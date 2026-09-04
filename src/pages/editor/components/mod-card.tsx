@@ -1,5 +1,6 @@
-import { Plus, Check, X, ExternalLink } from "lucide-react";
+import { Plus, Check, X, ExternalLink, Pencil } from "lucide-react";
 import { ProviderIcon } from "@/components/common/provider-icon";
+import { ContentTypeIcon } from "@/components/common/content-type-icon";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +8,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePack } from "@/context/pack-context";
 import { getModVersions } from "@/lib/api/mods";
-import { ModVersion } from "@/types";
+import { ModVersion, CustomContentItem } from "@/types";
+import { deleteCustomContentItem, getCustomContentItems } from "@/lib/storage/custom-content-storage";
+import { AddCustomContentDialog } from "@/components/views/add-custom-content-dialog";
 
 export type CardContentType = "mod" | "resourcepack" | "shader" | "datapack" | "world" | "override";
 export type CardProviderType = "modrinth" | "curseforge" | "custom" | "local_override" | "all";
@@ -32,6 +35,7 @@ export interface ModItemData {
 export interface ModCardComponentProps {
   mod: ModItemData;
   onCategoryClick?: (category: string) => void;
+  onEditCustomItem?: (item: CustomContentItem) => void;
 }
 
 const normalizeType = (t: string) => {
@@ -48,11 +52,12 @@ const normalizeProvider = (p: string) => {
   return p;
 };
 
-export default function ModCard({ mod, onCategoryClick }: ModCardComponentProps) {
+export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModCardComponentProps) {
   const [isTitleHovered, setIsTitleHovered] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [versions, setVersions] = useState<ModVersion[]>([]);
   const [isLoadingVersions, setIsLoadingVersions] = useState(false);
+  const [isEditingCustom, setIsEditingCustom] = useState(false);
   
   const { packSettings, installedContent, addContent, removeContent } = usePack();
   const { mcVersion, loader } = packSettings;
@@ -62,6 +67,8 @@ export default function ModCard({ mod, onCategoryClick }: ModCardComponentProps)
   const currentVersionId = installedItem?.versionId || "latest";
 
   const isCustom = mod.provider === "custom";
+  const globalCustomItems = getCustomContentItems();
+  const isFromMyResources = isCustom && mod.id && globalCustomItems.some(i => i.id === mod.id);
 
   const handleAddAction = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -77,7 +84,14 @@ export default function ModCard({ mod, onCategoryClick }: ModCardComponentProps)
           iconUrl: mod.iconUrl,
           versionId: isCustom ? "custom" : "latest",
           versionName: isCustom ? "Custom URL" : "Latest",
-          contentType: normalizeType(mod.type || "mod")
+          contentType: normalizeType(mod.type || "mod"),
+          downloadUrl: isCustom ? ((mod as any).customItem?.downloadUrl || mod.websiteUrl || mod.description) : undefined,
+          author: mod.author,
+          mcVersion: (mod as any).mcVersion,
+          loader: (mod as any).loader,
+          targetPath: (mod as any).targetPath,
+          storageLocation: (mod as any).storageLocation,
+          isPackageOnly: isCustom ? !isFromMyResources : undefined,
         });
       }
     }
@@ -86,7 +100,13 @@ export default function ModCard({ mod, onCategoryClick }: ModCardComponentProps)
   const handleOpenChange = async (open: boolean) => {
     if (open && versions.length === 0 && !isLoadingVersions && mod.id && !isCustom) {
       setIsLoadingVersions(true);
-      const fetched = await getModVersions(mod.provider || "modrinth", mod.id, mcVersion, loader);
+      const fetched = await getModVersions(
+        mod.provider || "modrinth", 
+        mod.id, 
+        mcVersion, 
+        loader, 
+        normalizeType(mod.type || "mod")
+      );
       setVersions(fetched);
       setIsLoadingVersions(false);
     }
@@ -157,12 +177,7 @@ export default function ModCard({ mod, onCategoryClick }: ModCardComponentProps)
               onMouseEnter={() => setIsTitleHovered(true)}
               onMouseLeave={() => setIsTitleHovered(false)}
             >
-              <img 
-                src="/logo.svg" 
-                alt="MODPKG" 
-                className="w-full h-full object-contain opacity-30 grayscale"
-                draggable={false}
-              />
+              <ContentTypeIcon type={mod.type || "mod"} iconClassName="w-7 h-7 text-neutral-400" />
             </div>
           )}
 
@@ -208,9 +223,9 @@ export default function ModCard({ mod, onCategoryClick }: ModCardComponentProps)
         
         {/* Add button & Version Select Group */}
         {isCustom ? (
-          /* For Custom Content: ONLY show the + / Check button without version dropdown */
+          /* For Custom Content: Show + / Check button AND Delete button */
           <div 
-            className={`absolute top-0 right-0 flex items-center rounded-full overflow-hidden border border-transparent transition-all flex-shrink-0 shadow-sm z-30 ${
+            className={`absolute top-0 right-0 flex items-center ml-2 rounded-full overflow-hidden border border-transparent transition-all flex-shrink-0 shadow-sm z-30 ${
               isAdded ? "bg-[#FE5000] text-white" : "bg-black text-white"
             }`}
             onClick={(e) => e.stopPropagation()}
@@ -232,7 +247,40 @@ export default function ModCard({ mod, onCategoryClick }: ModCardComponentProps)
                   </button>
                 </TooltipTrigger>
                 <TooltipContent className="bg-[#1E1E1E] text-white border-transparent text-xs">
-                  <p>{isAdded ? "Remove" : "Add to Package"}</p>
+                  <p>{isAdded ? "Remove from Package" : "Add to Package"}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <div className="w-px h-4 bg-white/20 transition-colors" />
+
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button 
+                    className="w-8 h-8 flex items-center justify-center hover:bg-white/20 transition-all text-white/80"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const customData: CustomContentItem = (mod as any).customItem || {
+                        id: mod.id || "custom",
+                        name: mod.name,
+                        contentType: normalizeType(mod.type || "mod"),
+                        downloadUrl: mod.websiteUrl || mod.description || "",
+                        author: mod.author,
+                        mcVersion: (mod as any).mcVersion || "Any",
+                        loader: (mod as any).loader || "Any",
+                        storageLocation: "local_browser",
+                        createdAt: new Date().toISOString(),
+                      };
+                      onEditCustomItem?.(customData);
+                    }}
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="bg-[#1E1E1E] text-white border-transparent text-xs">
+                  <p>Edit Custom Content</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -327,8 +375,17 @@ export default function ModCard({ mod, onCategoryClick }: ModCardComponentProps)
       {/* Footer tags */}
       <div className="flex items-end justify-between mt-auto pt-2 relative z-10 gap-2">
         
-        {/* Categories tags (Fluid single-line layout using flex-nowrap & shrink min-w-0) */}
-        {!isCustom && mod.categories && mod.categories.length > 0 ? (
+        {/* Categories tags */}
+        {isFromMyResources ? (
+          <div className="flex items-center gap-1.5 shrink min-w-0" onClick={(e) => e.stopPropagation()}>
+            <Badge 
+              variant="secondary" 
+              className="bg-black/50 text-white/60 rounded-md text-[10px] uppercase tracking-wider font-medium border border-transparent select-none cursor-default"
+            >
+              MY RESOURCES
+            </Badge>
+          </div>
+        ) : mod.categories && mod.categories.length > 0 ? (
           <div className="flex items-center gap-1.5 overflow-hidden max-w-[calc(100%-36px)] flex-nowrap">
             {mod.categories.slice(0, 2).map((cat) => (
               <Badge 
@@ -397,6 +454,7 @@ export default function ModCard({ mod, onCategoryClick }: ModCardComponentProps)
           )}
         </div>
       </div>
+
     </motion.div>
   );
 }

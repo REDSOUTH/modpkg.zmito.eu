@@ -1,5 +1,13 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { PackSettings, Loader, MojangVersion, ModrinthLoaderTag, PackContextType, InstalledItem } from "@/types";
+import { PackSettings, Loader, MojangVersion, ModrinthLoaderTag, PackContextType, InstalledItem, CustomFileItem } from "@/types";
+import { 
+  getPackagesIndex, 
+  savePackagesIndex, 
+  getPackData, 
+  savePackData, 
+  deletePackStorage,
+  PackExclusiveData 
+} from "@/lib/storage/package-storage";
 
 const PackContext = createContext<PackContextType | null>(null);
 
@@ -22,28 +30,59 @@ const DEFAULT_LOADERS: Loader[] = [
   { id: "quilt", name: "Quilt" }
 ];
 
-const generateRandomId = (): string => {
+export const generateRandomPackId = (): string => {
   const randomStr = Math.random().toString(36).substring(2, 8);
   return `modpkg-${randomStr}`;
 };
 
+const DEFAULT_FALLBACK_PACK: PackSettings = {
+  id: "modpkg-default",
+  name: "MODPKG",
+  mcVersion: "1.20.4",
+  loader: "fabric",
+  versions: ["v1.0.0"],
+  currentVersion: "v1.0.0",
+  description: "Mi modpack personalizado creado con MODPKG"
+};
+
 export function PackProvider({ children }: { children: ReactNode }) {
-  const [packSettings, setPackSettings] = useState<PackSettings>({
-    id: generateRandomId(),
-    name: "MODPKG",
-    mcVersion: "1.20.4",
-    loader: "fabric",
-    versions: ["v1.0.0"],
-    currentVersion: "v1.0.0",
-    description: "Mi modpack personalizado creado con MODPKG"
+  const [packagesList, setPackagesList] = useState<PackSettings[]>(() => getPackagesIndex());
+  const [activePackId, setActivePackId] = useState<string | null>(() => {
+    const list = getPackagesIndex();
+    return list.length > 0 ? list[0].id : null;
   });
 
+  const [packSettings, setPackSettings] = useState<PackSettings>(() => {
+    const list = getPackagesIndex();
+    return list.length > 0 ? list[0] : DEFAULT_FALLBACK_PACK;
+  });
+
+  const [installedContent, setInstalledContent] = useState<InstalledItem[]>([]);
+  const [customFiles, setCustomFiles] = useState<CustomFileItem[]>([]);
   const [rawMcVersions, setRawMcVersions] = useState<MojangVersion[]>([]);
   const [rawLoaders, setRawLoaders] = useState<ModrinthLoaderTag[]>([]);
   const [isLoadingVersions, setIsLoadingVersions] = useState<boolean>(true);
-  const [installedContent, setInstalledContent] = useState<InstalledItem[]>([]);
+  const [latestMcRelease, setLatestMcRelease] = useState<string>("1.20.4");
+  const [isCreatePackModalOpen, setIsCreatePackModalOpen] = useState<boolean>(false);
 
-  // Fetch real Minecraft versions from Mojang API
+  // Load active pack data when activePackId changes
+  useEffect(() => {
+    if (!activePackId) {
+      if (packagesList.length === 0) {
+        setIsCreatePackModalOpen(true);
+      }
+      return;
+    }
+    const current = packagesList.find(p => p.id === activePackId);
+    if (current) {
+      setPackSettings(current);
+      const data = getPackData(current.id);
+      setInstalledContent(data.installedContent || []);
+      setCustomFiles(data.customFiles || []);
+    }
+  }, [activePackId, packagesList]);
+
+  // Fetch real Minecraft versions from Mojang API & Modrinth loaders
   useEffect(() => {
     async function fetchMojangVersions() {
       try {
@@ -53,13 +92,9 @@ export function PackProvider({ children }: { children: ReactNode }) {
           const versionsList: MojangVersion[] = data.versions || [];
           setRawMcVersions(versionsList);
           
-          // Auto select the latest release version from Mojang
           const latestRelease = data.latest?.release || versionsList.find(v => v.type === "release")?.id;
           if (latestRelease) {
-            setPackSettings(prev => ({
-              ...prev,
-              mcVersion: latestRelease
-            }));
+            setLatestMcRelease(latestRelease);
           }
         }
       } catch (err) {
@@ -85,7 +120,6 @@ export function PackProvider({ children }: { children: ReactNode }) {
     fetchModrinthLoaders();
   }, []);
 
-  // Helper to get formatted MC versions based on showAll parameter
   const getMinecraftVersions = (showAll = false): string[] => {
     if (rawMcVersions.length === 0) {
       return DEFAULT_RELEASE_VERSIONS;
@@ -93,13 +127,11 @@ export function PackProvider({ children }: { children: ReactNode }) {
     if (showAll) {
       return rawMcVersions.map(v => v.id);
     }
-    // Default: Only 'release' versions
     return rawMcVersions
       .filter(v => v.type === "release")
       .map(v => v.id);
   };
 
-  // Helper to get formatted Loaders based on showAll parameter
   const getLoaders = (showAll = false): Loader[] => {
     if (rawLoaders.length === 0) {
       return DEFAULT_LOADERS;
@@ -110,16 +142,81 @@ export function PackProvider({ children }: { children: ReactNode }) {
         name: l.name.charAt(0).toUpperCase() + l.name.slice(1)
       }));
     }
-    // Default: Only main release loaders (fabric, forge, neoforge, quilt)
     const mainLoaders = ["fabric", "forge", "neoforge", "quilt"];
     return DEFAULT_LOADERS.filter(l => mainLoaders.includes(l.id));
   };
 
+  // Create new package
+  const createPack = (packData: Omit<PackSettings, "id" | "versions" | "currentVersion"> & { id?: string; version?: string }): PackSettings => {
+    const newId = packData.id || generateRandomPackId();
+    const newVersion = packData.version || "v1.0.0";
+    const newPack: PackSettings = {
+      id: newId,
+      name: packData.name || "MODPKG",
+      mcVersion: packData.mcVersion || latestMcRelease,
+      loader: packData.loader || "fabric",
+      versions: [newVersion],
+      currentVersion: newVersion,
+      description: packData.description || "Mi modpack personalizado creado con MODPKG",
+    };
+
+    const updatedList = [newPack, ...packagesList];
+    setPackagesList(updatedList);
+    savePackagesIndex(updatedList);
+
+    // Initialize per-pack storage object
+    const emptyData: PackExclusiveData = {
+      id: newId,
+      installedContent: [],
+      customContent: [],
+      customFiles: [],
+    };
+    savePackData(newId, emptyData);
+
+    setActivePackId(newId);
+    setPackSettings(newPack);
+    setInstalledContent([]);
+    setIsCreatePackModalOpen(false);
+
+    return newPack;
+  };
+
+  // Switch active pack
+  const switchPack = (packId: string) => {
+    const target = packagesList.find(p => p.id === packId);
+    if (!target) return;
+    setActivePackId(packId);
+    setPackSettings(target);
+    const data = getPackData(packId);
+    setInstalledContent(data.installedContent || []);
+    setCustomFiles(data.customFiles || []);
+  };
+
+  // Delete package
+  const deletePack = (packId: string) => {
+    const updatedList = packagesList.filter(p => p.id !== packId);
+    setPackagesList(updatedList);
+    savePackagesIndex(updatedList);
+    deletePackStorage(packId);
+
+    if (updatedList.length > 0) {
+      switchPack(updatedList[0].id);
+    } else {
+      setActivePackId(null);
+      setPackSettings(DEFAULT_FALLBACK_PACK);
+      setInstalledContent([]);
+      setIsCreatePackModalOpen(true);
+    }
+  };
+
   const updatePackSettings = (newSettings: Partial<PackSettings>) => {
-    setPackSettings(prev => ({
-      ...prev,
-      ...newSettings
-    }));
+    setPackSettings(prev => {
+      const updated = { ...prev, ...newSettings };
+      const updatedList = packagesList.map(p => p.id === prev.id ? updated : p);
+      setPackagesList(updatedList);
+      savePackagesIndex(updatedList);
+      return updated;
+    });
   };
 
   const createNewVersion = (versionName: string, copyFromVersion = "empty") => {
@@ -129,13 +226,17 @@ export function PackProvider({ children }: { children: ReactNode }) {
       const exists = prev.versions.includes(trimmed);
       const updatedVersions = exists ? prev.versions : [...prev.versions, trimmed];
       
-      console.log(`[Version Created] Name: ${trimmed}, Source: ${copyFromVersion}`);
-      
-      return {
+      const updated = {
         ...prev,
         versions: updatedVersions,
         currentVersion: trimmed
       };
+      
+      const updatedList = packagesList.map(p => p.id === prev.id ? updated : p);
+      setPackagesList(updatedList);
+      savePackagesIndex(updatedList);
+      
+      return updated;
     });
   };
 
@@ -147,35 +248,92 @@ export function PackProvider({ children }: { children: ReactNode }) {
         ? filteredVersions[0] 
         : prev.currentVersion;
 
-      return {
+      const updated = {
         ...prev,
         versions: filteredVersions,
         currentVersion: nextCurrentVersion
       };
+
+      const updatedList = packagesList.map(p => p.id === prev.id ? updated : p);
+      setPackagesList(updatedList);
+      savePackagesIndex(updatedList);
+
+      return updated;
     });
   };
 
   const addContent = (item: InstalledItem) => {
     setInstalledContent(prev => {
-      // Check if already installed
-      if (prev.some(i => i.id === item.id)) {
-        // If it exists, update versionId, versionName, etc.
-        return prev.map(i => i.id === item.id ? { ...i, ...item } : i);
+      const updated = prev.some(i => i.id === item.id)
+        ? prev.map(i => i.id === item.id ? { ...i, ...item } : i)
+        : [...prev, item];
+      
+      if (activePackId) {
+        const packData = getPackData(activePackId);
+        packData.installedContent = updated;
+        savePackData(activePackId, packData);
       }
-      return [...prev, item];
+      return updated;
     });
-    console.log(`[PackContext] Added content: ${item.name} (${item.versionId})`);
   };
 
   const removeContent = (id: string) => {
-    setInstalledContent(prev => prev.filter(i => i.id !== id));
-    console.log(`[PackContext] Removed content ID: ${id}`);
+    setInstalledContent(prev => {
+      const updated = prev.filter(i => i.id !== id);
+      if (activePackId) {
+        const packData = getPackData(activePackId);
+        packData.installedContent = updated;
+        savePackData(activePackId, packData);
+      }
+      return updated;
+    });
+  };
+
+  const addCustomFile = (file: CustomFileItem) => {
+    setCustomFiles(prev => {
+      const updated = [file, ...prev.filter(f => f.id !== file.id)];
+      if (activePackId) {
+        const packData = getPackData(activePackId);
+        packData.customFiles = updated;
+        savePackData(activePackId, packData);
+      }
+      return updated;
+    });
+  };
+
+  const updateCustomFile = (file: CustomFileItem) => {
+    setCustomFiles(prev => {
+      const updated = prev.map(f => f.id === file.id ? file : f);
+      if (activePackId) {
+        const packData = getPackData(activePackId);
+        packData.customFiles = updated;
+        savePackData(activePackId, packData);
+      }
+      return updated;
+    });
+  };
+
+  const removeCustomFile = (id: string) => {
+    setCustomFiles(prev => {
+      const updated = prev.filter(f => f.id !== id);
+      if (activePackId) {
+        const packData = getPackData(activePackId);
+        packData.customFiles = updated;
+        savePackData(activePackId, packData);
+      }
+      return updated;
+    });
   };
 
   return (
     <PackContext.Provider
       value={{
         packSettings,
+        packagesList,
+        activePackId,
+        createPack,
+        switchPack,
+        deletePack,
         updatePackSettings,
         createNewVersion,
         deleteVersion,
@@ -185,7 +343,13 @@ export function PackProvider({ children }: { children: ReactNode }) {
         isLoadingVersions,
         installedContent,
         addContent,
-        removeContent
+        removeContent,
+        customFiles,
+        addCustomFile,
+        updateCustomFile,
+        removeCustomFile,
+        isCreatePackModalOpen,
+        setIsCreatePackModalOpen,
       }}
     >
       {children}

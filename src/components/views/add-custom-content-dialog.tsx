@@ -7,10 +7,22 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ContentTypeIcon } from "@/components/common/content-type-icon";
 import { CustomStorageType } from "@/components/common/storage-badge";
-import { PlusCircle, Pencil, Check, Sparkles, Package, Globe } from "lucide-react";
+import { PackageDropdownSelector } from "@/components/common/package-dropdown-selector";
+import { DeleteConfirmDialog } from "@/components/common/delete-confirm-dialog";
+import { PlusCircle, Pencil, Check, Sparkles, Package, Globe, AlertTriangle, Trash2 } from "lucide-react";
 import { useState, useEffect, ChangeEvent } from "react";
-import { saveCustomContentItem, updateCustomContentItem } from "@/lib/storage/custom-content-storage";
+import { 
+  saveCustomContentItem, 
+  updateCustomContentItem, 
+  deleteCustomContentItem, 
+  getCustomContentItems,
+  getPackageCustomContentItems,
+  savePackageCustomContentItem,
+  updatePackageCustomContentItem,
+  deletePackageCustomContentItem
+} from "@/lib/storage/custom-content-storage";
 import { CustomContentItem } from "@/types";
+import { ResourceOptionsSection } from "@/components/views/resource-options-section";
 import { usePack } from "@/context/pack-context";
 
 export interface AddCustomContentDialogProps {
@@ -18,10 +30,12 @@ export interface AddCustomContentDialogProps {
   onClose: () => void;
   onAdded?: (newItem: CustomContentItem) => void;
   onUpdated?: (updatedItem: CustomContentItem) => void;
-  editItem?: CustomContentItem | null;
+  onDeleted?: (itemId: string) => void;
+  editItem?: CustomContentItem | any | null;
   isLoggedIn?: boolean;
   defaultAddToPackage?: boolean;
   defaultSaveAsCommon?: boolean;
+  context?: "standalone" | "editor";
 }
 
 export const sanitizeLinuxPath = (str: string): string => {
@@ -44,12 +58,14 @@ export function AddCustomContentDialog({
   onClose, 
   onAdded, 
   onUpdated,
+  onDeleted,
   editItem,
   isLoggedIn = false,
   defaultAddToPackage = false,
   defaultSaveAsCommon = true,
+  context = "standalone",
 }: AddCustomContentDialogProps) {
-  const { packSettings, getMinecraftVersions, getLoaders, addContent } = usePack();
+  const { packSettings, getMinecraftVersions, getLoaders, addContent, removeContent } = usePack();
 
   const [name, setName] = useState<string>("");
   const [downloadUrl, setDownloadUrl] = useState<string>("");
@@ -70,6 +86,15 @@ export function AddCustomContentDialog({
   const mcVersionsList = getMinecraftVersions(showAllMcVersions);
   const loadersList = getLoaders(showAllLoaders);
 
+  // Active package version & loader compatibility check
+  const currentPkgMcVersion = packSettings.mcVersion || "1.20.1";
+  const currentPkgLoader = packSettings.loader || "Any";
+
+  const isMcCompatibleWithPkg = selectedMcVersions.includes("Any") || selectedMcVersions.includes(currentPkgMcVersion);
+  const isLoaderCompatibleWithPkg = selectedLoaders.includes("Any") || selectedLoaders.map(l => l.toLowerCase()).includes(currentPkgLoader.toLowerCase());
+  const isCompatibleWithCurrentPkg = isMcCompatibleWithPkg && isLoaderCompatibleWithPkg;
+  const isOrphanedSave = context === "editor" && !isCompatibleWithCurrentPkg && !saveAsCommon;
+
   useEffect(() => {
     if (isOpen) {
       if (editItem) {
@@ -78,24 +103,42 @@ export function AddCustomContentDialog({
         setContentType(editItem.contentType);
         setAuthor(editItem.author || "");
         
-        const l = editItem.loader ? editItem.loader.split(", ").map(s => s.trim()) : ["Any"];
-        setSelectedLoaders(l);
+        const rawL = editItem.loader || "Any";
+        if (rawL === "Any" || rawL.toLowerCase() === "all" || !rawL) {
+          setSelectedLoaders(["Any"]);
+        } else {
+          const loaderMap: Record<string, string> = { fabric: "Fabric", forge: "Forge", neoforge: "NeoForge", quilt: "Quilt" };
+          const parsedLoaders = rawL.split(",").map((s: string) => {
+            const trimmed = s.trim();
+            return loaderMap[trimmed.toLowerCase()] || (trimmed.charAt(0).toUpperCase() + trimmed.slice(1));
+          });
+          setSelectedLoaders(parsedLoaders);
+        }
 
-        const v = editItem.mcVersion ? editItem.mcVersion.split(", ").map(s => s.trim()) : ["Any"];
-        setSelectedMcVersions(v);
+        const rawV = editItem.mcVersion || "Any";
+        if (rawV === "Any" || rawV.toLowerCase() === "all" || !rawV) {
+          setSelectedMcVersions(["Any"]);
+        } else {
+          const parsedVersions = rawV.split(",").map((s: string) => s.trim());
+          setSelectedMcVersions(parsedVersions);
+        }
 
         setTargetPath(editItem.targetPath || "config/options.txt");
         setSaveToCloud(editItem.storageLocation === "account_cloud");
-        setAddToPackage(false);
-        setSaveAsCommon(true);
+        setAddToPackage(defaultAddToPackage);
+        setSaveAsCommon(defaultSaveAsCommon);
         setDetectedTypeNote(null);
       } else {
         setName("");
         setDownloadUrl("");
         setContentType("mod");
         setAuthor("");
-        setSelectedLoaders(["Any"]);
-        setSelectedMcVersions([packSettings.mcVersion || "1.20.1"]);
+        const rawLoader = packSettings.loader && packSettings.loader !== "Any" ? packSettings.loader : "Any";
+        const loaderMap: Record<string, string> = { fabric: "Fabric", forge: "Forge", neoforge: "NeoForge", quilt: "Quilt" };
+        const initLoader = loaderMap[rawLoader.toLowerCase()] || (rawLoader.charAt(0).toUpperCase() + rawLoader.slice(1));
+        const initVersion = packSettings.mcVersion || "1.20.1";
+        setSelectedLoaders([initLoader]);
+        setSelectedMcVersions([initVersion]);
         setShowAllMcVersions(false);
         setShowAllLoaders(false);
         setTargetPath("config/options.txt");
@@ -193,6 +236,29 @@ export function AddCustomContentDialog({
     }
   };
 
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState<boolean>(false);
+
+  const handlePromptDelete = () => {
+    setIsConfirmDeleteOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!editItem) return;
+    const globalItems = getCustomContentItems();
+    const isGlobal = globalItems.some(i => i.id === editItem.id);
+
+    if (isGlobal) {
+      deleteCustomContentItem(editItem.id);
+    } else {
+      deletePackageCustomContentItem(packSettings.id, editItem.id);
+    }
+    removeContent(editItem.id);
+
+    onDeleted?.(editItem.id);
+    setIsConfirmDeleteOpen(false);
+    onClose();
+  };
+
   const handleSave = () => {
     if (!name.trim() || !downloadUrl.trim()) return;
 
@@ -209,28 +275,72 @@ export function AddCustomContentDialog({
       storageLocation,
     };
 
-    let targetItem: CustomContentItem;
+    let targetItem: CustomContentItem | null = null;
 
     if (editItem) {
-      const updated = updateCustomContentItem(editItem.id, payload);
-      targetItem = updated || { ...editItem, ...payload };
-      if (updated) onUpdated?.(updated);
+      const isCurrentlyGlobal = getCustomContentItems().some(i => i.id === editItem.id);
+      const isCurrentlyPkgOnly = getPackageCustomContentItems(packSettings.id).some(i => i.id === editItem.id);
+
+      if (saveAsCommon) {
+        if (isCurrentlyGlobal) {
+          const updated = updateCustomContentItem(editItem.id, payload);
+          targetItem = updated || { ...editItem, ...payload };
+          if (targetItem) onUpdated?.(targetItem);
+        } else if (isCurrentlyPkgOnly) {
+          deletePackageCustomContentItem(packSettings.id, editItem.id);
+          targetItem = saveCustomContentItem(payload);
+          if (targetItem) onUpdated?.(targetItem);
+        } else {
+          targetItem = saveCustomContentItem(payload);
+          if (targetItem) onAdded?.(targetItem);
+        }
+      } else {
+        if (isCurrentlyPkgOnly) {
+          const updated = updatePackageCustomContentItem(packSettings.id, editItem.id, payload);
+          targetItem = updated || { ...editItem, ...payload };
+          if (targetItem) onUpdated?.(targetItem);
+        } else if (isCurrentlyGlobal) {
+          deleteCustomContentItem(editItem.id);
+          targetItem = savePackageCustomContentItem(packSettings.id, payload);
+          if (targetItem) onUpdated?.(targetItem);
+        } else {
+          targetItem = savePackageCustomContentItem(packSettings.id, payload);
+          if (targetItem) onAdded?.(targetItem);
+        }
+      }
     } else {
-      targetItem = saveCustomContentItem(payload);
-      onAdded?.(targetItem);
+      if (saveAsCommon) {
+        targetItem = saveCustomContentItem(payload);
+        onAdded?.(targetItem);
+      } else {
+        targetItem = savePackageCustomContentItem(packSettings.id, payload);
+        onAdded?.(targetItem);
+      }
     }
 
-    // Add to active package if checked
-    if (addToPackage) {
-      addContent({
-        id: targetItem.id,
-        name: targetItem.name,
-        provider: "custom",
-        iconUrl: "",
-        versionId: "custom",
-        versionName: "Custom URL",
-        contentType: targetItem.contentType,
-      });
+    // 3. Handle active package installation ("Add directly to current package")
+    if (context === "editor" || addToPackage) {
+      if (addToPackage && isCompatibleWithCurrentPkg) {
+        const itemId = targetItem?.id || editItem?.id || `custom-pkg-${Date.now()}`;
+        addContent({
+          id: itemId,
+          name: payload.name,
+          provider: "custom",
+          iconUrl: "",
+          versionId: "custom",
+          versionName: "Custom URL",
+          contentType: payload.contentType,
+          downloadUrl: payload.downloadUrl,
+          author: payload.author,
+          mcVersion: payload.mcVersion,
+          loader: payload.loader,
+          targetPath: payload.targetPath,
+          storageLocation: payload.storageLocation,
+          isPackageOnly: !saveAsCommon,
+        });
+      } else if (!addToPackage && editItem?.id) {
+        removeContent(editItem.id);
+      }
     }
 
     onClose();
@@ -238,16 +348,18 @@ export function AddCustomContentDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent hideClose className="sm:max-w-4xl bg-[#0A0A0A] border border-[#1E1E1E] p-0 gap-0 overflow-hidden shadow-2xl rounded-2xl">
+      <DialogContent 
+        hideClose 
+        className="sm:max-w-4xl bg-[#0A0A0A] border border-[#1E1E1E] p-0 gap-0 overflow-hidden shadow-2xl rounded-2xl"
+      >
         
-        {/* Header */}
-        <DialogHeader className="p-5 px-6 border-b border-[#1E1E1E] flex flex-row items-center gap-4 shrink-0">
+        <DialogHeader className="p-5 px-6 border-b border-[#1E1E1E] flex flex-row items-center gap-4 shrink-0 space-y-0">
           {editItem ? (
             <Pencil className="w-8 h-8 text-blue-400 shrink-0" />
           ) : (
             <PlusCircle className="w-8 h-8 text-blue-400 shrink-0" />
           )}
-          <div className="flex flex-col text-left justify-center -mt-[2px]">
+          <div className="flex flex-col text-left justify-center">
             <DialogTitle className="text-white text-lg font-bold leading-tight">
               {editItem ? "Edit Custom Content" : "Add Custom Content"}
             </DialogTitle>
@@ -350,91 +462,36 @@ export function AddCustomContentDialog({
                 />
               </div>
 
-              {/* Destination Options */}
-              <div className="flex flex-col gap-2.5 mt-2">
-                
-                {/* Add to Active Package Checkbox */}
-                <div 
-                  onClick={() => setAddToPackage(!addToPackage)}
-                  className="flex items-center gap-3 p-3 bg-[#1E1E1E]/60 border border-white/5 rounded-xl cursor-pointer hover:bg-[#1E1E1E] transition-colors"
-                >
-                  <Checkbox
-                    checked={addToPackage}
-                    onCheckedChange={(checked) => setAddToPackage(!!checked)}
-                    className="data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500 border-white/20"
-                  />
-                  <div className="flex items-center gap-2.5">
-                    <Package className="w-4 h-4 text-blue-400 shrink-0" />
-                    <div className="flex flex-col text-left">
-                      <span className="text-xs font-semibold text-white">Add directly to current package</span>
-                      <span className="text-[11px] text-white/50">Install to active modpack version list</span>
-                    </div>
-                  </div>
+              {/* Destination & Sync Options */}
+              <ResourceOptionsSection
+                context={context}
+                accentColor="blue"
+                resourceType="content"
+                showAddToPackage={!editItem}
+                addToPackage={addToPackage}
+                onAddToPackageChange={setAddToPackage}
+                saveToLibrary={saveAsCommon}
+                onSaveToLibraryChange={setSaveAsCommon}
+                saveToCloud={saveToCloud}
+                onSaveToCloudChange={setSaveToCloud}
+                isLoggedIn={isLoggedIn}
+              />
+
+              {isOrphanedSave ? (
+                <div className="flex items-center gap-2.5 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs font-medium">
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-red-400" />
+                  <span>
+                    Cannot Save: Selected loader ({selectedLoaders.join(", ")}) or version ({selectedMcVersions.join(", ")}) is incompatible with current package ({currentPkgLoader} {currentPkgMcVersion}), and 'Save to My Resources' is unchecked. Check 'Save to My Resources' or adjust compatibility to save.
+                  </span>
                 </div>
-
-                {/* Save in Custom Content Checkbox */}
-                <div 
-                  onClick={() => setSaveAsCommon(!saveAsCommon)}
-                  className="flex items-center gap-3 p-3 bg-[#1E1E1E]/60 border border-white/5 rounded-xl cursor-pointer hover:bg-[#1E1E1E] transition-colors"
-                >
-                  <Checkbox
-                    checked={saveAsCommon}
-                    onCheckedChange={(checked) => setSaveAsCommon(!!checked)}
-                    className="data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500 border-white/20"
-                  />
-                  <div className="flex items-center gap-2.5">
-                    <PlusCircle className="w-4 h-4 text-blue-400 shrink-0" />
-                    <div className="flex flex-col text-left">
-                      <span className="text-xs font-semibold text-white">Save in Custom Content</span>
-                      <span className="text-[11px] text-white/50">Make accessible across all your modpacks</span>
-                    </div>
-                  </div>
+              ) : (!isCompatibleWithCurrentPkg && context === "editor") ? (
+                <div className="flex items-center gap-2.5 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400 text-xs font-medium">
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
+                  <span>
+                    Warning: Selected loader ({selectedLoaders.join(", ")}) or version ({selectedMcVersions.join(", ")}) does not match current package ({currentPkgLoader} {currentPkgMcVersion}). This custom resource will not appear for selection in this package's editor.
+                  </span>
                 </div>
-
-                {/* REDSOUTH Account Sync Checkbox */}
-                <TooltipProvider delayDuration={150}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div 
-                        onClick={() => {
-                          if (isLoggedIn) setSaveToCloud(!saveToCloud);
-                        }}
-                        className={`flex items-center gap-3 p-3 bg-[#1E1E1E]/60 border border-white/5 rounded-xl transition-colors ${
-                          isLoggedIn 
-                            ? "cursor-pointer hover:bg-[#1E1E1E]" 
-                            : "opacity-50 cursor-not-allowed"
-                        }`}
-                      >
-                        <Checkbox
-                          disabled={!isLoggedIn}
-                          checked={saveToCloud && isLoggedIn}
-                          onCheckedChange={(checked) => {
-                            if (isLoggedIn) setSaveToCloud(!!checked);
-                          }}
-                          className="data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500 border-white/20 disabled:cursor-not-allowed"
-                        />
-                        <div className="flex items-center gap-2.5">
-                          <img src="/redsouth/logo-colored.svg" alt="REDSOUTH Account" className="w-4 h-4 object-contain shrink-0" />
-                          <div className="flex flex-col text-left">
-                            <span className="text-xs font-semibold text-white">Save to REDSOUTH Account</span>
-                            <span className="text-[11px] text-white/50">
-                              {isLoggedIn 
-                                ? "Sync across your REDSOUTH devices" 
-                                : "Sign in to sync across devices"}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </TooltipTrigger>
-                    {!isLoggedIn && (
-                      <TooltipContent side="top" sideOffset={8} className="bg-[#1E1E1E] border border-white/10 text-white font-medium text-xs shadow-xl max-w-xs">
-                        <p>Sign in to your REDSOUTH Account to sync resources across devices.</p>
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
-                </TooltipProvider>
-
-              </div>
+              ) : null}
 
             </div>
 
@@ -456,36 +513,38 @@ export function AddCustomContentDialog({
                   </button>
                 </div>
 
-                <div className="flex items-center gap-2 flex-wrap max-h-52 overflow-y-auto custom-scrollbar pr-1">
-                  <button
-                    type="button"
-                    onClick={toggleAllLoaders}
-                    className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-all border ${
-                      selectedLoaders.includes("Any")
-                        ? "bg-blue-500 text-white border-blue-500"
-                        : "bg-[#1E1E1E] text-white/60 border-transparent hover:text-white"
-                    }`}
-                  >
-                    All Loaders
-                  </button>
-                  {loadersList.map((ldr) => {
-                    const isSelected = selectedLoaders.includes(ldr.name);
-                    return (
-                      <button
-                        key={ldr.id}
-                        type="button"
-                        onClick={() => toggleLoader(ldr.name)}
-                        className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-all border ${
-                          isSelected && !selectedLoaders.includes("Any")
-                            ? "bg-blue-500 text-white border-blue-500"
-                            : "bg-[#1E1E1E] text-white/60 border-transparent hover:text-white"
-                        }`}
-                      >
-                        {ldr.name}
-                      </button>
-                    );
-                  })}
-                </div>
+                <ScrollArea className="max-h-36 pr-2">
+                  <div className="flex items-center gap-2 flex-wrap py-1">
+                    <button
+                      type="button"
+                      onClick={toggleAllLoaders}
+                      className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-all border ${
+                        selectedLoaders.includes("Any")
+                          ? "bg-blue-500 text-white border-blue-500"
+                          : "bg-[#1E1E1E] text-white/60 border-transparent hover:text-white"
+                      }`}
+                    >
+                      All Loaders
+                    </button>
+                    {loadersList.map((ldr: { id: string; name: string }) => {
+                      const isSelected = selectedLoaders.includes(ldr.name);
+                      return (
+                        <button
+                          key={ldr.id}
+                          type="button"
+                          onClick={() => toggleLoader(ldr.name)}
+                          className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-all border ${
+                            isSelected && !selectedLoaders.includes("Any")
+                              ? "bg-blue-500 text-white border-blue-500"
+                              : "bg-[#1E1E1E] text-white/60 border-transparent hover:text-white"
+                          }`}
+                        >
+                          {ldr.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
               </div>
 
               {/* Supported MC Versions (Mojang API) */}
@@ -503,36 +562,38 @@ export function AddCustomContentDialog({
                   </button>
                 </div>
 
-                <div className="flex items-center gap-2 flex-wrap max-h-64 overflow-y-auto custom-scrollbar pr-1">
-                  <button
-                    type="button"
-                    onClick={() => toggleMcVersion("Any")}
-                    className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-all border ${
-                      selectedMcVersions.includes("Any")
-                        ? "bg-blue-500 text-white border-blue-500"
-                        : "bg-[#1E1E1E] text-white/60 border-transparent hover:text-white"
-                    }`}
-                  >
-                    All Versions
-                  </button>
-                  {mcVersionsList.map((ver) => {
-                    const isSelected = selectedMcVersions.includes(ver);
-                    return (
-                      <button
-                        key={ver}
-                        type="button"
-                        onClick={() => toggleMcVersion(ver)}
-                        className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-all border ${
-                          isSelected && !selectedMcVersions.includes("Any")
-                            ? "bg-blue-500 text-white border-blue-500"
-                            : "bg-[#1E1E1E] text-white/60 border-transparent hover:text-white"
-                        }`}
-                      >
-                        {ver}
-                      </button>
-                    );
-                  })}
-                </div>
+                <ScrollArea className="max-h-52 pr-2">
+                  <div className="flex items-center gap-2 flex-wrap py-1">
+                    <button
+                      type="button"
+                      onClick={() => toggleMcVersion("Any")}
+                      className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-all border ${
+                        selectedMcVersions.includes("Any")
+                          ? "bg-blue-500 text-white border-blue-500"
+                          : "bg-[#1E1E1E] text-white/60 border-transparent hover:text-white"
+                      }`}
+                    >
+                      All Versions
+                    </button>
+                    {mcVersionsList.map((ver: string) => {
+                      const isSelected = selectedMcVersions.includes(ver);
+                      return (
+                        <button
+                          key={ver}
+                          type="button"
+                          onClick={() => toggleMcVersion(ver)}
+                          className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-all border ${
+                            isSelected && !selectedMcVersions.includes("Any")
+                              ? "bg-blue-500 text-white border-blue-500"
+                              : "bg-[#1E1E1E] text-white/60 border-transparent hover:text-white"
+                          }`}
+                        >
+                          {ver}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
               </div>
 
             </div>
@@ -541,22 +602,47 @@ export function AddCustomContentDialog({
         </ScrollArea>
 
         {/* Footer matching PackSettingsModal style */}
-        <DialogFooter className="p-4 px-6 border-t border-[#1E1E1E] bg-[#0A0A0A] flex sm:justify-end gap-3 shrink-0">
-          <DialogClose asChild>
-            <Button variant="ghost" className="text-white/60 hover:text-white hover:bg-[#1E1E1E] rounded-xl px-5 h-11 border-0">
-              Cancel
+        <DialogFooter className="p-4 px-6 border-t border-[#1E1E1E] bg-[#0A0A0A] flex sm:justify-between items-center gap-3 shrink-0">
+          {editItem ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handlePromptDelete}
+              className="h-11 rounded-xl border-2 border-[#1E1E1E] bg-[#1E1E1E] text-white hover:border-[#FE5000] hover:text-[#FE5000] hover:bg-transparent px-4 font-semibold text-xs transition-colors shrink-0 gap-2 flex items-center"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Delete</span>
             </Button>
-          </DialogClose>
-          <Button 
-            onClick={handleSave} 
-            disabled={!name.trim() || !downloadUrl.trim()}
-            className="bg-blue-500 text-white hover:bg-blue-600 rounded-xl px-5 h-11 font-semibold outline outline-2 outline-transparent hover:outline-blue-500/50 hover:outline-offset-2 active:scale-95 transition-all disabled:opacity-40"
-          >
-            {editItem ? "Update Custom Content" : "Add Custom Content"}
-          </Button>
+          ) : (
+            <div />
+          )}
+
+          <div className="flex items-center gap-3">
+            <DialogClose asChild>
+              <Button variant="ghost" className="text-white/60 hover:text-white hover:bg-[#1E1E1E] rounded-xl px-5 h-11 border-0">
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button 
+              onClick={handleSave} 
+              disabled={!name.trim() || !downloadUrl.trim() || isOrphanedSave}
+              className="bg-blue-500 text-white hover:bg-blue-600 rounded-xl px-5 h-11 font-semibold outline outline-2 outline-transparent hover:outline-blue-500/50 hover:outline-offset-2 active:scale-95 transition-all disabled:opacity-40"
+            >
+              {editItem ? "Update Custom Content" : "Add Custom Content"}
+            </Button>
+          </div>
         </DialogFooter>
 
       </DialogContent>
+
+      {/* Confirmation Dialog for Deleting Custom Content */}
+      <DeleteConfirmDialog
+        isOpen={isConfirmDeleteOpen}
+        onClose={() => setIsConfirmDeleteOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Custom Content"
+        itemName={name}
+      />
     </Dialog>
   );
 }

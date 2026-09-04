@@ -21,9 +21,26 @@ export function normalizeContentType(type: string): CardContentType {
 }
 
 export function ContentTypeIcon({ type, className, iconClassName, ...props }: ContentTypeIconProps) {
+  const rawType = (type || "").toLowerCase();
   const normalized = normalizeContentType(type);
 
   const getIcon = () => {
+    switch (rawType) {
+      case "config":
+        return <FileText className={cn("w-3.5 h-3.5 text-blue-400 shrink-0", iconClassName)} />;
+      case "script":
+        return <Code2 className={cn("w-3.5 h-3.5 text-purple-400 shrink-0", iconClassName)} />;
+      case "data":
+        return <FileJson className={cn("w-3.5 h-3.5 text-emerald-400 shrink-0", iconClassName)} />;
+      case "multimedia":
+      case "image":
+        return <Image className={cn("w-3.5 h-3.5 text-pink-400 shrink-0", iconClassName)} />;
+      case "other":
+        return <File className={cn("w-3.5 h-3.5 text-amber-400 shrink-0", iconClassName)} />;
+      default:
+        break;
+    }
+
     switch (normalized) {
       case "mod":
         return <Box className={cn("w-3.5 h-3.5 text-[#FE5000] shrink-0", iconClassName)} />;
@@ -98,6 +115,7 @@ export function FileTypeIcon({ type, className, iconClassName, ...props }: FileT
         return <Code2 className={cn("w-3.5 h-3.5 text-purple-400 shrink-0", iconClassName)} />;
       case "data":
         return <FileJson className={cn("w-3.5 h-3.5 text-emerald-400 shrink-0", iconClassName)} />;
+      case "multimedia":
       case "image":
         return <Image className={cn("w-3.5 h-3.5 text-pink-400 shrink-0", iconClassName)} />;
       default:

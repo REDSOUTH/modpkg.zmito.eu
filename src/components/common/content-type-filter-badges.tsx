@@ -16,6 +16,7 @@ export interface ContentTypeFilterBadgesProps {
   value: string;
   onValueChange: (value: string) => void;
   items?: FilterBadgeItem[];
+  activeColorClass?: string;
   className?: string;
 }
 
@@ -35,6 +36,7 @@ export function ContentTypeFilterBadges({
   value,
   onValueChange,
   items = DEFAULT_FILTER_BADGE_ITEMS,
+  activeColorClass = "bg-blue-500 text-white shadow-md shadow-blue-500/20",
   className,
 }: ContentTypeFilterBadgesProps) {
   return (
@@ -48,6 +50,10 @@ export function ContentTypeFilterBadges({
       <div className="flex items-center gap-1.5 flex-wrap">
         {items.map((item) => {
           const isActive = value === item.id || value === item.type;
+          const isAll = item.id === "all" || item.type === "all";
+          const isBlackActive = isActive && activeColorClass.includes("text-black");
+          const iconActiveColor = isBlackActive ? "text-black" : "text-white";
+
           return (
             <button
               key={item.id}
@@ -55,16 +61,16 @@ export function ContentTypeFilterBadges({
               className={cn(
                 "flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer select-none",
                 isActive
-                  ? "bg-[#FE5000] text-white shadow-md shadow-[#FE5000]/20"
+                  ? activeColorClass
                   : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
               )}
             >
-              {item.id === "all" ? (
-                <Layers className={cn("w-3.5 h-3.5", isActive ? "text-white" : "text-white/70")} />
+              {isAll ? (
+                <Layers className={cn("w-3.5 h-3.5 shrink-0", isActive ? iconActiveColor : "text-white/70")} />
               ) : (
                 <ContentTypeIcon
                   type={item.type || item.id}
-                  iconClassName={cn("w-3.5 h-3.5", isActive && "text-white")}
+                  iconClassName={cn("w-3.5 h-3.5", isActive && iconActiveColor)}
                 />
               )}
               <span>

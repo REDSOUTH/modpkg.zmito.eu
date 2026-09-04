@@ -1,9 +1,10 @@
+import { DeleteConfirmDialog } from "@/components/common/delete-confirm-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Check, X, FilePlus, Copy, Trash2, Settings } from "lucide-react";
+import { Plus, Check, X, FilePlus, Copy, Trash2, Settings, Package } from "lucide-react";
 import { useState, useEffect, useRef, ChangeEvent, KeyboardEvent } from "react";
 import { usePack } from "@/context/pack-context";
 import { PackSettingsModalProps, FieldLabelProps } from "@/types";
@@ -19,19 +20,33 @@ const sanitizeSlug = (str: string): string => {
     .replace(/[^a-z0-9.-]/g, "");
 };
 
-export default function PackSettingsModal({ isOpen, onClose, focusField }: PackSettingsModalProps) {
-  const { packSettings, updatePackSettings, createNewVersion, deleteVersion, getMinecraftVersions, getLoaders } = usePack();
+export default function PackSettingsModal({ isOpen, onClose, focusField, isCreateMode: propIsCreateMode = false }: PackSettingsModalProps) {
+  const { 
+    packSettings, 
+    packagesList, 
+    createPack, 
+    deletePack,
+    updatePackSettings, 
+    createNewVersion, 
+    deleteVersion, 
+    getMinecraftVersions, 
+    getLoaders 
+  } = usePack();
+
   const nameInputRef = useRef<HTMLInputElement>(null);
   const versionTriggerRef = useRef<HTMLButtonElement>(null);
   const mcVersionTriggerRef = useRef<HTMLButtonElement>(null);
   const loaderTriggerRef = useRef<HTMLButtonElement>(null);
 
-  const [name, setName] = useState<string>(packSettings.name);
-  const [id, setId] = useState<string>(packSettings.id);
+  const isFirstPack = packagesList.length === 0;
+  const isCreateMode = propIsCreateMode || isFirstPack;
+
+  const [name, setName] = useState<string>("MODPKG");
+  const [id, setId] = useState<string>("");
   const [isIdCustomized, setIsIdCustomized] = useState<boolean>(false);
-  const [mcVersion, setMcVersion] = useState<string>(packSettings.mcVersion);
-  const [loader, setLoader] = useState<string>(packSettings.loader);
-  const [currentVersion, setCurrentVersion] = useState<string>(packSettings.currentVersion);
+  const [mcVersion, setMcVersion] = useState<string>("1.20.4");
+  const [loader, setLoader] = useState<string>("fabric");
+  const [currentVersion, setCurrentVersion] = useState<string>("v1.0.0");
 
   const [showAllMcVersions, setShowAllMcVersions] = useState<boolean>(false);
   const [showAllLoaders, setShowAllLoaders] = useState<boolean>(false);
@@ -42,22 +57,35 @@ export default function PackSettingsModal({ isOpen, onClose, focusField }: PackS
 
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState<boolean>(false);
   const [versionToDelete, setVersionToDelete] = useState<string | null>(null);
+  const [isConfirmDeletePackOpen, setIsConfirmDeletePackOpen] = useState<boolean>(false);
 
   const mcVersionsList = getMinecraftVersions(showAllMcVersions);
   const loadersList = getLoaders(showAllLoaders);
 
-  // Sync modal form with packSettings when opened and move real focus
+  // Sync modal form with packSettings or reset defaults for Create Mode
   useEffect(() => {
     if (isOpen) {
-      setName(packSettings.name);
-      setId(packSettings.id);
-      setIsIdCustomized(false);
-      setMcVersion(packSettings.mcVersion);
-      setLoader(packSettings.loader);
-      setCurrentVersion(packSettings.currentVersion);
-      setIsCreatingVersion(false);
-      setNewVersionName("");
-      setCopySourceVersion("empty");
+      if (isCreateMode) {
+        const availableMc = getMinecraftVersions(false);
+        const randomSuffix = Math.random().toString(36).substring(2, 7);
+        setName("MODPKG");
+        setId(`modpkg-${randomSuffix}`);
+        setIsIdCustomized(false);
+        setMcVersion(availableMc[0] || "1.20.4");
+        setLoader("fabric");
+        setCurrentVersion("v1.0.0");
+        setIsCreatingVersion(false);
+      } else {
+        setName(packSettings.name);
+        setId(packSettings.id);
+        setIsIdCustomized(false);
+        setMcVersion(packSettings.mcVersion);
+        setLoader(packSettings.loader);
+        setCurrentVersion(packSettings.currentVersion);
+        setIsCreatingVersion(false);
+        setNewVersionName("");
+        setCopySourceVersion("empty");
+      }
 
       setTimeout(() => {
         if (focusField === "name" && nameInputRef.current) {
@@ -75,16 +103,28 @@ export default function PackSettingsModal({ isOpen, onClose, focusField }: PackS
         }
       }, 150);
     }
-  }, [isOpen, focusField]);
+  }, [isOpen, focusField, isCreateMode]);
 
   const handleSave = () => {
-    updatePackSettings({
-      name: name.trim() || packSettings.name,
-      id: id.trim() || packSettings.id,
-      mcVersion,
-      loader,
-      currentVersion
-    });
+    if (!name.trim()) return;
+    if (isCreateMode) {
+      createPack({
+        id: id.trim(),
+        name: name.trim(),
+        mcVersion,
+        loader,
+        version: currentVersion.trim() || "v1.0.0",
+        description: "Mi modpack personalizado creado con MODPKG",
+      });
+    } else {
+      updatePackSettings({
+        name: name.trim() || packSettings.name,
+        id: id.trim() || packSettings.id,
+        mcVersion,
+        loader,
+        currentVersion
+      });
+    }
     onClose();
   };
 
@@ -116,7 +156,7 @@ export default function PackSettingsModal({ isOpen, onClose, focusField }: PackS
     setName(val);
     if (!isIdCustomized) {
       const slug = sanitizeSlug(val);
-      setId(slug);
+      setId(slug || "modpkg");
     }
   };
 
@@ -128,14 +168,33 @@ export default function PackSettingsModal({ isOpen, onClose, focusField }: PackS
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent hideClose className="sm:max-w-xl bg-[#0A0A0A] border border-[#1E1E1E] p-0 gap-0 overflow-hidden shadow-2xl rounded-2xl">
-          
-          <DialogHeader className="p-5 px-6 border-b border-[#1E1E1E] flex flex-row items-center gap-4">
-            <Settings className="w-8 h-8 text-[#FE5000] shrink-0" />
-            <div className="flex flex-col text-left justify-center -mt-[2px]">
-              <DialogTitle className="text-white text-lg font-bold leading-tight">Pack Settings</DialogTitle>
-              <p className="text-xs text-white/50 mt-0.5">Main configuration and version management for your modpack</p>
+      <Dialog 
+        open={isOpen} 
+        onOpenChange={(open) => {
+          if (!open && isFirstPack) return;
+          if (!open) onClose();
+        }}
+      >
+        <DialogContent 
+          hideClose
+          onPointerDownOutside={(e) => isFirstPack && e.preventDefault()}
+          onEscapeKeyDown={(e) => isFirstPack && e.preventDefault()}
+          onInteractOutside={(e) => isFirstPack && e.preventDefault()}
+          className="sm:max-w-xl bg-[#0A0A0A] border border-[#1E1E1E] p-0 gap-0 overflow-hidden shadow-2xl rounded-2xl"
+        >
+          <DialogHeader className="p-5 px-6 border-b border-[#1E1E1E] flex flex-row items-center gap-4 space-y-0">
+            {isCreateMode ? (
+              <Package className="w-8 h-8 text-[#FE5000] shrink-0" />
+            ) : (
+              <Settings className="w-8 h-8 text-[#FE5000] shrink-0" />
+            )}
+            <div className="flex flex-col text-left justify-center">
+              <DialogTitle className="text-white text-lg font-bold leading-tight">
+                {isCreateMode ? "Create New MODPKG" : "Pack Settings"}
+              </DialogTitle>
+              <p className="text-xs text-white/50 mt-0.5">
+                {isCreateMode ? "Configure basic settings for your new modpack" : "Main configuration and version management for your modpack"}
+              </p>
             </div>
           </DialogHeader>
 
@@ -354,54 +413,64 @@ export default function PackSettingsModal({ isOpen, onClose, focusField }: PackS
             </div>
           </div>
 
-          <DialogFooter className="p-4 px-6 border-t border-[#1E1E1E] bg-[#0A0A0A] flex sm:justify-end gap-3">
-            <DialogClose asChild>
-              <Button variant="ghost" className="text-white/60 hover:text-white hover:bg-[#1E1E1E] rounded-xl px-5 h-11">
-                Cancel
+          <DialogFooter className="p-4 px-6 border-t border-[#1E1E1E] bg-[#0A0A0A] flex sm:justify-between items-center gap-3">
+            {!isFirstPack && !isCreateMode ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsConfirmDeletePackOpen(true)}
+                className="h-11 rounded-xl border-2 border-[#1E1E1E] bg-[#1E1E1E] text-white hover:border-[#FE5000] hover:text-[#FE5000] hover:bg-transparent px-4 font-semibold text-xs transition-colors shrink-0 gap-2 flex items-center"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Delete package</span>
               </Button>
-            </DialogClose>
-            <Button 
-              onClick={handleSave}
-              className="bg-[#FE5000] text-white hover:bg-[#E04700] rounded-xl px-5 h-11 font-semibold outline outline-2 outline-transparent hover:outline-[#FE5000]/50 hover:outline-offset-2 active:scale-95 transition-all"
-            >
-              Save Changes
-            </Button>
+            ) : (
+              <div />
+            )}
+
+            <div className="flex items-center gap-3">
+              {!isFirstPack && (
+                <DialogClose asChild>
+                  <Button variant="ghost" className="text-white/60 hover:text-white hover:bg-[#1E1E1E] rounded-xl px-5 h-11">
+                    Cancel
+                  </Button>
+                </DialogClose>
+              )}
+              <Button 
+                onClick={handleSave}
+                disabled={!name.trim()}
+                className="bg-[#FE5000] text-white hover:bg-[#E04700] rounded-xl px-5 h-11 font-semibold outline outline-2 outline-transparent hover:outline-[#FE5000]/50 hover:outline-offset-2 active:scale-95 transition-all disabled:opacity-40"
+              >
+                {isCreateMode ? "Create MODPKG" : "Save Changes"}
+              </Button>
+            </div>
           </DialogFooter>
 
         </DialogContent>
       </Dialog>
 
       {/* Confirmation Dialog for Deleting Version */}
-      <Dialog open={isConfirmDeleteOpen} onOpenChange={setIsConfirmDeleteOpen}>
-        <DialogContent className="sm:max-w-lg bg-[#0A0A0A] border-2 border-[#1E1E1E] p-6 gap-4 overflow-hidden shadow-2xl rounded-2xl">
-          <DialogHeader className="gap-2 p-0">
-            <DialogTitle className="text-white text-base font-bold flex items-center gap-2">
-              <Trash2 className="w-5 h-5 text-[#FE5000]" />
-              <span>Delete Version</span>
-            </DialogTitle>
-          </DialogHeader>
-          
-          <p className="text-sm text-white/70">
-            Are you sure you want to delete version <strong className="text-white font-mono">{versionToDelete}</strong>? This action cannot be undone.
-          </p>
+      <DeleteConfirmDialog
+        isOpen={isConfirmDeleteOpen}
+        onClose={() => setIsConfirmDeleteOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Version"
+        itemName={`Version ${versionToDelete}`}
+      />
 
-          <DialogFooter className="flex sm:justify-end gap-2 pt-2">
-            <Button 
-              variant="ghost" 
-              onClick={() => setIsConfirmDeleteOpen(false)}
-              className="text-white/60 hover:text-white hover:bg-[#1E1E1E] rounded-xl px-4 h-10"
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleConfirmDelete}
-              className="bg-[#FE5000] hover:bg-[#E04700] text-white rounded-xl px-4 h-10 font-semibold border-0 outline outline-2 outline-transparent hover:outline-[#FE5000]/50 hover:outline-offset-2 transition-all"
-            >
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Confirmation Dialog for Deleting MODPKG */}
+      <DeleteConfirmDialog
+        isOpen={isConfirmDeletePackOpen}
+        onClose={() => setIsConfirmDeletePackOpen(false)}
+        onConfirm={() => {
+          setIsConfirmDeletePackOpen(false);
+          deletePack(packSettings.id);
+          onClose();
+        }}
+        title="Delete Package"
+        itemName={packSettings.name}
+        description={`Are you sure you want to delete ${packSettings.name} (${packSettings.id})? All custom files and installed content associated with this package will be removed. This action cannot be undone.`}
+      />
     </>
   );
 }

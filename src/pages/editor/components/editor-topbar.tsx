@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/breadcrumb";
 
 import { usePack } from "@/context/pack-context";
+import { PackageDropdownSelector } from "@/components/common/package-dropdown-selector";
 import { EditorTopbarProps } from "@/types";
 
 interface UserProject {
@@ -21,30 +22,12 @@ interface UserProject {
 }
 
 export default function EditorTopbar({ onOpenSettings }: EditorTopbarProps) {
-  const { packSettings, updatePackSettings, loaders } = usePack();
+  const { packSettings, packagesList, switchPack, setIsCreatePackModalOpen, loaders } = usePack();
   const [copied, setCopied] = useState<boolean>(false);
   const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState<boolean>(false);
   const [projectSearchQuery, setProjectSearchQuery] = useState<string>("");
 
   const dropdownRef = useRef<HTMLLIElement>(null);
-
-  // Mock list of user projects
-  const [userProjects, setUserProjects] = useState<UserProject[]>([
-    { id: packSettings.id, name: packSettings.name },
-    { id: "modpkg-cobblemon", name: "Cobblemon SMP" },
-    { id: "modpkg-create", name: "Create & Magic" },
-    { id: "modpkg-vanilla", name: "Vanilla+ Performance" },
-  ]);
-
-  // Keep current pack in list if name changes
-  useEffect(() => {
-    setUserProjects(prev => {
-      if (prev.some(p => p.id === packSettings.id)) {
-        return prev.map(p => p.id === packSettings.id ? { ...p, name: packSettings.name } : p);
-      }
-      return [{ id: packSettings.id, name: packSettings.name }, ...prev];
-    });
-  }, [packSettings.id, packSettings.name]);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -73,18 +56,20 @@ export default function EditorTopbar({ onOpenSettings }: EditorTopbarProps) {
     }
   };
 
-  const filteredProjects = userProjects.filter(p =>
+  const filteredProjects = packagesList.filter(p =>
     p.name.toLowerCase().includes(projectSearchQuery.toLowerCase())
   );
 
-  const handleSelectProject = (project: UserProject) => {
-    updatePackSettings({ id: project.id, name: project.name });
+  const handleSelectProject = (packId: string) => {
+    switchPack(packId);
     setIsProjectDropdownOpen(false);
   };
 
-  const handleCreateNewProject = () => {
+  const handleCreateNewProject = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     setIsProjectDropdownOpen(false);
-    onOpenSettings("name");
+    setIsCreatePackModalOpen(true);
+    onOpenSettings(null, true);
   };
 
   return (
@@ -122,92 +107,12 @@ export default function EditorTopbar({ onOpenSettings }: EditorTopbarProps) {
                 </Tooltip>
               </TooltipProvider>
 
-              {/* Ghost Button to open project dropdown */}
-              <button
-                onClick={() => setIsProjectDropdownOpen(!isProjectDropdownOpen)}
-                className={`p-1 rounded-lg transition-colors flex items-center justify-center ${
-                  isProjectDropdownOpen 
-                    ? "bg-white/10 text-white" 
-                    : "text-white/40 hover:text-white hover:bg-white/10"
-                }`}
-                title="Switch package"
-              >
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isProjectDropdownOpen ? "rotate-180 text-[#FE5000]" : ""}`} />
-              </button>
+              {/* Componentized Package Dropdown Selector */}
+              <PackageDropdownSelector
+                mode="topbar"
+                onCreateNewPack={handleCreateNewProject}
+              />
             </div>
-
-            {/* Dropdown Menu */}
-            <AnimatePresence>
-              {isProjectDropdownOpen && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95, y: -4 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                  transition={{ duration: 0.15, ease: "easeOut" }}
-                  className="absolute top-full left-0 mt-2 w-72 bg-[#0A0A0A] border-2 border-[#1E1E1E] rounded-2xl shadow-2xl p-2 z-50 overflow-hidden backdrop-blur-xl flex flex-col"
-                >
-                  {/* Search Bar */}
-                  <div className="relative flex items-center px-1 py-1">
-                    <Search className="w-3.5 h-3.5 text-white/40 absolute left-3 pointer-events-none" />
-                    <input
-                      type="text"
-                      placeholder="Search package..."
-                      value={projectSearchQuery}
-                      onChange={(e) => setProjectSearchQuery(e.target.value)}
-                      className="w-full bg-[#1E1E1E] text-white text-xs rounded-xl pl-8 pr-3 py-2 border border-transparent focus:border-[#FE5000] focus:outline-none placeholder:text-white/40 transition-colors"
-                      autoFocus
-                    />
-                  </div>
-
-                  {/* Separator */}
-                  <Separator className="bg-[#1E1E1E] my-1.5" />
-
-                  {/* Projects List */}
-                  <ScrollArea className="max-h-48 custom-scrollbar">
-                    <div className="flex flex-col gap-0.5 p-0.5">
-                      {filteredProjects.length === 0 ? (
-                        <div className="text-xs text-white/40 px-3 py-3 text-center">
-                          No packages found
-                        </div>
-                      ) : (
-                        filteredProjects.map((p) => {
-                          const isActive = p.id === packSettings.id;
-                          return (
-                            <button
-                              key={p.id}
-                              onClick={() => handleSelectProject(p)}
-                              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors ${
-                                isActive
-                                  ? "bg-[#FE5000]/10 text-[#FE5000] font-medium"
-                                  : "text-white/80 hover:bg-[#1E1E1E] hover:text-white"
-                              }`}
-                            >
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                <img src="/logo.svg" alt="MODPKG" className="w-4 h-4 object-contain shrink-0" />
-                                <span className="truncate">{p.name}</span>
-                              </div>
-                              {isActive && <Check className="w-3.5 h-3.5 text-[#FE5000] shrink-0" />}
-                            </button>
-                          );
-                        })
-                      )}
-                    </div>
-                  </ScrollArea>
-
-                  {/* Separator */}
-                  <Separator className="bg-[#1E1E1E] my-1.5" />
-
-                  {/* Create New MODPKG Button */}
-                  <button
-                    onClick={handleCreateNewProject}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-[#FE5000] hover:bg-[#FE5000]/10 transition-colors text-left"
-                  >
-                    <Plus className="w-4 h-4 shrink-0 text-[#FE5000]" />
-                    <span>Create new MODPKG</span>
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </BreadcrumbItem>
           
           <BreadcrumbSeparator className="text-white/20">
@@ -262,11 +167,11 @@ export default function EditorTopbar({ onOpenSettings }: EditorTopbarProps) {
         </button>
 
         <button 
-          onClick={() => onOpenSettings("name")}
+          onClick={handleCreateNewProject}
           className="bg-[#FE5000] hover:bg-[#E04700] text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all outline outline-2 outline-transparent hover:outline-[#FE5000] hover:outline-offset-[3px] active:scale-95 duration-200 flex items-center gap-1.5"
         >
           <Plus className="w-4 h-4 shrink-0" />
-          <span>New Package</span>
+          <span>New MODPKG</span>
         </button>
       </div>
 

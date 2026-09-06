@@ -5,11 +5,13 @@ import EditorPage from "../pages/editor/editor";
 import CustomContentPage from "../pages/custom-content/custom-content";
 import MyResourcesPage from "../pages/my-resources/my-resources";
 import NotFoundPage from "../pages/not-found/not-found";
+import { AppErrorBoundary } from "../components/common/app-error-boundary";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <RootLayout />,
+    errorElement: <AppErrorBoundary />,
     children: [
       {
         path: "/",

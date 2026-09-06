@@ -11,11 +11,119 @@ export type FocusField = "name" | "version" | "mcVersion" | "loader" | null;
 export interface PackSettings {
   id: string;
   name: string;
+  slug?: string;
   mcVersion: string;
   loader: string;
+  loaderVersion?: string;
   versions: string[];
   currentVersion: string;
   description: string;
+  author?: string;
+  authorId?: string;
+  isPublic?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  tags?: string[];
+}
+
+export interface PackReleaseData {
+  releaseId: string;
+  minecraft: string;
+  loader: {
+    type: string;
+    version?: string;
+  };
+  installedContent: InstalledItem[];
+  customFiles: CustomFileItem[];
+  publishedAt?: string;
+  updatedAt?: string;
+}
+
+export interface ModpkgExportMetadata {
+  projectId: string;
+  versionId: string;
+  name: string;
+  description: string;
+  author: string;
+  authorId?: string;
+}
+
+export interface ModpkgExportDependencies {
+  minecraft: string;
+  loader: {
+    type: string;
+    version?: string;
+  };
+}
+
+export interface ModpkgModrinthItem {
+  id: string;
+  name: string;
+  type: string; // "mod" | "resourcepack" | "shader" | "datapack" | "world"
+  versionId: string;
+  versionName?: string;
+  fileName?: string;
+  url?: string;
+  hashes?: {
+    sha1?: string;
+    sha512?: string;
+  };
+}
+export type ModpkgModrinthMod = ModpkgModrinthItem;
+
+export interface ModpkgCurseforgeItem {
+  id: string | number;
+  name?: string;
+  type: string; // "mod" | "resourcepack" | "shader" | "datapack" | "world"
+  fileId: string | number;
+  fileName?: string;
+  url?: string;
+  hashes?: {
+    sha1?: string;
+    md5?: string;
+  };
+}
+export type ModpkgCurseforgeMod = ModpkgCurseforgeItem;
+
+export interface ModpkgCustomItem {
+  id?: string;
+  name: string;
+  type: string; // "mod" | "resourcepack" | "shader" | "datapack" | "world"
+  fileName?: string;
+  url?: string;
+  targetPath?: string;
+  hashes?: {
+    sha1?: string;
+  };
+}
+export type ModpkgDirectUrlMod = ModpkgCustomItem;
+
+export interface ModpkgOverride {
+  path: string;
+  type: "text" | "base64" | "url";
+  content?: string;
+  url?: string;
+  fileType?: string;
+}
+
+export interface ModpkgExportFile {
+  formatVersion: 1;
+  generator: string;
+  exportedAt: string;
+  metadata: ModpkgExportMetadata;
+  dependencies: ModpkgExportDependencies;
+  content: {
+    modrinth: ModpkgModrinthItem[];
+    curseforge: ModpkgCurseforgeItem[];
+    custom: ModpkgCustomItem[];
+  };
+  mods?: {
+    modrinth?: any[];
+    curseforge?: any[];
+    directUrls?: any[];
+    custom?: any[];
+  };
+  overrides: ModpkgOverride[];
 }
 
 export interface InstalledItem {

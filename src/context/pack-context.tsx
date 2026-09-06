@@ -77,8 +77,46 @@ export function PackProvider({ children }: { children: ReactNode }) {
     if (current) {
       setPackSettings(current);
       const data = getPackData(current.id);
-      setInstalledContent(data.installedContent || []);
-      setCustomFiles(data.customFiles || []);
+      const curVer = current.currentVersion || "v1.0.0";
+
+      if (!data.releases) {
+        data.releases = {};
+      }
+
+      if (!data.releases[curVer]) {
+        data.releases[curVer] = {
+          releaseId: curVer,
+          minecraft: current.mcVersion,
+          loader: {
+            type: current.loader,
+            version: current.loaderVersion || "latest",
+          },
+          installedContent: data.installedContent || [],
+          customFiles: data.customFiles || [],
+          publishedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      }
+
+      // Ensure all versions in current.versions exist in releases
+      (current.versions || [curVer]).forEach(v => {
+        if (!data.releases![v]) {
+          data.releases![v] = {
+            releaseId: v,
+            minecraft: current.mcVersion,
+            loader: { type: current.loader, version: current.loaderVersion || "latest" },
+            installedContent: v === curVer ? [...(data.installedContent || [])] : [],
+            customFiles: v === curVer ? [...(data.customFiles || [])] : [],
+            publishedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+        }
+      });
+      savePackData(current.id, data);
+
+      const activeRelease = data.releases[curVer];
+      setInstalledContent(activeRelease.installedContent || []);
+      setCustomFiles(activeRelease.customFiles || []);
     }
   }, [activePackId, packagesList]);
 
@@ -165,17 +203,34 @@ export function PackProvider({ children }: { children: ReactNode }) {
     savePackagesIndex(updatedList);
 
     // Initialize per-pack storage object
+    const initialRelease = {
+      releaseId: newVersion,
+      minecraft: newPack.mcVersion,
+      loader: {
+        type: newPack.loader,
+        version: newPack.loaderVersion || "latest",
+      },
+      installedContent: [],
+      customFiles: [],
+      publishedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
     const emptyData: PackExclusiveData = {
       id: newId,
       installedContent: [],
       customContent: [],
       customFiles: [],
+      releases: {
+        [newVersion]: initialRelease,
+      },
     };
     savePackData(newId, emptyData);
 
     setActivePackId(newId);
     setPackSettings(newPack);
     setInstalledContent([]);
+    setCustomFiles([]);
     setIsCreatePackModalOpen(false);
 
     return newPack;
@@ -188,8 +243,23 @@ export function PackProvider({ children }: { children: ReactNode }) {
     setActivePackId(packId);
     setPackSettings(target);
     const data = getPackData(packId);
-    setInstalledContent(data.installedContent || []);
-    setCustomFiles(data.customFiles || []);
+    const curVer = target.currentVersion || "v1.0.0";
+    if (!data.releases) data.releases = {};
+    if (!data.releases[curVer]) {
+      data.releases[curVer] = {
+        releaseId: curVer,
+        minecraft: target.mcVersion,
+        loader: { type: target.loader, version: target.loaderVersion || "latest" },
+        installedContent: data.installedContent || [],
+        customFiles: data.customFiles || [],
+        publishedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      savePackData(packId, data);
+    }
+    const activeRel = data.releases[curVer];
+    setInstalledContent(activeRel.installedContent || []);
+    setCustomFiles(activeRel.customFiles || []);
   };
 
   // Delete package
@@ -205,12 +275,67 @@ export function PackProvider({ children }: { children: ReactNode }) {
       setActivePackId(null);
       setPackSettings(DEFAULT_FALLBACK_PACK);
       setInstalledContent([]);
+      setCustomFiles([]);
       setIsCreatePackModalOpen(true);
     }
   };
 
   const updatePackSettings = (newSettings: Partial<PackSettings>) => {
     setPackSettings(prev => {
+      const prevVersion = prev.currentVersion;
+      const newVersion = newSettings.currentVersion ?? prevVersion;
+      const isSwitchingVersion = newVersion !== prevVersion;
+
+      if (activePackId) {
+        const packData = getPackData(activePackId);
+        if (!packData.releases) packData.releases = {};
+
+        // 1. Save current active version state
+        packData.releases[prevVersion] = {
+          ...(packData.releases[prevVersion] || {
+            releaseId: prevVersion,
+            minecraft: prev.mcVersion,
+            loader: { type: prev.loader, version: prev.loaderVersion || "latest" },
+          }),
+          installedContent: installedContent,
+          customFiles: customFiles,
+          updatedAt: new Date().toISOString(),
+        };
+
+        // 2. If switching to new version, load its contents
+        if (isSwitchingVersion) {
+          const targetRelease = packData.releases[newVersion] || {
+            releaseId: newVersion,
+            minecraft: newSettings.mcVersion || prev.mcVersion,
+            loader: {
+              type: newSettings.loader || prev.loader,
+              version: prev.loaderVersion || "latest",
+            },
+            installedContent: [],
+            customFiles: [],
+            publishedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          packData.releases[newVersion] = targetRelease;
+          packData.installedContent = targetRelease.installedContent || [];
+          packData.customFiles = targetRelease.customFiles || [];
+
+          setInstalledContent(targetRelease.installedContent || []);
+          setCustomFiles(targetRelease.customFiles || []);
+        } else {
+          // Updating settings on the same version
+          if (newSettings.mcVersion) packData.releases[prevVersion].minecraft = newSettings.mcVersion;
+          if (newSettings.loader) {
+            packData.releases[prevVersion].loader = {
+              type: newSettings.loader,
+              version: prev.loaderVersion || "latest",
+            };
+          }
+        }
+
+        savePackData(activePackId, packData);
+      }
+
       const updated = { ...prev, ...newSettings };
       const updatedList = packagesList.map(p => p.id === prev.id ? updated : p);
       setPackagesList(updatedList);
@@ -222,20 +347,75 @@ export function PackProvider({ children }: { children: ReactNode }) {
   const createNewVersion = (versionName: string, copyFromVersion = "empty") => {
     const trimmed = versionName.trim();
     if (!trimmed) return;
+
+    let newContent: InstalledItem[] = [];
+    let newFiles: CustomFileItem[] = [];
+
+    if (activePackId) {
+      const packData = getPackData(activePackId);
+      if (!packData.releases) packData.releases = {};
+
+      // 1. Save current active version first
+      const currentVer = packSettings.currentVersion;
+      packData.releases[currentVer] = {
+        ...(packData.releases[currentVer] || {
+          releaseId: currentVer,
+          minecraft: packSettings.mcVersion,
+          loader: { type: packSettings.loader, version: packSettings.loaderVersion || "latest" },
+        }),
+        installedContent: installedContent,
+        customFiles: customFiles,
+        updatedAt: new Date().toISOString(),
+      };
+
+      // 2. Resolve content for new version based on copyFromVersion
+      if (copyFromVersion && copyFromVersion !== "empty") {
+        if (copyFromVersion === currentVer) {
+          newContent = JSON.parse(JSON.stringify(installedContent || []));
+          newFiles = JSON.parse(JSON.stringify(customFiles || []));
+        } else if (packData.releases[copyFromVersion]) {
+          newContent = JSON.parse(JSON.stringify(packData.releases[copyFromVersion].installedContent || []));
+          newFiles = JSON.parse(JSON.stringify(packData.releases[copyFromVersion].customFiles || []));
+        }
+      }
+
+      // 3. Create and save release for new version
+      packData.releases[trimmed] = {
+        releaseId: trimmed,
+        minecraft: packSettings.mcVersion,
+        loader: {
+          type: packSettings.loader,
+          version: packSettings.loaderVersion || "latest",
+        },
+        installedContent: newContent,
+        customFiles: newFiles,
+        publishedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      packData.installedContent = newContent;
+      packData.customFiles = newFiles;
+
+      savePackData(activePackId, packData);
+    }
+
+    // 4. Update memory states
+    setInstalledContent(newContent);
+    setCustomFiles(newFiles);
+
     setPackSettings(prev => {
       const exists = prev.versions.includes(trimmed);
       const updatedVersions = exists ? prev.versions : [...prev.versions, trimmed];
-      
+
       const updated = {
         ...prev,
         versions: updatedVersions,
-        currentVersion: trimmed
+        currentVersion: trimmed,
       };
-      
+
       const updatedList = packagesList.map(p => p.id === prev.id ? updated : p);
       setPackagesList(updatedList);
       savePackagesIndex(updatedList);
-      
+
       return updated;
     });
   };
@@ -248,10 +428,28 @@ export function PackProvider({ children }: { children: ReactNode }) {
         ? filteredVersions[0] 
         : prev.currentVersion;
 
+      if (activePackId) {
+        const packData = getPackData(activePackId);
+        if (packData.releases && packData.releases[versionToDelete]) {
+          delete packData.releases[versionToDelete];
+        }
+
+        if (prev.currentVersion === versionToDelete) {
+          const nextRelease = packData.releases?.[nextCurrentVersion];
+          const nextContent = nextRelease?.installedContent || [];
+          const nextFiles = nextRelease?.customFiles || [];
+          packData.installedContent = nextContent;
+          packData.customFiles = nextFiles;
+          setInstalledContent(nextContent);
+          setCustomFiles(nextFiles);
+        }
+        savePackData(activePackId, packData);
+      }
+
       const updated = {
         ...prev,
         versions: filteredVersions,
-        currentVersion: nextCurrentVersion
+        currentVersion: nextCurrentVersion,
       };
 
       const updatedList = packagesList.map(p => p.id === prev.id ? updated : p);
@@ -271,6 +469,22 @@ export function PackProvider({ children }: { children: ReactNode }) {
       if (activePackId) {
         const packData = getPackData(activePackId);
         packData.installedContent = updated;
+        const curVer = packSettings.currentVersion || "v1.0.0";
+        if (!packData.releases) packData.releases = {};
+        if (!packData.releases[curVer]) {
+          packData.releases[curVer] = {
+            releaseId: curVer,
+            minecraft: packSettings.mcVersion,
+            loader: { type: packSettings.loader, version: packSettings.loaderVersion || "latest" },
+            installedContent: updated,
+            customFiles: customFiles,
+            publishedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+        } else {
+          packData.releases[curVer].installedContent = updated;
+          packData.releases[curVer].updatedAt = new Date().toISOString();
+        }
         savePackData(activePackId, packData);
       }
       return updated;
@@ -283,6 +497,12 @@ export function PackProvider({ children }: { children: ReactNode }) {
       if (activePackId) {
         const packData = getPackData(activePackId);
         packData.installedContent = updated;
+        const curVer = packSettings.currentVersion || "v1.0.0";
+        if (!packData.releases) packData.releases = {};
+        if (packData.releases[curVer]) {
+          packData.releases[curVer].installedContent = updated;
+          packData.releases[curVer].updatedAt = new Date().toISOString();
+        }
         savePackData(activePackId, packData);
       }
       return updated;
@@ -295,6 +515,22 @@ export function PackProvider({ children }: { children: ReactNode }) {
       if (activePackId) {
         const packData = getPackData(activePackId);
         packData.customFiles = updated;
+        const curVer = packSettings.currentVersion || "v1.0.0";
+        if (!packData.releases) packData.releases = {};
+        if (!packData.releases[curVer]) {
+          packData.releases[curVer] = {
+            releaseId: curVer,
+            minecraft: packSettings.mcVersion,
+            loader: { type: packSettings.loader, version: packSettings.loaderVersion || "latest" },
+            installedContent: installedContent,
+            customFiles: updated,
+            publishedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+        } else {
+          packData.releases[curVer].customFiles = updated;
+          packData.releases[curVer].updatedAt = new Date().toISOString();
+        }
         savePackData(activePackId, packData);
       }
       return updated;
@@ -307,6 +543,12 @@ export function PackProvider({ children }: { children: ReactNode }) {
       if (activePackId) {
         const packData = getPackData(activePackId);
         packData.customFiles = updated;
+        const curVer = packSettings.currentVersion || "v1.0.0";
+        if (!packData.releases) packData.releases = {};
+        if (packData.releases[curVer]) {
+          packData.releases[curVer].customFiles = updated;
+          packData.releases[curVer].updatedAt = new Date().toISOString();
+        }
         savePackData(activePackId, packData);
       }
       return updated;
@@ -319,6 +561,12 @@ export function PackProvider({ children }: { children: ReactNode }) {
       if (activePackId) {
         const packData = getPackData(activePackId);
         packData.customFiles = updated;
+        const curVer = packSettings.currentVersion || "v1.0.0";
+        if (!packData.releases) packData.releases = {};
+        if (packData.releases[curVer]) {
+          packData.releases[curVer].customFiles = updated;
+          packData.releases[curVer].updatedAt = new Date().toISOString();
+        }
         savePackData(activePackId, packData);
       }
       return updated;

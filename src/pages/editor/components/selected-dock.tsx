@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePack } from "@/context/pack-context";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ExportModpkgDialog } from "@/components/views/export-modpkg-dialog";
 
 export type ContentType = "mod" | "resourcepack" | "shader" | "datapack" | "world" | "override" | string;
 export type ProviderType = "modrinth" | "curseforge" | "custom" | "local_override" | "all";
@@ -15,31 +16,10 @@ export type ProviderType = "modrinth" | "curseforge" | "custom" | "local_overrid
 export default function SelectedDock() {
   const { packSettings, installedContent, customFiles, removeContent } = usePack();
   const [isHovered, setIsHovered] = useState<boolean>(false);
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState<boolean>(false);
 
   const handleExportModpack = () => {
-    const exportData = {
-      id: packSettings.id,
-      name: packSettings.name,
-      version: packSettings.currentVersion,
-      mcVersion: packSettings.mcVersion,
-      loader: packSettings.loader,
-      description: packSettings.description,
-      installedContent,
-      customFiles,
-      exportedAt: new Date().toISOString(),
-      generator: "MODPKG Web",
-    };
-
-    const jsonContent = JSON.stringify(exportData, null, 2);
-    const blob = new Blob([jsonContent], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${packSettings.id || "modpkg"}-${packSettings.currentVersion || "v1.0.0"}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    setIsExportDialogOpen(true);
   };
   
   // Persist pinned state in localStorage
@@ -70,7 +50,7 @@ export default function SelectedDock() {
     removeContent(id);
   };
 
-  const isExpanded = isHovered || isPinned;
+  const isExpanded = isHovered || isPinned || isExportDialogOpen;
 
   // Breakdown statistics
   const modsCount = installedContent.filter(i => i.contentType === "mod").length;
@@ -348,7 +328,7 @@ export default function SelectedDock() {
       <div className={`bg-black shrink-0 border-t border-[#1E1E1E] w-full sticky bottom-0 z-50 transition-all ${isExpanded ? "pl-4 pr-6 py-4" : "p-4 flex justify-center"}`}>
         <button 
           onClick={handleExportModpack}
-          title="Download Modpack configuration"
+          title="Export MODPKG"
           className={`h-12 flex items-center justify-center bg-[#FE5000] hover:bg-[#E04700] text-white font-semibold rounded-xl transition-all outline outline-2 outline-transparent hover:outline-[#FE5000] hover:outline-offset-[3px] active:scale-95 duration-200 overflow-hidden cursor-pointer ${isExpanded ? "w-full gap-2" : "w-12 shrink-0"}`}
         >
           <Download className="w-5 h-5 flex-shrink-0" />
@@ -358,14 +338,19 @@ export default function SelectedDock() {
                 initial={{ opacity: 0, width: 0, marginLeft: 0 }}
                 animate={{ opacity: 1, width: "auto", marginLeft: 8 }}
                 exit={{ opacity: 0, width: 0, marginLeft: 0 }}
-                className="whitespace-nowrap"
+                className="whitespace-nowrap font-bold"
               >
-                Download Modpack
+                Export MODPKG
               </motion.span>
             )}
           </AnimatePresence>
         </button>
       </div>
+
+      <ExportModpkgDialog
+        isOpen={isExportDialogOpen}
+        onClose={() => setIsExportDialogOpen(false)}
+      />
 
     </motion.aside>
   );

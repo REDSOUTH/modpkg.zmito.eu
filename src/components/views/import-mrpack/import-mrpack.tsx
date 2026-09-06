@@ -78,12 +78,20 @@ export default function ImportMrpackInput() {
     }
   };
   
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+
   const handleDragOver = (e: DragEvent<HTMLLabelElement>) => {
     e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
   };
   
   const handleDrop = (e: DragEvent<HTMLLabelElement>) => {
     e.preventDefault();
+    setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       if (fileInputRef.current) {
         fileInputRef.current.files = e.dataTransfer.files;
@@ -95,15 +103,23 @@ export default function ImportMrpackInput() {
   return (
     <>
       <label
-        className="h-option"
+        className={`h-option group relative flex flex-col items-center justify-center p-6 text-center transition-all ${
+          isDragging ? "!outline-[#45D66F] !outline-offset-4 bg-[#45D66F]/10" : ""
+        }`}
         htmlFor="input-mrpack"
         onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        {svg.import}
-        <p>Import .mrpack</p>
+        <img src="/social/modrinth.svg" alt="Modrinth" className="w-12 h-12 mb-3 object-contain select-none pointer-events-none group-hover:scale-105 transition-all duration-300" draggable={false} />
+        <p className="text-xl font-bold text-white tracking-wide text-center w-full group-hover:text-white transition-colors">Import .mrpack</p>
+        <p className="text-xs text-white/40 mt-1 max-w-[210px] leading-snug text-center mx-auto">Unpack & convert Modrinth format packages</p>
+        <div className="flex items-center justify-center gap-1.5 mt-2">
+          <span className="px-2 py-0.5 rounded-md bg-[#45D66F]/15 text-[#45D66F] text-[10px] font-medium">Modrinth</span>
+          <span className="px-2 py-0.5 rounded-md bg-white/5 text-white/50 text-[10px] font-medium">Auto-Convert</span>
+        </div>
       </label>
-      <input type="file" name="" id="input-mrpack" accept="application/MRPACK" hidden ref={fileInputRef} onChange={handleFileSelect} />
+      <input type="file" name="" id="input-mrpack" accept="application/MRPACK,.mrpack" hidden ref={fileInputRef} onChange={handleFileSelect} />
       <ImportMrpackDialog
         openDialogState={openDialogState}
         packName={packName}

@@ -48,16 +48,19 @@ export default function EditorPage() {
     document.title = "MODPKG — Editor";
   }, []);
 
-  // Handle package imported from JSON file
+  // Handle package imported from JSON file (.modpkg.json or legacy package.json)
   useEffect(() => {
     const parsed = (location.state as any)?.parsedJson;
     if (parsed) {
-      const packName = parsed.name || "Imported Modpack";
-      const mcVersion = parsed.mcVersion || parsed.minecraftVersion || "1.20.4";
-      const loader = parsed.loader || "fabric";
-      const id = parsed.id || `modpkg-import-${Math.random().toString(36).substring(2, 7)}`;
-      const currentVersion = parsed.currentVersion || parsed.version || "v1.0.0";
-      const description = parsed.description || "Imported package";
+      const metadata = parsed.metadata || {};
+      const dependencies = parsed.dependencies || {};
+
+      const packName = metadata.name || parsed.name || "Imported Modpack";
+      const mcVersion = dependencies.minecraft || parsed.mcVersion || parsed.minecraftVersion || "1.20.4";
+      const loader = (typeof dependencies.loader === "object" ? dependencies.loader.type : dependencies.loader) || parsed.loader || "fabric";
+      const id = metadata.projectId || parsed.id || `modpkg-import-${Math.random().toString(36).substring(2, 7)}`;
+      const currentVersion = metadata.versionId || parsed.currentVersion || parsed.version || "v1.0.0";
+      const description = metadata.description || parsed.description || "Imported package";
 
       createPack({
         id,
@@ -68,29 +71,87 @@ export default function EditorPage() {
         description,
       });
 
-      // Import installed content if available
-      if (Array.isArray(parsed.installedContent)) {
+      // 1. Process content (official schema `content` or fallback `mods`)
+      const contentRoot = parsed.content || parsed.mods;
+      if (contentRoot) {
+        if (Array.isArray(contentRoot.modrinth)) {
+          contentRoot.modrinth.forEach((m: any) => {
+            if (m && m.id) {
+              addContent({
+                id: m.id,
+                name: m.name || m.id,
+                provider: "modrinth",
+                iconUrl: m.iconUrl || "",
+                versionId: m.versionId || "latest",
+                versionName: m.versionName || m.versionId || "Latest",
+                contentType: m.type || m.contentType || "mod",
+                downloadUrl: m.url,
+              });
+            }
+          });
+        }
+        if (Array.isArray(contentRoot.curseforge)) {
+          contentRoot.curseforge.forEach((m: any) => {
+            if (m && m.id) {
+              addContent({
+                id: String(m.id),
+                name: m.name || String(m.id),
+                provider: "curseforge",
+                iconUrl: m.iconUrl || "",
+                versionId: String(m.fileId || "latest"),
+                versionName: m.fileName || "Latest",
+                contentType: m.type || m.contentType || "mod",
+                downloadUrl: m.url,
+              });
+            }
+          });
+        }
+        const customItems = contentRoot.custom || contentRoot.directUrls;
+        if (Array.isArray(customItems)) {
+          customItems.forEach((m: any) => {
+            if (m && (m.url || m.name)) {
+              addContent({
+                id: m.id || `custom-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
+                name: m.name || m.fileName || "Custom Resource",
+                provider: "custom",
+                iconUrl: m.iconUrl || "",
+                versionId: "custom",
+                versionName: "Custom URL",
+                contentType: m.type || m.contentType || "mod",
+                downloadUrl: m.url,
+                targetPath: m.targetPath,
+              });
+            }
+          });
+        }
+      } else if (Array.isArray(parsed.installedContent)) {
+        // Fallback for direct installedContent array
         parsed.installedContent.forEach((item: any) => {
           if (item && item.id) addContent(item);
         });
-      } else if (parsed.mods && Array.isArray(parsed.mods.modrinth)) {
-        parsed.mods.modrinth.forEach((item: any) => {
-          if (item && item.id) {
-            addContent({
-              id: item.id,
-              name: item.name || item.id,
-              provider: "modrinth",
-              iconUrl: item.iconUrl || "",
-              versionId: item.versionId || "latest",
-              versionName: item.versionName || "Latest",
-              contentType: item.contentType || "mod",
+      }
+
+      // 2. Process official schema overrides
+      if (Array.isArray(parsed.overrides)) {
+        parsed.overrides.forEach((o: any) => {
+          if (o && o.path) {
+            const cleanPath = o.path.startsWith("/") ? o.path : `/${o.path}`;
+            const filename = cleanPath.split("/").pop() || "options.txt";
+            addCustomFile({
+              id: `file-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
+              name: filename,
+              targetPath: cleanPath,
+              type: o.fileType || (filename.endsWith(".json") ? "data" : filename.endsWith(".js") ? "script" : "config"),
+              content: o.type === "text" || !o.type ? o.content : undefined,
+              sourceUrl: o.type === "url" ? o.url : undefined,
+              storageLocation: "local_browser",
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
             });
           }
         });
-      }
-
-      // Import custom files if available
-      if (Array.isArray(parsed.customFiles)) {
+      } else if (Array.isArray(parsed.customFiles)) {
+        // Fallback for customFiles array
         parsed.customFiles.forEach((file: any) => {
           if (file && file.id) addCustomFile(file);
         });

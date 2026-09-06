@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Check, X, FilePlus, Copy, Trash2, Settings, Package } from "lucide-react";
 import { useState, useEffect, useRef, ChangeEvent, KeyboardEvent } from "react";
 import { usePack } from "@/context/pack-context";
+import { getPackData } from "@/lib/storage/package-storage";
 import { PackSettingsModalProps, FieldLabelProps } from "@/types";
 
 function FieldLabel({ children }: FieldLabelProps) {
@@ -126,6 +127,18 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
       });
     }
     onClose();
+  };
+
+  const handleVersionChange = (newVer: string) => {
+    setCurrentVersion(newVer);
+    if (!isCreateMode && packSettings.id) {
+      const packData = getPackData(packSettings.id);
+      if (packData?.releases?.[newVer]) {
+        const rel = packData.releases[newVer];
+        if (rel.minecraft) setMcVersion(rel.minecraft);
+        if (rel.loader?.type) setLoader(rel.loader.type);
+      }
+    }
   };
 
   const handleConfirmNewVersion = () => {
@@ -309,7 +322,7 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  <Select value={currentVersion} onValueChange={setCurrentVersion}>
+                  <Select value={currentVersion} onValueChange={handleVersionChange}>
                     <SelectTrigger 
                       ref={versionTriggerRef}
                       className="bg-[#1E1E1E] border-2 border-[#1E1E1E] text-white focus:ring-0 focus:border-[#FE5000] h-11 rounded-xl flex-1"

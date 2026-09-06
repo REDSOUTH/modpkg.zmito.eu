@@ -3,20 +3,15 @@ import { User, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import modpkgLogo from "/banner.svg";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 export default function Header() {
   const location = useLocation();
   const isHome = location.pathname === "/";
 
-  // Measure the rendered logo width once to compute nav offset
-  const logoMeasureRef = useRef<HTMLImageElement>(null);
-  const [navOffset, setNavOffset] = useState<number>(0);
-  useEffect(() => {
-    if (logoMeasureRef.current) {
-      setNavOffset(logoMeasureRef.current.offsetWidth + 24);
-    }
-  }, []);
+  // Distance from left edge for the nav when the logo is visible in the header
+  // Logo aspect ratio is 586:200 with height 36px (h-9) -> width ~105.5px + 24px gap = ~130px
+  const LOGO_NAV_OFFSET = 130;
 
   // Disable pointer events on the logo during the spring animation
   const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
@@ -40,16 +35,9 @@ export default function Header() {
       <div className="flex h-16 items-center justify-between px-6 max-w-[1920px] mx-auto w-full">
 
         <div className="relative flex items-center h-full">
-          <img
-            ref={logoMeasureRef}
-            src={modpkgLogo}
-            className="h-9 invisible absolute pointer-events-none select-none"
-            aria-hidden="true"
-            alt="Measure logo"
-          />
-
           <motion.div
             className={`absolute inset-y-0 left-0 flex items-center ${isHome || isTransitioning ? "pointer-events-none" : ""}`}
+            initial={false}
             animate={{ opacity: isHome ? 0 : 1 }}
             transition={{ duration: 0.25 }}
           >
@@ -62,14 +50,15 @@ export default function Header() {
                 src={modpkgLogo}
                 alt="MODPKG Logo"
                 draggable="false"
-                className="h-9 select-none"
+                className="h-9 w-auto aspect-[586/200] select-none"
                 transition={{ type: "spring", stiffness: 180, damping: 26 }}
               />
             </Link>
           </motion.div>
 
           <motion.nav
-            animate={{ paddingLeft: isHome ? 0 : navOffset }}
+            initial={false}
+            animate={{ paddingLeft: isHome ? 0 : LOGO_NAV_OFFSET }}
             transition={{ type: "spring", stiffness: 200, damping: 30 }}
             className="hidden md:flex items-center gap-6"
           >

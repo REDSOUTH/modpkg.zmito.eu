@@ -1,4 +1,4 @@
-import { PackSettings, InstalledItem, CustomContentItem, CustomFileItem } from "@/types";
+import { PackSettings, InstalledItem, CustomContentItem, CustomFileItem, PackReleaseData } from "@/types";
 
 export const PACKAGES_INDEX_KEY = "modpkg_packages_index";
 export const GLOBAL_CUSTOM_CONTENT_KEY = "modpkg_custom_content_global";
@@ -9,6 +9,7 @@ export interface PackExclusiveData {
   installedContent: InstalledItem[];
   customContent: CustomContentItem[];
   customFiles: CustomFileItem[];
+  releases?: Record<string, PackReleaseData>;
 }
 
 export function getPackagesIndex(): PackSettings[] {
@@ -39,6 +40,7 @@ export function getPackData(packId: string): PackExclusiveData {
         installedContent: parsed.installedContent || [],
         customContent: parsed.customContent || [],
         customFiles: parsed.customFiles || [],
+        releases: parsed.releases || {},
       };
     }
   } catch (e) {
@@ -49,6 +51,7 @@ export function getPackData(packId: string): PackExclusiveData {
     installedContent: [],
     customContent: [],
     customFiles: [],
+    releases: {},
   };
 }
 

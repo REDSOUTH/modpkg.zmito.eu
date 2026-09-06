@@ -4,6 +4,8 @@ import { LayoutGroup, AnimatePresence, motion } from "framer-motion";
 import Header from "./header";
 import Footer from "./footer";
 import { PackProvider } from "@/context/pack-context";
+import { Toaster } from "@/components/ui/sonner";
+import { ErrorBoundary } from "@/components/common/app-error-boundary";
 
 export default function RootLayout() {
   const location = useLocation();
@@ -20,7 +22,9 @@ export default function RootLayout() {
         <div className="flex flex-col bg-black text-white font-['Poppins'] min-h-[100dvh]">
         <Header />
         <main className="flex-1 flex flex-col relative">
-          <Outlet />
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
 
           <AnimatePresence>
             {isHome && (
@@ -32,7 +36,7 @@ export default function RootLayout() {
                   top: 0,
                   left: 0,
                   right: 0,
-                  bottom: 0,
+                  height: "calc(100vh - 65px)",
                   zIndex: 10,
                   display: "flex",
                   flexDirection: "column",
@@ -47,16 +51,17 @@ export default function RootLayout() {
                   src="/banner.svg"
                   alt="MODPKG Banner Logo"
                   draggable="false"
-                  className="select-none"
-                  style={{ height: 160, marginBottom: "6dvh" }}
+                  className="select-none h-[150px] max-[1139px]:h-[100px]"
+                  style={{ marginBottom: 44 }}
                   transition={{ type: "spring", stiffness: 180, damping: 26 }}
                 />
-                <div style={{ width: 1100, height: 565, flexShrink: 0 }} />
+                <div style={{ width: 1140, height: 500, flexShrink: 0 }} />
               </motion.div>
             )}
           </AnimatePresence>
         </main>
         <Footer />
+        <Toaster />
       </div>
     </LayoutGroup>
     </PackProvider>

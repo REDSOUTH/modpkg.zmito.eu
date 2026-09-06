@@ -48,7 +48,7 @@ export function CustomContentSidebar({
 }: CustomContentSidebarProps) {
 
   const storageOptions: IconTabOption[] = [
-    { id: "all", label: "All Storage", icon: <Layers className="w-4 h-4 text-white" /> },
+    { id: "all", label: "All Storage", icon: <Layers className="w-4 h-4 text-foreground" /> },
     { id: "local", label: "Local Browser", icon: <HardDrive className="w-4 h-4 text-blue-400" />, activeColorClass: "text-blue-400" },
     { id: "cloud", label: "REDSOUTH Account", icon: <img src="/redsouth/logo-colored.svg" alt="REDSOUTH Account" className="w-4 h-4 object-contain" />, activeColorClass: "text-[#FE5000]" },
   ];
@@ -104,7 +104,7 @@ export function CustomContentSidebar({
 
   return (
     <aside
-      className="w-80 shrink-0 border-r border-[#1E1E1E] bg-black flex flex-col z-30 overflow-hidden sticky"
+      className="w-80 shrink-0 border-r border-border bg-card flex flex-col z-30 overflow-hidden sticky"
       style={{ top: stickyTop, height: `calc(100vh - ${stickyTop}px)` }}
     >
       
@@ -119,7 +119,7 @@ export function CustomContentSidebar({
       </div>
 
       <div className="px-5 shrink-0">
-        <Separator className="bg-[#1E1E1E] w-full" />
+        <Separator className="bg-border w-full" />
       </div>
 
       {/* Scrollable Area */}
@@ -144,7 +144,7 @@ export function CustomContentSidebar({
           {/* Loader Filter Badges (Only available ones with count > 0) */}
           {availableLoaders.length > 0 && (
             <div className="flex flex-col gap-2.5">
-              <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider pl-1">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
                 LOADER
               </h3>
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -153,7 +153,7 @@ export function CustomContentSidebar({
                   className={`text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer ${
                     selectedLoader === "all"
                       ? "bg-[#FE5000] text-white shadow-md shadow-[#FE5000]/20"
-                      : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
                   }`}
                 >
                   All ({counts.all})
@@ -167,7 +167,7 @@ export function CustomContentSidebar({
                       className={`text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer ${
                         isActive
                           ? "bg-[#FE5000] text-white shadow-md shadow-[#FE5000]/20"
-                          : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
                       }`}
                     >
                       {ldr.label} ({ldr.count})
@@ -181,7 +181,7 @@ export function CustomContentSidebar({
           {/* Minecraft Version Filter Badges (Only available ones with count > 0) */}
           {availableMcVersions.length > 0 && (
             <div className="flex flex-col gap-2.5">
-              <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider pl-1">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
                 MINECRAFT VERSION
               </h3>
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -190,7 +190,7 @@ export function CustomContentSidebar({
                   className={`text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer ${
                     selectedMcVersion === "all"
                       ? "bg-[#FE5000] text-white shadow-md shadow-[#FE5000]/20"
-                      : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
                   }`}
                 >
                   All ({counts.all})
@@ -204,7 +204,7 @@ export function CustomContentSidebar({
                       className={`text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer ${
                         isActive
                           ? "bg-[#FE5000] text-white shadow-md shadow-[#FE5000]/20"
-                          : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
                       }`}
                     >
                       {ver.label} ({ver.count})

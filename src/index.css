@@ -6,43 +6,230 @@
 @layer base {
   :root {
     /* Original variables and properties */
-    background-color: black;
-    color: white;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
     font-family: "Poppins", serif;
     font-weight: 400;
     font-style: normal;
     --enfasis-color: #FE5000;
 
-    /* Shadcn UI Dark Mode Base Variables */
+    /* Base theme (Full black background with REDSOUTH Zinc grises) */
     --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
-    --card: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
+    --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
     --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --border: 0 0% 12%;
+    --input: 240 3.7% 15.9%;
+    --ring: 19 100% 50%;
     --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 12%;
+    --input: 240 3.7% 15.9%;
+    --ring: 19 100% 50%;
+  }
+
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 19 100% 50%;
   }
 
   * {
     @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Form controls, inputs, selects, comboboxes, and checkboxes default to 2px borders */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+  textarea,
+  select,
+  [role="combobox"],
+  [data-radix-select-trigger] {
+    border-width: 2px !important;
+  }
+
+  [role="checkbox"],
+  button[role="checkbox"] {
+    border-width: 2px !important;
+  }
+
+  /* Ensure outline-color is always orange and never defaults to white currentColor */
+  *, *::before, *::after {
+    outline-color: #FE5000;
+  }
+
+  /* Global keyboard Tab selection indicator: single, crisp 2px orange (#FE5000) */
+  :focus:not(:focus-visible) {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  :focus-visible {
+    outline: 2px solid #FE5000 !important;
+    outline-offset: 0px !important;
+    transition: none !important;
+  }
+
+  /* Form controls, checkboxes, and bordered elements: focus directly colors their own 2px border orange (no floating outer outline, no double border) */
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  [role="combobox"]:focus-visible,
+  [data-radix-select-trigger]:focus-visible,
+  [role="checkbox"]:focus-visible,
+  button[class*="border"]:not([class*="border-0"]):focus-visible,
+  button[class*="border-2"]:focus-visible {
+    border-color: #FE5000 !important;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Scoped dialog emphasis colors: Custom Content (Blue) */
+  .dialog-accent-blue input:focus,
+  .dialog-accent-blue input:focus-visible,
+  .dialog-accent-blue textarea:focus,
+  .dialog-accent-blue textarea:focus-visible,
+  .dialog-accent-blue select:focus,
+  .dialog-accent-blue select:focus-visible,
+  .dialog-accent-blue [role="combobox"]:focus,
+  .dialog-accent-blue [role="combobox"]:focus-visible,
+  .dialog-accent-blue [data-radix-select-trigger]:focus,
+  .dialog-accent-blue [data-radix-select-trigger]:focus-visible,
+  .dialog-accent-blue [data-radix-select-trigger][data-state="open"],
+  .dialog-accent-blue [role="checkbox"]:focus-visible,
+  .dialog-accent-blue button[class*="border"]:not([class*="border-0"]):focus-visible,
+  .dialog-accent-blue button[class*="border-2"]:focus-visible {
+    border-color: #3b82f6 !important;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  .dialog-accent-blue :focus-visible {
+    outline-color: #3b82f6 !important;
+  }
+
+  .dialog-accent-blue [role="checkbox"][data-state="checked"] {
+    background-color: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+  }
+
+  .dialog-accent-blue input,
+  .dialog-accent-blue textarea {
+    caret-color: #3b82f6;
+  }
+
+  /* Scoped dialog emphasis colors: Custom Files (Amber) */
+  .dialog-accent-amber input:focus,
+  .dialog-accent-amber input:focus-visible,
+  .dialog-accent-amber textarea:focus,
+  .dialog-accent-amber textarea:focus-visible,
+  .dialog-accent-amber select:focus,
+  .dialog-accent-amber select:focus-visible,
+  .dialog-accent-amber [role="combobox"]:focus,
+  .dialog-accent-amber [role="combobox"]:focus-visible,
+  .dialog-accent-amber [data-radix-select-trigger]:focus,
+  .dialog-accent-amber [data-radix-select-trigger]:focus-visible,
+  .dialog-accent-amber [data-radix-select-trigger][data-state="open"],
+  .dialog-accent-amber [role="checkbox"]:focus-visible,
+  .dialog-accent-amber button[class*="border"]:not([class*="border-0"]):focus-visible,
+  .dialog-accent-amber button[class*="border-2"]:focus-visible {
+    border-color: #fbbf24 !important;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  .dialog-accent-amber :focus-visible {
+    outline-color: #fbbf24 !important;
+  }
+
+  .dialog-accent-amber [role="checkbox"][data-state="checked"] {
+    background-color: #fbbf24 !important;
+    border-color: #fbbf24 !important;
+    color: #000000 !important;
+  }
+
+  .dialog-accent-amber input,
+  .dialog-accent-amber textarea {
+    caret-color: #fbbf24;
+  }
+
+  /* Dropdown containers and options: never show focus outline or hover border */
+  [role="listbox"],
+  [role="menu"],
+  [role="option"],
+  [role="menuitem"],
+  [role="menuitemcheckbox"],
+  [role="menuitemradio"],
+  [data-radix-select-content],
+  [data-radix-select-item],
+  [data-radix-dropdown-menu-content],
+  [data-radix-dropdown-menu-item] {
+    outline: none !important;
+  }
+
+  [role="option"]:focus,
+  [role="option"]:focus-visible,
+  [role="menuitem"]:focus,
+  [role="menuitem"]:focus-visible,
+  [role="menuitemcheckbox"]:focus,
+  [role="menuitemcheckbox"]:focus-visible,
+  [role="menuitemradio"]:focus,
+  [role="menuitemradio"]:focus-visible,
+  [data-radix-select-item]:focus,
+  [data-radix-select-item]:focus-visible,
+  [data-radix-dropdown-menu-item]:focus,
+  [data-radix-dropdown-menu-item]:focus-visible {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
   }
 }
 
@@ -59,7 +246,6 @@ button, input, select, label {
   font-family: "Poppins", serif;
   font-weight: 400;
   font-style: normal;
-  color: white;
 }
 
 button {
@@ -72,15 +258,24 @@ button {
     height: 8px;
   }
   &::-webkit-scrollbar-track {
-    background: #333333;
+    background: #18181b;
     border-radius: 0px;
   }
   &::-webkit-scrollbar-thumb {
-    background: white;
+    background: #3f3f46;
     border-radius: 10px;
   }
   &::-webkit-scrollbar-corner {
     background: transparent;
+  }
+}
+
+.light :root, .light .custom-scrollbar {
+  &::-webkit-scrollbar-track {
+    background: #f4f4f5;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #d4d4d8;
   }
 }
 
@@ -95,6 +290,7 @@ button {
   justify-content: center;
   border-radius: 14px;
   background-color: #1E1E1E;
+  border: 1px solid transparent;
   color: white;
   font-weight: 500;
   outline: 3px solid transparent;
@@ -117,6 +313,31 @@ button {
   }
 }
 
+/* Light mode adaptations */
+.light .h-option {
+  background-color: #f4f4f5;
+  color: #18181b;
+  border-color: #e4e4e7;
+}
+
+.light .h-option:hover {
+  background-color: #edeef0;
+}
+
+/* Light mode component helper classes */
+.light [data-theme-card] {
+  background-color: #ffffff !important;
+  color: #09090b !important;
+  border: 1px solid #e4e4e7 !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+}
+
+.light [data-theme-dialog] {
+  background-color: #ffffff !important;
+  color: #09090b !important;
+  border-color: #e4e4e7 !important;
+}
+
 @media (max-width: 1139px) {
   .h-option {
     padding: 20px;
@@ -134,4 +355,24 @@ button {
   :root {
     zoom: 0.8;
   }
+}
+
+/* Custom scrollbar utility for custom scroll areas */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(150, 150, 150, 0.3) transparent;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(150, 150, 150, 0.3);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(150, 150, 150, 0.5);
 }

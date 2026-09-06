@@ -252,7 +252,7 @@ export function PackageFileTree({
     if (["zip", "tar", "gz", "jar"].includes(ext || "")) {
       return <Archive className="w-3.5 h-3.5 text-amber-400 shrink-0" />;
     }
-    return <File className="w-3.5 h-3.5 text-white/50 shrink-0" />;
+    return <File className="w-3.5 h-3.5 text-muted-foreground shrink-0" />;
   };
 
   // Recursive tree node renderer
@@ -268,8 +268,8 @@ export function PackageFileTree({
             className={cn(
               "group flex items-center justify-between px-1.5 py-1 rounded-lg transition-all cursor-pointer select-none text-xs min-w-0",
               isSelected
-                ? "bg-[#1E1E1E] text-amber-400 border border-amber-400/40 shadow-sm"
-                : "text-white/80 hover:bg-[#1E1E1E] hover:text-white border border-transparent"
+                ? "bg-muted text-amber-500 border border-amber-500/40 shadow-sm"
+                : "text-muted-foreground hover:bg-muted/60 hover:text-foreground border border-transparent"
             )}
             onClick={() => {
               if (isFolder) {
@@ -283,14 +283,14 @@ export function PackageFileTree({
               {isFolder ? (
                 <>
                   {isExpanded ? (
-                    <ChevronDown className="w-3 h-3 text-white/40 shrink-0" />
+                    <ChevronDown className="w-3 h-3 text-muted-foreground shrink-0" />
                   ) : (
-                    <ChevronRight className="w-3 h-3 text-white/40 shrink-0" />
+                    <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />
                   )}
                   {isExpanded ? (
-                    <FolderOpen className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <FolderOpen className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                   ) : (
-                    <Folder className="w-3.5 h-3.5 text-amber-400/80 shrink-0" />
+                    <Folder className="w-3.5 h-3.5 text-amber-500/80 shrink-0" />
                   )}
                 </>
               ) : (
@@ -303,7 +303,7 @@ export function PackageFileTree({
               <span 
                 className={cn(
                   "truncate font-medium min-w-0",
-                  isFolder ? "text-white font-semibold" : isSelected ? "text-amber-400 font-semibold" : "text-white/80"
+                  isFolder ? "text-foreground font-semibold" : isSelected ? "text-amber-500 font-semibold" : "text-foreground/90"
                 )}
                 title={node.name}
               >
@@ -325,7 +325,7 @@ export function PackageFileTree({
                   });
                 }}
                 title={isFolder ? "Delete folder" : "Delete file"}
-                className="p-1 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors shrink-0"
+                className="p-1 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors shrink-0"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -334,7 +334,7 @@ export function PackageFileTree({
 
           {/* Children if folder is expanded */}
           {isFolder && isExpanded && node.children && node.children.length > 0 && (
-            <div className="flex flex-col mt-0.5 min-w-0 ml-[12px] pl-1.5 border-l border-white/10 hover:border-white/20 transition-colors">
+            <div className="flex flex-col mt-0.5 min-w-0 ml-[12px] pl-1.5 border-l border-border hover:border-border/80 transition-colors">
               {renderTreeNodes(node.children, level + 1)}
             </div>
           )}
@@ -346,9 +346,9 @@ export function PackageFileTree({
   return (
     <div className="flex flex-col gap-4 w-full min-w-0 overflow-hidden">
       {/* Top Toolbar */}
-      <div className="flex flex-col gap-2.5 bg-[#1E1E1E] p-3.5 rounded-2xl">
+      <div className="flex flex-col gap-2.5 bg-muted dark:bg-[#1E1E1E] p-3.5 rounded-2xl border border-border">
         <div className="flex items-center justify-between pl-1 pr-1">
-          <span className="text-[11px] font-bold text-white/40 uppercase tracking-widest">
+          <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
             Custom Files
           </span>
         </div>
@@ -366,9 +366,9 @@ export function PackageFileTree({
           <Button
             variant="ghost"
             onClick={() => setIsImportDialogOpen(true)}
-            className="w-full h-9 text-xs font-semibold text-white/80 hover:text-amber-400 hover:bg-white/5 rounded-xl px-3 gap-2 border border-white/5 transition-all cursor-pointer"
+            className="w-full h-9 text-xs font-semibold text-muted-foreground hover:text-amber-500 hover:bg-muted rounded-xl px-3 gap-2 border border-border transition-all cursor-pointer"
           >
-            <Download className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <Download className="w-3.5 h-3.5 text-amber-500 shrink-0" />
             <span>Import from My Resources</span>
           </Button>
         </div>
@@ -384,25 +384,25 @@ export function PackageFileTree({
 
       {/* Directory Explorer Header */}
       <div className="flex items-center justify-between pl-1 pr-1 pt-1">
-        <span className="text-[11px] font-bold text-white/40 uppercase tracking-widest">
+        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
           Directory Explorer
         </span>
-        <span className="text-[10px] text-white/40 font-mono">/</span>
+        <span className="text-[10px] text-muted-foreground font-mono">/</span>
       </div>
 
       {/* Tree Node Hierarchy */}
       <div className="flex flex-col gap-0.5 w-full min-w-0 overflow-hidden">
         {isSearching && filteredTree.length === 0 ? (
-          <div className="text-center py-8 text-xs text-white/40 flex flex-col items-center gap-2">
-            <Search className="w-5 h-5 text-white/20" />
+          <div className="text-center py-8 text-xs text-muted-foreground flex flex-col items-center gap-2">
+            <Search className="w-5 h-5 text-muted-foreground/40" />
             <span>No files found</span>
-            <span className="text-[11px] text-white/30">No files or folders match "{searchQuery}"</span>
+            <span className="text-[11px] text-muted-foreground/60">No files or folders match "{searchQuery}"</span>
           </div>
         ) : tree.length === 0 ? (
-          <div className="text-center py-8 text-xs text-white/40 flex flex-col items-center gap-2">
-            <Folder className="w-6 h-6 text-white/20" />
+          <div className="text-center py-8 text-xs text-muted-foreground flex flex-col items-center gap-2">
+            <Folder className="w-6 h-6 text-muted-foreground/40" />
             <span>Directory is empty</span>
-            <span className="text-[11px] text-white/30">Add a file or import from My Resources to build your structure.</span>
+            <span className="text-[11px] text-muted-foreground/60">Add a file or import from My Resources to build your structure.</span>
           </div>
         ) : (
           renderTreeNodes(filteredTree)

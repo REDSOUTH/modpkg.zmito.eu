@@ -9,6 +9,7 @@ export function generateModpkgExport(packSettings, installedContent, customFiles
       versionName: i.versionName || undefined,
       fileName: i.fileName || (i.contentType === "resourcepack" ? `${i.name}.zip` : `${i.name}.jar`),
       url: i.downloadUrl || undefined,
+      iconUrl: i.iconUrl || undefined,
       hashes: i.hashes || undefined,
     }));
 
@@ -21,6 +22,7 @@ export function generateModpkgExport(packSettings, installedContent, customFiles
       fileId: i.versionId || "latest",
       fileName: i.fileName || (i.contentType === "resourcepack" ? `${i.name}.zip` : `${i.name}.jar`),
       url: i.downloadUrl || undefined,
+      iconUrl: i.iconUrl || undefined,
       hashes: i.hashes || undefined,
     }));
 
@@ -37,6 +39,7 @@ export function generateModpkgExport(packSettings, installedContent, customFiles
         type: i.contentType || "mod",
         fileName: i.fileName || fallbackFilename,
         url: i.downloadUrl || "",
+        iconUrl: i.iconUrl || undefined,
         targetPath: i.targetPath || (i.contentType === "resourcepack" ? `resourcepacks/${fallbackFilename}` : `mods/${fallbackFilename}`),
         hashes: i.hashes || undefined,
       };
@@ -93,7 +96,7 @@ export function generateModpkgExport(packSettings, installedContent, customFiles
 import { getPackData } from "@/lib/storage/package-storage";
 
 export function getSafePackageId(packSettings) {
-  return (packSettings?.slug || packSettings?.name || packSettings?.id || "modpack")
+  return (packSettings?.id || packSettings?.slug || packSettings?.name || "modpack")
     .toLowerCase()
     .replace(/\s+/g, "-")
     .replace(/[^a-z0-9.-]/g, "");
@@ -143,7 +146,7 @@ export function generateModpkgProjectExport(packSettings, installedContent, cust
     project: {
       id: packSettings.id,
       name: packSettings.name,
-      slug: packSettings.slug || packSettings.id,
+      slug: packSettings.id,
       description: packSettings.description || "",
       author: packSettings.author || "Zmito",
       authorId: packSettings.authorId || "usuario-redsouth-uuid",

@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileSliders, Pencil, Upload, Globe, Code2, Check, Trash2 } from "lucide-react";
+import { FileSliders, Pencil, Upload, Globe, Code2, Check, Trash2, X } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import Editor from "@monaco-editor/react";
 import { FileTypeIcon } from "@/components/common/content-type-icon";
@@ -21,6 +21,7 @@ import {
 } from "@/lib/storage/config-files-storage";
 import { CustomFileItem, CustomFileType, CustomStorageLocation } from "@/types";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/components/theme-provider";
 
 export interface AddConfigFileDialogProps {
   isOpen: boolean;
@@ -67,6 +68,7 @@ export function AddConfigFileDialog({
   initialTargetPath,
 }: AddConfigFileDialogProps) {
   const { addCustomFile, updateCustomFile, removeCustomFile } = usePack();
+  const { theme } = useTheme();
   const [name, setName] = useState("");
   const [targetPath, setTargetPath] = useState(initialTargetPath || "/");
   const [type, setType] = useState<CustomFileType>("config");
@@ -282,24 +284,36 @@ export function AddConfigFileDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent hideClose className="w-[95vw] max-w-[1360px] bg-[#0A0A0A] border border-[#1E1E1E] p-0 gap-0 overflow-hidden shadow-2xl rounded-2xl">
+      <DialogContent hideClose className="dialog-accent-amber w-[95vw] max-w-[1360px] bg-card border border-border p-0 gap-0 overflow-hidden shadow-2xl rounded-2xl text-foreground">
 
-        <DialogHeader className="p-5 px-6 border-b border-[#1E1E1E] flex flex-row items-center gap-4 shrink-0 space-y-0">
-          {editItem ? (
-            <Pencil className="w-8 h-8 text-amber-400 shrink-0" />
-          ) : (
-            <FileSliders className="w-8 h-8 text-amber-400 shrink-0" />
-          )}
-          <div className="flex flex-col text-left justify-center">
-            <DialogTitle className="text-white text-lg font-bold leading-tight">
-              {editItem ? "Edit Custom File" : "Add Custom File"}
-            </DialogTitle>
-            <p className="text-xs text-white/50 mt-0.5">
-              {editItem
-                ? "Modify this custom file's name, path and content"
-                : "Add a reusable custom file to your library"}
-            </p>
+        <DialogHeader className="p-5 px-6 border-b border-border flex flex-row items-center justify-between shrink-0 space-y-0">
+          <div className="flex items-center gap-4">
+            {editItem ? (
+              <Pencil className="w-8 h-8 text-amber-400 shrink-0" />
+            ) : (
+              <FileSliders className="w-8 h-8 text-amber-400 shrink-0" />
+            )}
+            <div className="flex flex-col text-left justify-center">
+              <DialogTitle className="text-foreground text-lg font-bold leading-tight">
+                {editItem ? "Edit Custom File" : "Add Custom File"}
+              </DialogTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {editItem
+                  ? "Modify this custom file's name, path and content"
+                  : "Add a reusable custom file to your library"}
+              </p>
+            </div>
           </div>
+          <DialogClose asChild>
+            <button
+              type="button"
+              onClick={onClose}
+              title="Close"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-foreground hover:bg-muted transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </DialogClose>
         </DialogHeader>
 
         {/* Body */}
@@ -311,7 +325,7 @@ export function AddConfigFileDialog({
 
               {/* Friendly Name */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-white/50 uppercase tracking-wider">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Display Name
                 </label>
                 <Input
@@ -322,13 +336,13 @@ export function AddConfigFileDialog({
                     setUserEditedName(true);
                   }}
                   placeholder='e.g. "My Graphics Settings"'
-                  className="bg-[#1E1E1E] border-[#1E1E1E] text-white h-11 rounded-xl focus-visible:border-amber-400"
+                  className="bg-muted/70 border-border text-foreground h-11 rounded-xl focus-visible:border-amber-400"
                 />
               </div>
 
               {/* Target Path */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-white/50 uppercase tracking-wider">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Target Path in Package
                 </label>
                 <Input
@@ -338,26 +352,26 @@ export function AddConfigFileDialog({
                     setUserEditedPath(true);
                   }}
                   placeholder="/options.txt"
-                  className="bg-[#1E1E1E] border-[#1E1E1E] text-white h-11 rounded-xl font-mono text-sm focus-visible:border-amber-400"
+                  className="bg-muted/70 border-border text-foreground h-11 rounded-xl font-mono text-sm focus-visible:border-amber-400"
                 />
-                <p className="text-[11px] text-white/40">
-                  Root-relative path in package (e.g. <span className="font-mono text-white/60">/config/options.txt</span>)
+                <p className="text-[11px] text-muted-foreground">
+                  Root-relative path in package (e.g. <span className="font-mono text-foreground/80">/config/options.txt</span>)
                 </p>
               </div>
 
               {/* File Type */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-white/50 uppercase tracking-wider">File Type</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">File Type</label>
                 <Select value={type} onValueChange={(v) => handleTypeChange(v as CustomFileType)}>
-                  <SelectTrigger className="bg-[#1E1E1E] border-2 border-[#1E1E1E] text-white focus:ring-0 focus:border-amber-400 h-11 rounded-xl">
+                  <SelectTrigger className="bg-muted/70 border-2 border-border text-foreground focus:ring-0 focus:border-amber-400 h-11 rounded-xl">
                     <div className="flex items-center gap-2">
                       <FileTypeIcon type={type} />
                       <span>{type.charAt(0).toUpperCase() + type.slice(1)}</span>
                     </div>
                   </SelectTrigger>
-                  <SelectContent className="bg-[#0A0A0A] border-2 border-[#1E1E1E] text-white rounded-xl">
+                  <SelectContent className="bg-popover border-2 border-border text-popover-foreground rounded-xl">
                     {CUSTOM_FILE_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value} className="focus:bg-[#1E1E1E] focus:text-amber-400">
+                      <SelectItem key={t.value} value={t.value} className="focus:bg-muted focus:text-amber-400">
                         <div className="flex items-center gap-2">
                           <FileTypeIcon type={t.value} />
                           <span>{t.label}</span>
@@ -386,15 +400,15 @@ export function AddConfigFileDialog({
             </div>
 
             {/* Right Column — Takes all remaining width */}
-            <div className="flex-1 flex flex-col gap-4 border-l border-[#1E1E1E] pl-0 md:pl-6 min-w-0">
+            <div className="flex-1 flex flex-col gap-4 border-l border-border pl-0 md:pl-6 min-w-0">
 
               {/* Content Mode Tabs */}
               <div className="flex flex-col gap-3">
-                <label className="text-xs font-semibold text-white/50 uppercase tracking-wider">Content Editor</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Content Editor</label>
 
                 {/* Mode toggle pills (URL only when type === "multimedia") */}
                 {type === "multimedia" ? (
-                  <div className="flex items-center gap-1.5 bg-[#1E1E1E]/60 p-1 rounded-xl w-fit">
+                  <div className="flex items-center gap-1.5 bg-muted/60 p-1 rounded-xl w-fit">
                     <button
                       type="button"
                       disabled
@@ -405,7 +419,7 @@ export function AddConfigFileDialog({
                     </button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-1.5 bg-[#1E1E1E]/60 p-1 rounded-xl w-fit">
+                  <div className="flex items-center gap-1.5 bg-muted/60 p-1 rounded-xl w-fit">
                     {MODE_TABS.map((tab) => (
                       <button
                         key={tab.id}
@@ -414,7 +428,7 @@ export function AddConfigFileDialog({
                         className={`flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
                           contentMode === tab.id
                             ? "bg-amber-400 text-black shadow-sm"
-                            : "text-white/60 hover:text-white"
+                            : "text-muted-foreground hover:text-foreground"
                         }`}
                       >
                         {tab.icon}
@@ -429,13 +443,13 @@ export function AddConfigFileDialog({
 
                   {/* Edit mode — Monaco editor */}
                   {contentMode === "edit" && type !== "multimedia" && (
-                    <div className="rounded-xl overflow-hidden border border-[#1E1E1E] bg-[#1E1E1E]">
+                    <div className="rounded-xl overflow-hidden border border-border bg-card">
                       <Editor
                         height="410px"
                         language={monacoLang}
                         value={content}
                         onChange={(v) => setContent(v ?? "")}
-                        theme="vs-dark"
+                        theme={theme === "light" ? "light" : "vs-dark"}
                         options={{
                           fontSize: 12,
                           tabSize: 2,
@@ -474,29 +488,29 @@ export function AddConfigFileDialog({
                           "flex flex-col items-center justify-center gap-2 w-full h-36 rounded-xl border-2 border-dashed transition-all cursor-pointer select-none",
                           isDragging
                             ? "border-amber-400 bg-amber-400/10 text-amber-400 scale-[0.99]"
-                            : "border-[#1E1E1E] hover:border-amber-400/50 bg-[#1E1E1E]/30 hover:bg-amber-400/5 text-white/50 hover:text-amber-400"
+                            : "border-border hover:border-amber-400/50 bg-muted/30 hover:bg-amber-400/5 text-muted-foreground hover:text-amber-400"
                         )}
                       >
                         <Upload className={cn("w-6 h-6", isDragging && "animate-bounce")} />
                         <span className="text-xs font-semibold">
                           {isDragging ? "Drop file here to upload" : "Click or drag & drop to upload text/config file"}
                         </span>
-                        <span className="text-[11px] text-white/40">JSON, YAML, TOML, TXT, Config, Scripts, etc.</span>
+                        <span className="text-[11px] text-muted-foreground">JSON, YAML, TOML, TXT, Config, Scripts, etc.</span>
                       </button>
                       {uploadFileName && (
                         <div className="flex items-center gap-2 px-3 py-2 bg-amber-400/10 border border-amber-400/20 rounded-xl">
                           <Check className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                          <span className="text-xs text-white/80 font-mono truncate">{uploadFileName}</span>
+                          <span className="text-xs text-foreground/90 font-mono truncate">{uploadFileName}</span>
                         </div>
                       )}
                       {content && (
-                        <div className="rounded-xl overflow-hidden border border-[#1E1E1E]">
+                        <div className="rounded-xl overflow-hidden border border-border">
                           <Editor
                             height="240px"
                             language={monacoLang}
                             value={content}
                             onChange={(v) => setContent(v ?? "")}
-                            theme="vs-dark"
+                            theme={theme === "light" ? "light" : "vs-dark"}
                             options={{
                               fontSize: 12,
                               tabSize: 2,
@@ -522,9 +536,9 @@ export function AddConfigFileDialog({
                           value={sourceUrl}
                           onChange={(e) => handleUrlChange(e.target.value)}
                           placeholder="https://example.com/file.txt or https://example.com/image.png"
-                          className="bg-[#1E1E1E] border-[#1E1E1E] text-white h-11 rounded-xl font-mono text-sm focus-visible:border-amber-400"
+                          className="bg-muted/70 border-border text-foreground h-11 rounded-xl font-mono text-sm focus-visible:border-amber-400"
                         />
-                        <p className="text-[11px] text-white/40">
+                        <p className="text-[11px] text-muted-foreground">
                           Direct asset/file URL. Supports download links, images, videos, audio, and archives.
                         </p>
                       </div>
@@ -543,11 +557,11 @@ export function AddConfigFileDialog({
 
                           {/* Media Preview Player/Viewer */}
                           {mediaType === "image" && (
-                            <div className="flex flex-col gap-2 p-4 bg-[#1E1E1E]/40 border border-[#1E1E1E] rounded-xl">
-                              <span className="text-xs font-semibold text-white/50 uppercase tracking-wider">
+                            <div className="flex flex-col gap-2 p-4 bg-muted/40 border border-border rounded-xl">
+                              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                                 Image Preview
                               </span>
-                              <div className="flex items-center justify-center p-3 bg-black/60 rounded-xl overflow-hidden border border-white/5 min-h-[220px]">
+                              <div className="flex items-center justify-center p-3 bg-card rounded-xl overflow-hidden border border-border min-h-[220px]">
                                 <img
                                   src={sourceUrl}
                                   alt="URL Media Preview"
@@ -559,22 +573,22 @@ export function AddConfigFileDialog({
                           )}
 
                           {mediaType === "video" && (
-                            <div className="flex flex-col gap-2 p-4 bg-[#1E1E1E]/40 border border-[#1E1E1E] rounded-xl">
-                              <span className="text-xs font-semibold text-white/50 uppercase tracking-wider">
+                            <div className="flex flex-col gap-2 p-4 bg-muted/40 border border-border rounded-xl">
+                              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                                 Video Preview
                               </span>
-                              <div className="flex items-center justify-center p-3 bg-black/60 rounded-xl overflow-hidden border border-white/5 min-h-[220px]">
+                              <div className="flex items-center justify-center p-3 bg-card rounded-xl overflow-hidden border border-border min-h-[220px]">
                                 <video src={sourceUrl} controls className="max-h-72 w-full rounded-lg shadow-lg" />
                               </div>
                             </div>
                           )}
 
                           {mediaType === "audio" && (
-                            <div className="flex flex-col gap-2 p-4 bg-[#1E1E1E]/40 border border-[#1E1E1E] rounded-xl">
-                              <span className="text-xs font-semibold text-white/50 uppercase tracking-wider">
+                            <div className="flex flex-col gap-2 p-4 bg-muted/40 border border-border rounded-xl">
+                              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                                 Audio Player
                               </span>
-                              <div className="p-4 bg-black/60 rounded-xl border border-white/5">
+                              <div className="p-4 bg-card rounded-xl border border-border">
                                 <audio src={sourceUrl} controls className="w-full" />
                               </div>
                             </div>
@@ -593,27 +607,24 @@ export function AddConfigFileDialog({
         </ScrollArea>
 
         {/* Footer */}
-        <DialogFooter className="p-4 px-6 border-t border-[#1E1E1E] bg-[#0A0A0A] flex sm:justify-end gap-3 shrink-0">
-          {editItem && onDeleted && (
+        <DialogFooter className="p-4 px-6 border-t border-border bg-card flex sm:justify-between items-center gap-3 shrink-0">
+          {editItem && onDeleted ? (
             <Button
               type="button"
               variant="ghost"
               onClick={() => setIsConfirmDeleteOpen(true)}
-              className="mr-auto text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-xl px-4 h-11 transition-all"
+              className="text-muted-foreground hover:text-red-400 hover:bg-red-500/10 rounded-xl px-4 h-11 transition-all"
             >
               <Trash2 className="w-4 h-4 mr-2" />
               Delete
             </Button>
+          ) : (
+            <div />
           )}
-          <DialogClose asChild>
-            <Button variant="ghost" className="text-white/60 hover:text-white hover:bg-[#1E1E1E] rounded-xl px-5 h-11 border-0">
-              Cancel
-            </Button>
-          </DialogClose>
           <Button
             onClick={handleSave}
             disabled={!isValid}
-            className="bg-amber-400 text-black hover:bg-amber-300 rounded-xl px-5 h-11 font-semibold outline outline-2 outline-transparent hover:outline-amber-400/50 hover:outline-offset-2 active:scale-95 transition-all disabled:opacity-40"
+            className="bg-amber-400 text-black hover:bg-amber-300 rounded-xl px-6 h-11 font-semibold outline outline-2 outline-transparent hover:outline-amber-400/50 hover:outline-offset-2 active:scale-95 transition-all disabled:opacity-40"
           >
             {editItem ? "Update Custom File" : "Save Custom File"}
           </Button>

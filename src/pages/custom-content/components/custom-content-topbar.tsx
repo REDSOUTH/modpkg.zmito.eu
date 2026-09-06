@@ -6,12 +6,12 @@ export interface CustomContentTopbarProps {
 
 export function CustomContentTopbar({ onOpenAddModal }: CustomContentTopbarProps) {
   return (
-    <div className="h-14 border-b border-[#1E1E1E] bg-black/80 backdrop-blur supports-[backdrop-filter]:bg-black/60 flex items-center justify-between px-6 sticky top-[65px] z-40">
+    <div className="h-14 border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center justify-between px-6 sticky top-[65px] z-40">
       
       {/* Title */}
       <div className="flex items-center gap-2.5">
         <PlusCircle className="w-4.5 h-4.5 text-blue-400" />
-        <h1 className="text-sm font-bold text-white tracking-wide">Custom Content</h1>
+        <h1 className="text-sm font-bold text-foreground tracking-wide">Custom Content</h1>
       </div>
 
       {/* Right actions */}

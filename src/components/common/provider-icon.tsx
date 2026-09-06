@@ -83,7 +83,7 @@ export function ProviderBadge({ provider, className, ...props }: ProviderBadgePr
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#1E1E1E] text-white/80 border border-white/5",
+        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-muted text-foreground dark:bg-black dark:text-white/80 border border-border dark:border-white/5",
         className
       )}
       {...props}

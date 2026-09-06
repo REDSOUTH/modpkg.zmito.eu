@@ -99,7 +99,7 @@ export default function EditorSidebar({
   ];
 
   const providerOptions: IconTabOption[] = [
-    { id: "all", label: "All Sources", icon: <Globe className="w-4 h-4 text-white" /> },
+    { id: "all", label: "All Sources", icon: <Globe className="w-4 h-4 text-foreground dark:text-white" />, activeColorClass: "text-foreground dark:text-white" },
     { id: "modrinth", label: "Modrinth", icon: <img src="/social/modrinth.svg" alt="Modrinth" className="w-4 h-4 object-contain select-none pointer-events-none" draggable={false} />, activeColorClass: "text-[#45D66F]" },
     { id: "curseforge", label: "CurseForge", icon: <img src="/social/curseforge.svg" alt="CurseForge" className="w-4 h-4 object-contain select-none pointer-events-none" draggable={false} />, activeColorClass: "text-[#F16436]" },
     { id: "custom", label: "Custom", icon: <PlusCircle className="w-4 h-4 text-blue-400" />, activeColorClass: "text-blue-400" },
@@ -114,7 +114,7 @@ export default function EditorSidebar({
   ];
 
   return (
-    <aside className="w-80 border-r border-[#1E1E1E] bg-black flex flex-col flex-shrink-0 z-30 sticky top-[121px] h-[calc(100vh-121px)] overflow-hidden">
+    <aside className="w-80 border-r border-border bg-background flex flex-col flex-shrink-0 z-30 sticky top-[121px] h-[calc(100vh-121px)] overflow-hidden">
       
       <TooltipProvider delayDuration={200}>
         {/* VIEW Mode Switcher */}
@@ -128,7 +128,7 @@ export default function EditorSidebar({
         </div>
 
         <div className="px-5 shrink-0">
-          <Separator className="bg-[#1E1E1E] w-full" />
+          <Separator className="bg-border w-full" />
         </div>
 
         {activeView === "browse" ? (
@@ -161,7 +161,7 @@ export default function EditorSidebar({
 
             {/* Separator under Source & Content Type */}
             <div className="px-5 shrink-0">
-              <Separator className="bg-[#1E1E1E] w-full" />
+              <Separator className="bg-border w-full" />
             </div>
 
             {/* Scrollable Content */}
@@ -180,7 +180,7 @@ export default function EditorSidebar({
                   {/* Add Custom Resource Button (shown when Provider is Custom) */}
                   {provider === "custom" && (
                     <div className="flex flex-col gap-2 mt-1">
-                      <h3 className="text-[11px] font-bold text-white/40 uppercase tracking-widest pl-1">
+                      <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest pl-1">
                         CUSTOM RESOURCE
                       </h3>
                       <Button
@@ -199,7 +199,7 @@ export default function EditorSidebar({
                     {/* Categories List */}
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center justify-between pl-1 pr-1">
-                        <h3 className="text-[11px] font-bold text-white/40 uppercase tracking-widest">Categories</h3>
+                        <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Categories</h3>
                         {selectedCategories.length > 0 && (
                           <button 
                             onClick={() => setSelectedCategories([])}
@@ -212,7 +212,7 @@ export default function EditorSidebar({
                       <div className="flex flex-col gap-1">
                         {isLoadingCategories ? (
                           Array.from({ length: 11 }).map((_, i) => (
-                            <div key={i} className="h-9 bg-[#1E1E1E]/50 animate-pulse rounded-xl" />
+                            <div key={i} className="h-9 bg-muted animate-pulse rounded-xl" />
                           ))
                         ) : (
                           categories.map((cat) => {
@@ -225,15 +225,15 @@ export default function EditorSidebar({
                                 key={cat.id}
                                 variant="ghost"
                                 onClick={() => toggleCategory(cat.id)}
-                                className={`group justify-between px-3 h-9 rounded-xl text-sm font-medium transition-all ${
+                                className={`group justify-between px-3 h-9 rounded-xl text-sm font-medium transition-colors ${
                                   isSelected 
-                                    ? "bg-[#1E1E1E] text-white" 
-                                    : "text-white/50 hover:bg-[#1E1E1E]/50 hover:text-white"
+                                    ? "bg-muted dark:bg-[#1E1E1E] text-foreground" 
+                                    : "text-muted-foreground hover:bg-muted/60 dark:hover:bg-[#1E1E1E] hover:text-foreground"
                                 }`}
                               >
                                 <div className="flex items-center gap-3">
                                   <IconComponent 
-                                    className={`w-4 h-4 transition-all duration-300 group-hover:scale-110 shrink-0 ${iconData.color || "text-white/60"} ${
+                                    className={`w-4 h-4 transition-colors shrink-0 ${iconData.color || "text-muted-foreground"} ${
                                       isSelected ? 'opacity-100' : 'opacity-80 group-hover:opacity-100'
                                     }`} 
                                   />
@@ -247,12 +247,12 @@ export default function EditorSidebar({
                       </div>
                     </div>
 
-                    <Separator className="bg-[#1E1E1E]" />
+                    <Separator className="bg-border" />
 
                     {/* Environment Filter */}
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center justify-between pl-1 pr-1">
-                        <h3 className="text-[11px] font-bold text-white/40 uppercase tracking-widest">Environment</h3>
+                        <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Environment</h3>
                         {selectedEnvironments.length > 0 && (
                           <button 
                             onClick={() => setSelectedEnvironments([])}
@@ -274,8 +274,8 @@ export default function EditorSidebar({
                               onClick={() => toggleEnvironment(env.id)}
                               className={`group justify-between px-3 h-9 rounded-xl text-sm font-medium transition-all ${
                                 isSelected 
-                                  ? "bg-[#1E1E1E] text-white" 
-                                  : "text-white/50 hover:bg-[#1E1E1E]/50 hover:text-white"
+                                  ? "bg-muted dark:bg-[#1E1E1E] text-foreground" 
+                                  : "text-muted-foreground hover:bg-muted/60 dark:hover:bg-[#1E1E1E] hover:text-foreground"
                               }`}
                             >
                               <div className="flex items-center gap-3">

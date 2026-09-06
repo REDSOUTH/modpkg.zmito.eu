@@ -66,39 +66,51 @@ export function ImportConfigFileDialog({ isOpen, onClose, onImport }: ImportConf
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent hideClose className="w-[95vw] max-w-xl bg-[#0A0A0A] border border-[#1E1E1E] p-0 gap-0 overflow-hidden shadow-2xl rounded-2xl">
+      <DialogContent hideClose className="dialog-accent-amber w-[95vw] max-w-xl bg-card border border-border p-0 gap-0 overflow-hidden shadow-2xl rounded-2xl text-foreground">
 
         {/* Dialog Header */}
-        <DialogHeader className="p-5 px-6 border-b border-[#1E1E1E] flex flex-row items-center gap-3.5 shrink-0 space-y-0">
-          <div className="w-10 h-10 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center shrink-0">
-            <Download className="w-5 h-5 text-amber-400" />
+        <DialogHeader className="p-5 px-6 border-b border-border flex flex-row items-center justify-between shrink-0 space-y-0">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center shrink-0">
+              <Download className="w-5 h-5 text-amber-400" />
+            </div>
+            <div className="flex flex-col text-left justify-center min-w-0">
+              <DialogTitle className="text-foreground text-base font-bold leading-tight">
+                Import Custom File
+              </DialogTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Choose a custom file or asset from your My Resources library
+              </p>
+            </div>
           </div>
-          <div className="flex flex-col text-left justify-center min-w-0 flex-1">
-            <DialogTitle className="text-white text-base font-bold leading-tight">
-              Import Custom File
-            </DialogTitle>
-            <p className="text-xs text-white/50 mt-0.5">
-              Choose a custom file or asset from your My Resources library
-            </p>
-          </div>
+          <DialogClose asChild>
+            <button
+              type="button"
+              onClick={onClose}
+              title="Close"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-foreground hover:bg-muted transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </DialogClose>
         </DialogHeader>
 
         {/* Search & Type Filters */}
-        <div className="px-5 pt-4 pb-3 border-b border-[#1E1E1E] flex flex-col gap-3 shrink-0 bg-[#0E0E0E]">
+        <div className="px-5 pt-4 pb-3 border-b border-border flex flex-col gap-3 shrink-0 bg-muted/40">
           <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <Input
               autoFocus
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search custom files by name or path..."
-              className="bg-[#1E1E1E] border-[#1E1E1E] text-white h-10 rounded-xl pl-9 pr-8 text-xs focus-visible:border-amber-400"
+              className="bg-muted/70 border-border text-foreground h-10 rounded-xl pl-9 pr-8 text-xs focus-visible:border-amber-400"
             />
             {search && (
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-white/40 hover:text-white transition-colors"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -116,7 +128,7 @@ export function ImportConfigFileDialog({ isOpen, onClose, onImport }: ImportConf
                   "text-xs font-semibold px-3 py-1.5 rounded-lg transition-all whitespace-nowrap cursor-pointer select-none",
                   typeFilter === f.id
                     ? "bg-amber-400 text-black shadow-sm"
-                    : "text-white/60 hover:text-white bg-[#1E1E1E] hover:bg-white/10"
+                    : "text-muted-foreground hover:text-foreground bg-muted hover:bg-muted/80"
                 )}
               >
                 {f.label}
@@ -128,24 +140,24 @@ export function ImportConfigFileDialog({ isOpen, onClose, onImport }: ImportConf
         {/* Files List */}
         <ScrollArea className="max-h-[320px] w-full [&>div>div]:!block [&>div]:!block">
           {filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 gap-2 text-white/40 px-6 text-center">
+            <div className="flex flex-col items-center justify-center py-12 gap-2 text-muted-foreground px-6 text-center">
               {items.length === 0 ? (
                 <>
-                  <div className="w-12 h-12 rounded-2xl bg-[#1E1E1E] flex items-center justify-center text-white/30 mb-1">
+                  <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground mb-1">
                     <FileSliders className="w-6 h-6" />
                   </div>
-                  <span className="text-sm font-semibold text-white/70">No custom files in library</span>
-                  <span className="text-xs text-white/40 max-w-xs">
+                  <span className="text-sm font-semibold text-foreground">No custom files in library</span>
+                  <span className="text-xs text-muted-foreground max-w-xs">
                     You haven't saved any custom files in My Resources yet.
                   </span>
                 </>
               ) : (
                 <>
-                  <div className="w-10 h-10 rounded-xl bg-[#1E1E1E] flex items-center justify-center text-white/30 mb-1">
+                  <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground mb-1">
                     <Search className="w-5 h-5" />
                   </div>
-                  <span className="text-sm font-semibold text-white/70">No files found</span>
-                  <span className="text-xs text-white/40">
+                  <span className="text-sm font-semibold text-foreground">No files found</span>
+                  <span className="text-xs text-muted-foreground">
                     No files match your search or selected filter.
                   </span>
                 </>
@@ -166,7 +178,7 @@ export function ImportConfigFileDialog({ isOpen, onClose, onImport }: ImportConf
                       "w-full flex items-center gap-3.5 p-3 rounded-xl text-left transition-all cursor-pointer select-none border",
                       isSelected
                         ? "bg-amber-400/10 border-amber-400 shadow-md shadow-amber-400/5"
-                        : "bg-[#141414] border-[#1E1E1E] hover:bg-[#1A1A1A] hover:border-white/10"
+                        : "bg-card border-border hover:bg-muted/60"
                     )}
                   >
                     {/* Distinctive File Type Icon Container */}
@@ -185,11 +197,11 @@ export function ImportConfigFileDialog({ isOpen, onClose, onImport }: ImportConf
 
                     {/* File Name and Target Path */}
                     <div className="flex flex-col min-w-0 flex-1">
-                      <span className="text-sm font-semibold text-white truncate leading-tight" title={item.name}>
+                      <span className="text-sm font-semibold text-foreground truncate leading-tight" title={item.name}>
                         {item.name}
                       </span>
-                      <span className="text-xs font-mono text-white/50 truncate flex items-center gap-1.5 mt-1" title={item.targetPath}>
-                        <Folder className="w-3 h-3 text-white/30 shrink-0" />
+                      <span className="text-xs font-mono text-muted-foreground truncate flex items-center gap-1.5 mt-1" title={item.targetPath}>
+                        <Folder className="w-3 h-3 text-muted-foreground shrink-0" />
                         <span className="truncate">{item.targetPath}</span>
                       </span>
                     </div>
@@ -217,7 +229,7 @@ export function ImportConfigFileDialog({ isOpen, onClose, onImport }: ImportConf
                           "w-5 h-5 rounded-full border flex items-center justify-center transition-all ml-1 shrink-0",
                           isSelected
                             ? "border-amber-400 bg-amber-400 text-black"
-                            : "border-white/20 bg-transparent text-transparent"
+                            : "border-border bg-transparent text-transparent"
                         )}
                       >
                         <Check className="w-3 h-3 stroke-[3]" />
@@ -232,9 +244,9 @@ export function ImportConfigFileDialog({ isOpen, onClose, onImport }: ImportConf
 
         {/* Path Override Section (shown when a file is selected) */}
         {selected && (
-          <div className="px-5 py-4 border-t border-[#1E1E1E] shrink-0 bg-[#0E0E0E] flex flex-col gap-2">
+          <div className="px-5 py-4 border-t border-border shrink-0 bg-muted/40 flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-white/60 uppercase tracking-wider block">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
                 Destination Path in Package
               </label>
               {overridePath !== selected.targetPath && (
@@ -251,25 +263,20 @@ export function ImportConfigFileDialog({ isOpen, onClose, onImport }: ImportConf
               value={overridePath}
               onChange={(e) => setOverridePath(e.target.value)}
               placeholder={selected.targetPath}
-              className="bg-[#181818] border-[#2A2A2A] text-white h-10 rounded-xl font-mono text-xs focus-visible:border-amber-400"
+              className="bg-muted/70 border-border text-foreground h-10 rounded-xl font-mono text-xs focus-visible:border-amber-400"
             />
-            <p className="text-[11px] text-white/40">
+            <p className="text-[11px] text-muted-foreground">
               The imported file will be placed at this relative path inside your modpack package.
             </p>
           </div>
         )}
 
         {/* Dialog Footer */}
-        <DialogFooter className="p-4 px-6 border-t border-[#1E1E1E] bg-[#0A0A0A] flex sm:justify-end gap-3 shrink-0">
-          <DialogClose asChild>
-            <Button variant="ghost" className="text-white/60 hover:text-white hover:bg-[#1E1E1E] rounded-xl px-5 h-10 border-0 cursor-pointer">
-              Cancel
-            </Button>
-          </DialogClose>
+        <DialogFooter className="p-4 px-6 border-t border-border bg-card flex sm:justify-end gap-3 shrink-0">
           <Button
             onClick={handleImport}
             disabled={!selected}
-            className="bg-amber-400 text-black hover:bg-amber-300 rounded-xl px-5 h-10 font-semibold active:scale-95 transition-all disabled:opacity-40 cursor-pointer shadow-none"
+            className="bg-amber-400 text-black hover:bg-amber-300 rounded-xl px-6 h-10 font-semibold active:scale-95 transition-all disabled:opacity-40 cursor-pointer shadow-none"
           >
             <Download className="w-4 h-4 mr-2" />
             Import to Package

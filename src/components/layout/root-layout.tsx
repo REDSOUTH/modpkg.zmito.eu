@@ -19,7 +19,7 @@ export default function RootLayout() {
   return (
     <PackProvider>
       <LayoutGroup>
-        <div className="flex flex-col bg-black text-white font-['Poppins'] min-h-[100dvh]">
+        <div className="flex flex-col bg-background text-foreground font-['Poppins'] min-h-[100dvh] transition-colors duration-200">
         <Header />
         <main className="flex-1 flex flex-col relative">
           <ErrorBoundary>

@@ -11,7 +11,7 @@ import { getPackData } from "@/lib/storage/package-storage";
 import { PackSettingsModalProps, FieldLabelProps } from "@/types";
 
 function FieldLabel({ children }: FieldLabelProps) {
-  return <label className="text-xs font-semibold text-white/50 uppercase tracking-wider">{children}</label>;
+  return <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{children}</label>;
 }
 
 const sanitizeSlug = (str: string): string => {
@@ -108,9 +108,11 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
 
   const handleSave = () => {
     if (!name.trim()) return;
+    const cleanId = id.trim() || packSettings.id;
     if (isCreateMode) {
       createPack({
-        id: id.trim(),
+        id: cleanId,
+        slug: cleanId,
         name: name.trim(),
         mcVersion,
         loader,
@@ -120,7 +122,8 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
     } else {
       updatePackSettings({
         name: name.trim() || packSettings.name,
-        id: id.trim() || packSettings.id,
+        id: cleanId,
+        slug: cleanId,
         mcVersion,
         loader,
         currentVersion
@@ -193,22 +196,36 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
           onPointerDownOutside={(e) => isFirstPack && e.preventDefault()}
           onEscapeKeyDown={(e) => isFirstPack && e.preventDefault()}
           onInteractOutside={(e) => isFirstPack && e.preventDefault()}
-          className="sm:max-w-xl bg-[#0A0A0A] border border-[#1E1E1E] p-0 gap-0 overflow-hidden shadow-2xl rounded-2xl"
+          className="sm:max-w-xl bg-card border border-border p-0 gap-0 overflow-hidden shadow-2xl rounded-2xl"
         >
-          <DialogHeader className="p-5 px-6 border-b border-[#1E1E1E] flex flex-row items-center gap-4 space-y-0">
-            {isCreateMode ? (
-              <Package className="w-8 h-8 text-[#FE5000] shrink-0" />
-            ) : (
-              <Settings className="w-8 h-8 text-[#FE5000] shrink-0" />
-            )}
-            <div className="flex flex-col text-left justify-center">
-              <DialogTitle className="text-white text-lg font-bold leading-tight">
-                {isCreateMode ? "Create New MODPKG" : "Pack Settings"}
-              </DialogTitle>
-              <p className="text-xs text-white/50 mt-0.5">
-                {isCreateMode ? "Configure basic settings for your new modpack" : "Main configuration and version management for your modpack"}
-              </p>
+          <DialogHeader className="p-5 px-6 border-b border-border flex flex-row items-center justify-between space-y-0">
+            <div className="flex items-center gap-4">
+              {isCreateMode ? (
+                <Package className="w-8 h-8 text-[#FE5000] shrink-0" />
+              ) : (
+                <Settings className="w-8 h-8 text-[#FE5000] shrink-0" />
+              )}
+              <div className="flex flex-col text-left justify-center">
+                <DialogTitle className="text-foreground text-lg font-bold leading-tight">
+                  {isCreateMode ? "Create New MODPKG" : "Pack Settings"}
+                </DialogTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {isCreateMode ? "Configure basic settings for your new modpack" : "Main configuration and version management for your modpack"}
+                </p>
+              </div>
             </div>
+            {!isFirstPack && (
+              <DialogClose asChild>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  title="Close"
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-foreground hover:bg-muted transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </DialogClose>
+            )}
           </DialogHeader>
 
           <div className="p-6 flex flex-col gap-5">
@@ -227,7 +244,7 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
                     }
                   }}
                   placeholder="e.g. MODPKG"
-                  className="bg-[#1E1E1E] border-[#1E1E1E] text-white h-11 rounded-xl focus-visible:border-[#FE5000]"
+                  className="bg-muted/70 border-2 border-border text-foreground h-11 rounded-xl focus-visible:border-[#FE5000]"
                 />
               </div>
 
@@ -243,7 +260,7 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
                     }
                   }}
                   placeholder="e.g. modpkg-x9a2k8"
-                  className="bg-[#1E1E1E] border-[#1E1E1E] text-white font-mono text-xs h-11 rounded-xl focus-visible:border-[#FE5000]"
+                  className="bg-muted/70 border-2 border-border text-foreground font-mono text-xs h-11 rounded-xl focus-visible:border-[#FE5000]"
                 />
               </div>
             </div>
@@ -252,19 +269,19 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
             <div className="flex flex-col gap-2">
               <FieldLabel>Pack Version (Editing)</FieldLabel>
               {isCreatingVersion ? (
-                <div className="flex flex-col gap-3 p-4 bg-[#1E1E1E]/60 border border-[#333333] rounded-xl">
+                <div className="flex flex-col gap-3 p-4 bg-muted/60 border border-border rounded-xl">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-white uppercase tracking-wider">Create New Version</span>
+                    <span className="text-xs font-bold text-foreground uppercase tracking-wider">Create New Version</span>
                     <button 
                       onClick={() => setIsCreatingVersion(false)}
-                      className="text-white/40 hover:text-white transition-colors"
+                      className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                     >
                       <X className="w-4 h-4" />
                     </button>
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-medium text-white/50">Version Tag / Name</label>
+                    <label className="text-[11px] font-medium text-muted-foreground">Version Tag / Name</label>
                     <Input 
                       autoFocus
                       value={newVersionName}
@@ -282,27 +299,27 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
                         }
                       }}
                       placeholder="e.g. v1.0.0"
-                      className="bg-[#1E1E1E] border-[#1E1E1E] text-white h-10 rounded-xl focus-visible:border-[#FE5000]"
+                      className="bg-muted/70 border-2 border-border text-foreground h-10 rounded-xl focus-visible:border-[#FE5000]"
                     />
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-medium text-white/50">Initial Content</label>
+                    <label className="text-[11px] font-medium text-muted-foreground">Initial Content</label>
                     <Select value={copySourceVersion} onValueChange={setCopySourceVersion}>
-                      <SelectTrigger className="bg-[#1E1E1E] border border-[#333333] text-white h-10 rounded-xl">
+                      <SelectTrigger className="bg-muted/70 border-2 border-border text-foreground h-10 rounded-xl">
                         <SelectValue placeholder="Select content source" />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#0A0A0A] border border-[#333333] text-white rounded-xl">
-                        <SelectItem value="empty" className="focus:bg-[#1E1E1E] focus:text-[#FE5000]">
+                      <SelectContent className="bg-popover border-2 border-border text-popover-foreground rounded-xl">
+                        <SelectItem value="empty" className="focus:bg-muted focus:text-[#FE5000]">
                           <div className="flex items-center gap-2">
-                            <FilePlus className="w-3.5 h-3.5 text-white/60" />
+                            <FilePlus className="w-3.5 h-3.5 text-muted-foreground" />
                             <span>Empty (Fresh Start)</span>
                           </div>
                         </SelectItem>
                         {packSettings.versions.map((ver) => (
-                          <SelectItem key={ver} value={ver} className="focus:bg-[#1E1E1E] focus:text-[#FE5000]">
+                          <SelectItem key={ver} value={ver} className="focus:bg-muted focus:text-[#FE5000]">
                             <div className="flex items-center gap-2">
-                              <Copy className="w-3.5 h-3.5 text-white/60" />
+                              <Copy className="w-3.5 h-3.5 text-muted-foreground" />
                               <span>Copy from {ver}</span>
                             </div>
                           </SelectItem>
@@ -325,34 +342,36 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
                   <Select value={currentVersion} onValueChange={handleVersionChange}>
                     <SelectTrigger 
                       ref={versionTriggerRef}
-                      className="bg-[#1E1E1E] border-2 border-[#1E1E1E] text-white focus:ring-0 focus:border-[#FE5000] h-11 rounded-xl flex-1"
+                      className="bg-muted/70 border-2 border-border text-foreground focus:ring-0 focus:border-[#FE5000] h-11 rounded-xl flex-1"
                     >
                       <SelectValue placeholder="Select version" />
                     </SelectTrigger>
-                    <SelectContent className="bg-[#0A0A0A] border-2 border-[#1E1E1E] text-white rounded-xl">
+                    <SelectContent className="bg-popover border-2 border-border text-popover-foreground rounded-xl">
                       {packSettings.versions.map((ver) => (
-                        <SelectItem key={ver} value={ver} className="focus:bg-[#1E1E1E] focus:text-[#FE5000]">
+                        <SelectItem key={ver} value={ver} className="focus:bg-muted focus:text-[#FE5000]">
                           {ver}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                   <Button 
-                    variant="outline" 
+                    type="button"
+                    variant="ghost" 
                     size="icon" 
                     title="Create new version"
                     onClick={() => setIsCreatingVersion(true)}
-                    className="h-11 w-11 rounded-xl border-2 border-[#1E1E1E] bg-[#1E1E1E] text-white hover:border-[#FE5000] hover:text-[#FE5000] hover:bg-transparent transition-colors shrink-0"
+                    className="h-11 w-11 rounded-xl bg-muted dark:bg-[#1E1E1E] text-muted-foreground hover:text-[#FE5000] hover:bg-muted/80 dark:hover:bg-[#252525] ring-1 ring-inset ring-border/40 dark:ring-0 hover:ring-2 hover:ring-[#FE5000] transition-all shrink-0 cursor-pointer"
                   >
                     <Plus className="w-5 h-5" />
                   </Button>
                   {packSettings.versions.length > 1 && (
                     <Button 
-                      variant="outline" 
+                      type="button"
+                      variant="ghost" 
                       size="icon" 
                       title={`Delete version ${currentVersion}`}
                       onClick={() => handlePromptDelete(currentVersion)}
-                      className="h-11 w-11 rounded-xl border-2 border-[#1E1E1E] bg-[#1E1E1E] text-white hover:border-[#FE5000] hover:text-[#FE5000] hover:bg-transparent transition-colors shrink-0"
+                      className="h-11 w-11 rounded-xl bg-muted dark:bg-[#1E1E1E] text-muted-foreground hover:text-red-400 hover:bg-red-500/10 ring-1 ring-inset ring-border/40 dark:ring-0 hover:ring-2 hover:ring-red-500/60 transition-all shrink-0 cursor-pointer"
                     >
                       <Trash2 className="w-5 h-5" />
                     </Button>
@@ -368,13 +387,13 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
                 <Select value={mcVersion} onValueChange={setMcVersion}>
                   <SelectTrigger 
                     ref={mcVersionTriggerRef}
-                    className="bg-[#1E1E1E] border-2 border-[#1E1E1E] text-white focus:ring-0 focus:border-[#FE5000] h-11 rounded-xl"
+                    className="bg-muted/70 border-2 border-border text-foreground focus:ring-0 focus:border-[#FE5000] h-11 rounded-xl"
                   >
                     <SelectValue placeholder="Select version" />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#0A0A0A] border-2 border-[#1E1E1E] text-white rounded-xl max-h-60 overflow-y-auto custom-scrollbar">
+                  <SelectContent className="bg-popover border-2 border-border text-popover-foreground rounded-xl max-h-60 overflow-y-auto custom-scrollbar">
                     {mcVersionsList.map((v) => (
-                      <SelectItem key={v} value={v} className="focus:bg-[#1E1E1E] focus:text-[#FE5000]">
+                      <SelectItem key={v} value={v} className="focus:bg-muted focus:text-[#FE5000]">
                         {v}
                       </SelectItem>
                     ))}
@@ -385,9 +404,9 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
                     id="show-all-mc" 
                     checked={showAllMcVersions} 
                     onCheckedChange={(checked: boolean | "indeterminate") => setShowAllMcVersions(!!checked)} 
-                    className="border-[#333333] data-[state=checked]:bg-[#FE5000] data-[state=checked]:border-[#FE5000]"
+                    className="border-border data-[state=checked]:bg-[#FE5000] data-[state=checked]:border-[#FE5000]"
                   />
-                  <label htmlFor="show-all-mc" className="text-[11px] text-white/50 cursor-pointer select-none">
+                  <label htmlFor="show-all-mc" className="text-[11px] text-muted-foreground cursor-pointer select-none">
                     Show all Minecraft versions
                   </label>
                 </div>
@@ -399,13 +418,13 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
                 <Select value={loader} onValueChange={setLoader}>
                   <SelectTrigger 
                     ref={loaderTriggerRef}
-                    className="bg-[#1E1E1E] border-2 border-[#1E1E1E] text-white focus:ring-0 focus:border-[#FE5000] h-11 rounded-xl"
+                    className="bg-muted/70 border-2 border-border text-foreground focus:ring-0 focus:border-[#FE5000] h-11 rounded-xl"
                   >
                     <SelectValue placeholder="Select loader" />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#0A0A0A] border-2 border-[#1E1E1E] text-white rounded-xl max-h-60 overflow-y-auto custom-scrollbar">
+                  <SelectContent className="bg-popover border-2 border-border text-popover-foreground rounded-xl max-h-60 overflow-y-auto custom-scrollbar">
                     {loadersList.map((l) => (
-                      <SelectItem key={l.id} value={l.id} className="focus:bg-[#1E1E1E] focus:text-[#FE5000]">
+                      <SelectItem key={l.id} value={l.id} className="focus:bg-muted focus:text-[#FE5000]">
                         {l.name}
                       </SelectItem>
                     ))}
@@ -416,9 +435,9 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
                     id="show-all-loaders" 
                     checked={showAllLoaders} 
                     onCheckedChange={(checked: boolean | "indeterminate") => setShowAllLoaders(!!checked)} 
-                    className="border-[#333333] data-[state=checked]:bg-[#FE5000] data-[state=checked]:border-[#FE5000]"
+                    className="border-border data-[state=checked]:bg-[#FE5000] data-[state=checked]:border-[#FE5000]"
                   />
-                  <label htmlFor="show-all-loaders" className="text-[11px] text-white/50 cursor-pointer select-none">
+                  <label htmlFor="show-all-loaders" className="text-[11px] text-muted-foreground cursor-pointer select-none">
                     Show all loaders
                   </label>
                 </div>
@@ -426,13 +445,13 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
             </div>
           </div>
 
-          <DialogFooter className="p-4 px-6 border-t border-[#1E1E1E] bg-[#0A0A0A] flex sm:justify-between items-center gap-3">
+          <DialogFooter className="p-4 px-6 border-t border-border bg-card flex sm:justify-between items-center gap-3">
             {!isFirstPack && !isCreateMode ? (
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 onClick={() => setIsConfirmDeletePackOpen(true)}
-                className="h-11 rounded-xl border-2 border-[#1E1E1E] bg-[#1E1E1E] text-white hover:border-[#FE5000] hover:text-[#FE5000] hover:bg-transparent px-4 font-semibold text-xs transition-colors shrink-0 gap-2 flex items-center"
+                className="h-11 rounded-xl bg-muted dark:bg-[#1E1E1E] text-muted-foreground hover:text-red-400 hover:bg-red-500/10 ring-1 ring-inset ring-border/40 dark:ring-0 hover:ring-2 hover:ring-red-500/60 px-4 font-semibold text-xs transition-all shrink-0 gap-2 flex items-center cursor-pointer"
               >
                 <Trash2 className="w-4 h-4" />
                 <span>Delete package</span>
@@ -441,22 +460,13 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
               <div />
             )}
 
-            <div className="flex items-center gap-3">
-              {!isFirstPack && (
-                <DialogClose asChild>
-                  <Button variant="ghost" className="text-white/60 hover:text-white hover:bg-[#1E1E1E] rounded-xl px-5 h-11">
-                    Cancel
-                  </Button>
-                </DialogClose>
-              )}
-              <Button 
-                onClick={handleSave}
-                disabled={!name.trim()}
-                className="bg-[#FE5000] text-white hover:bg-[#E04700] rounded-xl px-5 h-11 font-semibold outline outline-2 outline-transparent hover:outline-[#FE5000]/50 hover:outline-offset-2 active:scale-95 transition-all disabled:opacity-40"
-              >
-                {isCreateMode ? "Create MODPKG" : "Save Changes"}
-              </Button>
-            </div>
+            <Button 
+              onClick={handleSave} 
+              disabled={!name.trim()}
+              className="bg-[#FE5000] text-white hover:bg-[#E04700] rounded-xl px-6 h-11 font-semibold outline outline-2 outline-transparent hover:outline-[#FE5000]/50 hover:outline-offset-2 active:scale-95 transition-all disabled:opacity-40 cursor-pointer"
+            >
+              {isCreateMode ? "Create MODPKG" : "Save Changes"}
+            </Button>
           </DialogFooter>
 
         </DialogContent>

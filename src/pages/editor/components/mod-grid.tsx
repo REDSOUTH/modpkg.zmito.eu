@@ -69,35 +69,35 @@ const contentItem = {
 };
 
 const ModCardSkeleton = () => (
-  <motion.div variants={skeletonItem} className="group relative bg-[#1E1E1E] rounded-2xl p-5 flex flex-col gap-4 overflow-hidden outline outline-3 outline-transparent h-full animate-pulse">
+  <motion.div variants={skeletonItem} className="group relative bg-card dark:bg-[#1E1E1E] border border-border dark:border-transparent rounded-2xl p-5 flex flex-col gap-4 overflow-hidden outline outline-3 outline-transparent h-full animate-pulse">
     <div className="flex items-start justify-between relative z-10">
       <div className="flex gap-4 items-center">
-        <Skeleton className="w-14 h-14 rounded-xl bg-white/5 shrink-0" />
+        <Skeleton className="w-14 h-14 rounded-xl bg-muted shrink-0" />
         <div className="flex flex-col justify-center gap-0.5">
           <div className="flex items-center gap-1.5 w-fit">
-            <Skeleton className="h-[18px] w-[140px] bg-white/5" />
+            <Skeleton className="h-[18px] w-[140px] bg-muted" />
           </div>
           <div className="flex items-center gap-1.5 mt-0.5 w-fit">
-            <Skeleton className="h-[14px] w-[80px] bg-white/5" />
+            <Skeleton className="h-[14px] w-[80px] bg-muted" />
           </div>
         </div>
       </div>
       <div className="flex items-center ml-2 shrink-0">
-        <Skeleton className="w-[65px] h-[32px] rounded-full bg-white/5" />
+        <Skeleton className="w-[65px] h-[32px] rounded-full bg-muted" />
       </div>
     </div>
     <div className="mt-1 flex flex-col relative z-10 pt-[3px]">
-      <Skeleton className="h-[14px] w-full bg-white/5" />
-      <Skeleton className="h-[14px] w-5/6 bg-white/5 mt-[8px]" />
+      <Skeleton className="h-[14px] w-full bg-muted" />
+      <Skeleton className="h-[14px] w-5/6 bg-muted mt-[8px]" />
     </div>
     <div className="flex items-end justify-between mt-auto pt-2 relative z-10 gap-2">
       <div className="flex flex-wrap gap-2">
-        <Skeleton className="h-[20px] w-[75px] bg-white/5 rounded-md" />
-        <Skeleton className="h-[20px] w-[50px] bg-white/5 rounded-md" />
+        <Skeleton className="h-[20px] w-[75px] bg-muted rounded-md" />
+        <Skeleton className="h-[20px] w-[50px] bg-muted rounded-md" />
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
-        <Skeleton className="w-6 h-6 rounded-md bg-white/5" />
-        <Skeleton className="w-6 h-6 rounded-md bg-white/5" />
+        <Skeleton className="w-6 h-6 rounded-md bg-muted" />
+        <Skeleton className="w-6 h-6 rounded-md bg-muted" />
       </div>
     </div>
   </motion.div>
@@ -322,51 +322,51 @@ export default function ModGrid({
       <div className="flex flex-col px-6 pt-3 pb-6 flex-1">
       
       {/* Header - Uniform across all providers */}
-      <div className="flex items-center justify-between mb-4 mt-0 z-10 bg-black flex-wrap gap-3">
+      <div className="flex items-center justify-between mb-4 mt-0 z-10 bg-background flex-wrap gap-3">
         <div>
-          <h2 className="text-3xl font-bold text-white">Browse {currentLabel}</h2>
+          <h2 className="text-3xl font-bold text-foreground">Browse {currentLabel}</h2>
         </div>
         
         {/* Controls - Uniform Amount & Sort by */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-white/40 uppercase tracking-wider flex items-center gap-1.5">
-              <Hash className="w-3.5 h-3.5 text-white/40" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <Hash className="w-3.5 h-3.5 text-muted-foreground" />
               Amount
             </span>
             <Select value={limit} onValueChange={setLimit}>
-              <SelectTrigger className="w-[80px] bg-[#1E1E1E] border-2 border-[#1E1E1E] text-white focus:ring-0 focus:border-[#FE5000] h-10 rounded-xl px-3 text-sm font-medium">
+              <SelectTrigger className="w-[80px] bg-muted/70 border border-border text-foreground focus:ring-0 focus:border-[#FE5000] h-10 rounded-xl px-3 text-sm font-medium">
                 <SelectValue placeholder="20" />
               </SelectTrigger>
-              <SelectContent className="bg-[#0A0A0A] border-2 border-[#1E1E1E] text-white rounded-xl shadow-xl">
-                <SelectItem value="5" className="focus:bg-[#1E1E1E] focus:text-[#FE5000] text-sm">5</SelectItem>
-                <SelectItem value="10" className="focus:bg-[#1E1E1E] focus:text-[#FE5000] text-sm">10</SelectItem>
-                <SelectItem value="15" className="focus:bg-[#1E1E1E] focus:text-[#FE5000] text-sm">15</SelectItem>
-                <SelectItem value="20" className="focus:bg-[#1E1E1E] focus:text-[#FE5000] text-sm">20</SelectItem>
-                <SelectItem value="50" className="focus:bg-[#1E1E1E] focus:text-[#FE5000] text-sm">50</SelectItem>
+              <SelectContent className="bg-popover border border-border text-popover-foreground rounded-xl shadow-xl">
+                <SelectItem value="5" className="focus:bg-muted focus:text-[#FE5000] text-sm">5</SelectItem>
+                <SelectItem value="10" className="focus:bg-muted focus:text-[#FE5000] text-sm">10</SelectItem>
+                <SelectItem value="15" className="focus:bg-muted focus:text-[#FE5000] text-sm">15</SelectItem>
+                <SelectItem value="20" className="focus:bg-muted focus:text-[#FE5000] text-sm">20</SelectItem>
+                <SelectItem value="50" className="focus:bg-muted focus:text-[#FE5000] text-sm">50</SelectItem>
                 {!isMax50 && (
-                  <SelectItem value="100" className="focus:bg-[#1E1E1E] focus:text-[#FE5000] text-sm">100</SelectItem>
+                  <SelectItem value="100" className="focus:bg-muted focus:text-[#FE5000] text-sm">100</SelectItem>
                 )}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="w-px h-6 bg-[#1E1E1E]" />
+          <div className="w-px h-6 bg-border" />
 
           <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-white/40 uppercase tracking-wider flex items-center gap-1.5">
-              <ArrowUpDown className="w-3.5 h-3.5 text-white/40" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground" />
               Sort by
             </span>
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[180px] bg-[#1E1E1E] border-2 border-[#1E1E1E] text-white focus:ring-0 focus:border-[#FE5000] h-10 rounded-xl px-3 text-sm font-medium">
+              <SelectTrigger className="w-[180px] bg-muted/70 border border-border text-foreground focus:ring-0 focus:border-[#FE5000] h-10 rounded-xl px-3 text-sm font-medium">
                 <SelectValue placeholder="Sort option" />
               </SelectTrigger>
-              <SelectContent className="bg-[#0A0A0A] border-2 border-[#1E1E1E] text-white rounded-xl shadow-xl">
-                <SelectItem value="relevance" className="focus:bg-[#1E1E1E] focus:text-[#FE5000] text-sm">Relevance</SelectItem>
-                <SelectItem value="downloads" className="focus:bg-[#1E1E1E] focus:text-[#FE5000] text-sm">Most Downloads</SelectItem>
-                <SelectItem value="updated" className="focus:bg-[#1E1E1E] focus:text-[#FE5000] text-sm">Recently Updated</SelectItem>
-                <SelectItem value="newest" className="focus:bg-[#1E1E1E] focus:text-[#FE5000] text-sm">Newest</SelectItem>
+              <SelectContent className="bg-popover border border-border text-popover-foreground rounded-xl shadow-xl">
+                <SelectItem value="relevance" className="focus:bg-muted focus:text-[#FE5000] text-sm">Relevance</SelectItem>
+                <SelectItem value="downloads" className="focus:bg-muted focus:text-[#FE5000] text-sm">Most Downloads</SelectItem>
+                <SelectItem value="updated" className="focus:bg-muted focus:text-[#FE5000] text-sm">Recently Updated</SelectItem>
+                <SelectItem value="newest" className="focus:bg-muted focus:text-[#FE5000] text-sm">Newest</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -429,10 +429,10 @@ export default function ModGrid({
                     <SearchX className="w-7 h-7" />
                   )}
                 </EmptyMedia>
-                <EmptyTitle className="text-white text-xl font-bold">
+                <EmptyTitle className="text-foreground text-xl font-bold">
                   {provider === "custom" ? "No custom resources found" : "No results found"}
                 </EmptyTitle>
-                <EmptyDescription className="text-white/60 max-w-md mx-auto text-sm text-center">
+                <EmptyDescription className="text-muted-foreground max-w-md mx-auto text-sm text-center">
                   {provider === "custom"
                     ? `You haven't added any custom ${currentLabel.toLowerCase()} yet. Use the '+ Add Custom Resource' button in the sidebar or click below.`
                     : `We couldn't find any ${currentLabel.toLowerCase()} matching your current filters.`}
@@ -450,7 +450,7 @@ export default function ModGrid({
                     </Button>
                     <Button 
                       variant="ghost" 
-                      className="text-white/60 hover:text-white hover:bg-[#1E1E1E] rounded-xl h-10 px-4 text-sm font-medium transition-all cursor-pointer"
+                      className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl h-10 px-4 text-sm font-medium transition-all cursor-pointer"
                       onClick={onOpenSettings}
                     >
                       <Settings2 className="w-4 h-4 mr-2" />
@@ -461,7 +461,7 @@ export default function ModGrid({
                   <>
                     <Button 
                       variant="ghost" 
-                      className="text-white/60 hover:text-white hover:bg-[#1E1E1E] rounded-xl h-10 px-4 text-sm font-medium transition-all cursor-pointer"
+                      className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl h-10 px-4 text-sm font-medium transition-all cursor-pointer"
                       onClick={onOpenSettings}
                     >
                       <Settings2 className="w-4 h-4 mr-2" />
@@ -469,7 +469,7 @@ export default function ModGrid({
                     </Button>
                     <Button 
                       variant="ghost" 
-                      className="text-white/60 hover:text-white hover:bg-[#1E1E1E] rounded-xl h-10 px-4 text-sm font-medium transition-all cursor-pointer"
+                      className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl h-10 px-4 text-sm font-medium transition-all cursor-pointer"
                       onClick={onClearFilters}
                     >
                       <X className="w-4 h-4 mr-2" />
@@ -492,7 +492,7 @@ export default function ModGrid({
                 <PaginationPrevious 
                   href="#" 
                   onClick={(e) => { e.preventDefault(); if (page > 1) handlePageChange(p => p - 1); }}
-                  className={page === 1 ? "pointer-events-none opacity-50 text-white/50" : "cursor-pointer text-white hover:bg-white/10 hover:text-white"}
+                  className={page === 1 ? "pointer-events-none opacity-50 text-muted-foreground" : "cursor-pointer text-foreground hover:bg-muted hover:text-foreground"}
                 />
               </PaginationItem>
 
@@ -501,7 +501,7 @@ export default function ModGrid({
                   <PaginationLink 
                     href="#" 
                     onClick={(e) => { e.preventDefault(); handlePageChange(1); }}
-                    className="text-white hover:bg-white/10 hover:text-white"
+                    className="text-foreground hover:bg-muted hover:text-foreground"
                   >
                     1
                   </PaginationLink>
@@ -510,7 +510,7 @@ export default function ModGrid({
 
               {page > 3 && (
                 <PaginationItem>
-                  <PaginationEllipsis className="text-white/50" />
+                  <PaginationEllipsis className="text-muted-foreground" />
                 </PaginationItem>
               )}
 
@@ -519,7 +519,7 @@ export default function ModGrid({
                   <PaginationLink 
                     href="#" 
                     onClick={(e) => { e.preventDefault(); handlePageChange(p => p - 1); }}
-                    className="text-white hover:bg-white/10 hover:text-white"
+                    className="text-foreground hover:bg-muted hover:text-foreground"
                   >
                     {page - 1}
                   </PaginationLink>
@@ -530,7 +530,7 @@ export default function ModGrid({
                 <PaginationLink 
                   href="#" 
                   isActive 
-                  className="bg-[#1E1E1E] text-[#FE5000] hover:bg-[#1E1E1E] hover:text-[#FE5000] border border-transparent font-bold cursor-default"
+                  className="bg-muted text-[#FE5000] hover:bg-muted hover:text-[#FE5000] border border-border/50 font-bold cursor-default"
                   onClick={(e) => e.preventDefault()}
                 >
                   {page}
@@ -542,7 +542,7 @@ export default function ModGrid({
                   <PaginationLink 
                     href="#" 
                     onClick={(e) => { e.preventDefault(); handlePageChange(p => p + 1); }}
-                    className="text-white hover:bg-white/10 hover:text-white"
+                    className="text-foreground hover:bg-muted hover:text-foreground"
                   >
                     {page + 1}
                   </PaginationLink>
@@ -554,7 +554,7 @@ export default function ModGrid({
                   <PaginationNext 
                     href="#" 
                     onClick={(e) => { e.preventDefault(); handlePageChange(p => p + 1); }}
-                    className="cursor-pointer text-white hover:bg-white/10 hover:text-white"
+                    className="cursor-pointer text-foreground hover:bg-muted hover:text-foreground"
                   />
                 </PaginationItem>
               )}

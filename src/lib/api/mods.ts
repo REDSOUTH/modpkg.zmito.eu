@@ -300,11 +300,14 @@ async function getModrinthVersions(
         recommended = true;
         foundRecommended = true;
       }
+      const primaryFile = v.files?.find((f: any) => f.primary) || v.files?.[0];
       return {
         id: v.id,
         name: v.name || v.version_number,
         stable,
-        recommended
+        recommended,
+        downloadUrl: primaryFile?.url,
+        fileName: primaryFile?.filename,
       };
     });
   } catch (e) {
@@ -378,7 +381,9 @@ async function getCurseForgeVersions(
         id: f.id.toString(),
         name: f.displayName,
         stable,
-        recommended
+        recommended,
+        downloadUrl: f.downloadUrl,
+        fileName: f.fileName,
       };
     });
   } catch (e) {

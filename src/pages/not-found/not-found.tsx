@@ -14,15 +14,15 @@ export default function NotFoundPage() {
     <div className="w-full min-h-[calc(100dvh-65px)] flex flex-col justify-center items-center py-10 text-center px-6">
 
       {/* 404 Big Display */}
-      <h1 className="text-8xl font-black tracking-tighter text-white mb-2 select-none">
+      <h1 className="text-8xl font-black tracking-tighter text-foreground mb-2 select-none">
         40<span className="text-[#FE5000]">4</span>
       </h1>
 
       {/* Title & Description */}
-      <h2 className="text-2xl font-bold text-white mb-3">
+      <h2 className="text-2xl font-bold text-foreground mb-3">
         Page Not Found
       </h2>
-      <p className="text-white/40 max-w-md text-sm mb-8 leading-relaxed text-center mx-auto">
+      <p className="text-muted-foreground max-w-md text-sm mb-8 leading-relaxed text-center mx-auto">
         The page you are looking for doesn't exist, has been removed, or is temporarily unavailable.
       </p>
 
@@ -31,7 +31,7 @@ export default function NotFoundPage() {
         <Button
           onClick={() => navigate(-1)}
           variant="ghost"
-          className="gap-2 text-white/60 hover:text-white hover:bg-[#1E1E1E] rounded-xl h-9 px-4 text-sm font-medium transition-all"
+          className="gap-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl h-9 px-4 text-sm font-medium transition-all"
         >
           <ArrowLeft className="w-4 h-4" />
           Go Back

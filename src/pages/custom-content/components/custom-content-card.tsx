@@ -43,7 +43,7 @@ export function CustomContentCard({ item, onDelete }: CustomContentCardProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="bg-[#0A0A0A] border border-[#1E1E1E] hover:border-[#FE5000]/40 rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all shadow-lg group hover:shadow-xl relative overflow-hidden"
+      className="bg-card border border-border hover:border-[#FE5000]/40 rounded-2xl p-5 flex flex-col justify-between gap-4 transition-all shadow-sm group hover:shadow-md relative overflow-hidden"
     >
       {/* Top Header info */}
       <div className="flex flex-col gap-2.5 min-w-0">
@@ -56,34 +56,34 @@ export function CustomContentCard({ item, onDelete }: CustomContentCardProps) {
         </div>
 
         <div className="flex flex-col gap-1 min-w-0">
-          <h3 className="text-white font-bold text-base truncate block w-full group-hover:text-[#FE5000] transition-colors">
+          <h3 className="text-foreground font-bold text-base truncate block w-full group-hover:text-[#FE5000] transition-colors">
             {item.name}
           </h3>
-          <p className="text-xs text-white/50 truncate">
-            By <span className="text-white/80">{item.author || "Unknown"}</span>
+          <p className="text-xs text-muted-foreground truncate">
+            By <span className="text-foreground font-semibold">{item.author || "Unknown"}</span>
           </p>
         </div>
 
-        <div className="bg-[#1E1E1E]/60 border border-white/5 rounded-xl p-2.5 flex items-center justify-between gap-2 text-xs text-white/60 font-mono truncate">
+        <div className="bg-muted/60 border border-border rounded-xl p-2.5 flex items-center justify-between gap-2 text-xs text-muted-foreground font-mono truncate">
           <span className="truncate">{item.downloadUrl}</span>
           <button
             onClick={handleCopyUrl}
-            className="p-1 hover:bg-white/10 rounded-lg text-white/60 hover:text-white transition-colors shrink-0"
+            className="p-1 hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground transition-colors shrink-0"
             title="Copy URL"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
           </button>
         </div>
       </div>
 
       {/* Bottom Action Footer */}
-      <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#1E1E1E]">
+      <div className="flex items-center justify-between gap-2 pt-2 border-t border-border">
         <a
           href={item.downloadUrl}
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="text-xs text-white/50 hover:text-white flex items-center gap-1 transition-colors"
+          className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
         >
           <ExternalLink className="w-3.5 h-3.5" />
           <span>Open Link</span>
@@ -92,7 +92,7 @@ export function CustomContentCard({ item, onDelete }: CustomContentCardProps) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => onDelete(item.id)}
-            className="p-2 rounded-xl text-white/40 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+            className="p-2 rounded-xl text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
             title="Delete Content"
           >
             <Trash2 className="w-4 h-4" />
@@ -100,10 +100,10 @@ export function CustomContentCard({ item, onDelete }: CustomContentCardProps) {
 
           <button
             onClick={handleToggleAdd}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer ${
               isAdded
-                ? "bg-[#FE5000] text-white"
-                : "bg-[#1E1E1E] text-white/80 hover:bg-[#FE5000] hover:text-white border border-white/5"
+                ? "bg-[#FE5000] text-white shadow-md shadow-[#FE5000]/20"
+                : "bg-muted text-foreground hover:bg-[#FE5000] hover:text-white border border-border"
             }`}
           >
             {isAdded ? (

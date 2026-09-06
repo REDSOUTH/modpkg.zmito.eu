@@ -91,7 +91,7 @@ export default function MyResourcesPage() {
 
   return (
     <>
-      <div className="flex w-full max-w-[1920px] mx-auto bg-black min-h-[calc(100vh-65px)]">
+      <div className="flex w-full max-w-[1920px] mx-auto bg-background min-h-[calc(100vh-65px)]">
 
         {/* ── Single unified sidebar ── */}
         <MyResourcesSidebar
@@ -127,7 +127,7 @@ export default function MyResourcesPage() {
                 className="flex flex-col px-6 pt-5 pb-6"
               >
                 <div className="mb-4">
-                  <h2 className="text-3xl font-bold text-white">Custom Content</h2>
+                  <h2 className="text-3xl font-bold text-foreground">Custom Content</h2>
                   <p className="text-xs text-blue-400 font-semibold mt-1">
                     Showing {filteredItems.length} item{filteredItems.length === 1 ? "" : "s"} in your library
                   </p>
@@ -145,8 +145,8 @@ export default function MyResourcesPage() {
                           <EmptyMedia variant="icon" className="bg-blue-500/10 text-blue-400">
                             <PlusCircle className="w-8 h-8" />
                           </EmptyMedia>
-                          <EmptyTitle className="text-white text-xl font-bold">No custom content found</EmptyTitle>
-                          <EmptyDescription className="text-white/60 max-w-md mx-auto text-sm">
+                          <EmptyTitle className="text-foreground text-xl font-bold">No custom content found</EmptyTitle>
+                          <EmptyDescription className="text-muted-foreground max-w-md mx-auto text-sm">
                             {items.length === 0
                               ? "You haven't added any custom content yet. Click below to add your first resource."
                               : "No items match your selected filters."}

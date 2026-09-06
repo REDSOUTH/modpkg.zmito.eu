@@ -30,13 +30,13 @@ export function IconTabSelector({
   return (
     <div className={cn("flex flex-col gap-2.5 w-full", className)}>
       {showLabel && label && (
-        <h3 className="text-[11px] font-bold text-white/40 uppercase tracking-widest pl-1">
+        <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest pl-1">
           {label}
         </h3>
       )}
       <TooltipProvider delayDuration={150}>
         <Tabs value={value} onValueChange={(val) => val && onValueChange(val)} className="w-full">
-          <TabsList className="bg-[#1E1E1E] border-0 rounded-xl p-1 gap-1 flex w-full h-11">
+          <TabsList className="bg-muted dark:bg-[#1E1E1E] border border-border/50 dark:border-0 rounded-xl p-1 gap-1 flex w-full h-11">
             {options.map((option) => {
               const isActive = value === option.id;
               return (
@@ -47,8 +47,8 @@ export function IconTabSelector({
                       className={cn(
                         "flex-1 h-9 rounded-lg transition-all duration-200 border-0 flex items-center justify-center",
                         isActive
-                          ? "bg-[#333333] opacity-100 shadow-sm"
-                          : "bg-transparent opacity-40 hover:opacity-80"
+                          ? "bg-white dark:bg-[#333333] text-foreground dark:text-white opacity-100 shadow-sm"
+                          : "bg-transparent text-muted-foreground opacity-50 hover:opacity-100"
                       )}
                     >
                       {option.icon}
@@ -57,12 +57,9 @@ export function IconTabSelector({
                   <TooltipContent
                     side="bottom"
                     sideOffset={10}
-                    className={cn(
-                      "bg-[#1E1E1E] border-0 text-white font-medium shadow-xl",
-                      option.activeColorClass
-                    )}
+                    className="font-medium shadow-xl border-0"
                   >
-                    <p>{option.label}</p>
+                    <p className={option.activeColorClass || "text-white"}>{option.label}</p>
                   </TooltipContent>
                 </Tooltip>
               );

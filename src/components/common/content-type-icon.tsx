@@ -85,7 +85,7 @@ export function ContentTypeBadge({ type, showLabel = true, className, ...props }
   return (
     <div 
       className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#1E1E1E] text-white/90 border-0 whitespace-nowrap",
+        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-muted text-foreground dark:bg-[#1E1E1E] dark:text-white/90 border-0 whitespace-nowrap",
         className
       )} 
       {...props}
@@ -148,7 +148,7 @@ export function FileTypeBadge({ type, showLabel = true, className, ...props }: F
   return (
     <div 
       className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#1E1E1E] text-white/90 border-0 whitespace-nowrap",
+        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-muted text-foreground dark:bg-[#1E1E1E] dark:text-white/90 border-0 whitespace-nowrap",
         className
       )} 
       {...props}

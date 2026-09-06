@@ -180,6 +180,8 @@ export interface ModVersion {
   name: string;
   stable: boolean;
   recommended: boolean;
+  downloadUrl?: string;
+  fileName?: string;
 }
 
 export interface Loader {
@@ -205,6 +207,7 @@ export interface PackContextType {
   packagesList: PackSettings[];
   activePackId: string | null;
   createPack: (packData: Omit<PackSettings, "id" | "versions" | "currentVersion"> & { id?: string; version?: string }) => PackSettings;
+  importPack: (parsedJson: any) => PackSettings;
   switchPack: (packId: string) => void;
   deletePack: (packId: string) => void;
   updatePackSettings: (newSettings: Partial<PackSettings>) => void;

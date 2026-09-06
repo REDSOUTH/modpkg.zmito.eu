@@ -42,15 +42,25 @@ export function PackageDropdownSelector({
   const updatePosition = () => {
     if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
-      const menuWidth = dropdownRef.current?.offsetWidth || 288;
+      const menuWidth = dropdownRef.current?.offsetWidth || 320;
+      const menuHeight = dropdownRef.current?.offsetHeight || 320;
       
       let left = rect.left + window.scrollX;
       if (align === "right") {
         left = rect.right + window.scrollX - menuWidth;
       }
 
+      // Check if dropdown would overflow bottom of viewport
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      let top = rect.bottom + window.scrollY + 6;
+
+      if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
+        top = rect.top + window.scrollY - menuHeight - 6;
+      }
+
       setMenuPosition({
-        top: rect.bottom + window.scrollY + 6,
+        top: Math.max(12, top),
         left: Math.max(12, left),
       });
     }
@@ -134,7 +144,7 @@ export function PackageDropdownSelector({
           <button
             type="button"
             className={`p-1 rounded-lg transition-colors flex items-center justify-center ${
-              isOpen ? "bg-white/10 text-white" : "text-white/40 hover:text-white hover:bg-white/10"
+              isOpen ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
             }`}
             title="Switch package"
           >
@@ -159,28 +169,31 @@ export function PackageDropdownSelector({
                   top: `${menuPosition.top}px`,
                   left: `${menuPosition.left}px`,
                 }}
-                className="w-72 bg-[#0A0A0A] border-2 border-[#1E1E1E] rounded-2xl shadow-2xl p-2 z-[9999] overflow-hidden backdrop-blur-xl flex flex-col"
+                className="w-80 bg-popover border border-border text-popover-foreground rounded-2xl shadow-2xl p-2 z-[9999] overflow-hidden backdrop-blur-xl flex flex-col"
               >
                 {/* Search Bar */}
                 <div className="relative flex items-center px-1 py-1">
-                  <Search className="w-3.5 h-3.5 text-white/40 absolute left-3 pointer-events-none" />
+                  <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-3 pointer-events-none" />
                   <input
                     type="text"
                     placeholder={mode === "add-to-pack" ? "Search compatible pack..." : "Search package..."}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-[#1E1E1E] text-white text-xs rounded-xl pl-8 pr-3 py-2 border border-transparent focus:border-[#FE5000] focus:outline-none placeholder:text-white/40 transition-colors"
+                    className="w-full bg-muted text-foreground text-xs rounded-xl pl-8 pr-3 py-2 border border-border focus:border-[#FE5000] focus:outline-none placeholder:text-muted-foreground transition-colors"
                     autoFocus
                   />
                 </div>
 
-                <Separator className="bg-[#1E1E1E] my-1.5" />
+                <Separator className="bg-border dark:bg-[#333333] my-1.5" />
 
                 {/* Packages List */}
-                <ScrollArea className="max-h-48 custom-scrollbar">
+                <ScrollArea
+                  className="max-h-60 [&>[data-radix-scroll-area-viewport]]:max-h-60 pr-1.5 custom-scrollbar"
+                  onWheel={(e) => e.stopPropagation()}
+                >
                   <div className="flex flex-col gap-0.5 p-0.5">
                     {filteredPackages.length === 0 ? (
-                      <div className="text-xs text-white/40 px-3 py-3 text-center">
+                      <div className="text-xs text-muted-foreground px-3 py-3 text-center">
                         {mode === "add-to-pack" ? "No compatible packages found" : "No packages found"}
                       </div>
                     ) : (
@@ -194,17 +207,19 @@ export function PackageDropdownSelector({
                             key={p.id}
                             type="button"
                             onClick={() => handleSelect(p)}
-                            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors ${
+                            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
                               isSelected
                                 ? "bg-[#FE5000]/10 text-[#FE5000] font-medium"
-                                : "text-white/80 hover:bg-[#1E1E1E] hover:text-white"
+                                : "text-foreground/80 hover:bg-muted hover:text-foreground"
                             }`}
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
                               <Package className="w-4 h-4 text-[#FE5000] shrink-0" />
-                              <div className="flex flex-col text-left truncate">
+                              <div className="flex flex-col text-left truncate min-w-0">
                                 <span className="truncate font-semibold">{p.name}</span>
-                                <span className="text-[10px] text-white/40 font-mono">{p.loader} • {p.mcVersion}</span>
+                                <span className="text-[10px] text-muted-foreground font-mono truncate">
+                                  {p.loader} · {p.mcVersion} · {p.id}
+                                </span>
                               </div>
                             </div>
                             {isSelected && <Check className="w-3.5 h-3.5 text-[#FE5000] shrink-0" />}
@@ -217,7 +232,7 @@ export function PackageDropdownSelector({
 
                 {mode === "topbar" && onCreateNewPack && (
                   <>
-                    <Separator className="bg-[#1E1E1E] my-1.5" />
+                    <Separator className="bg-border dark:bg-[#333333] my-1.5" />
                     <button
                       type="button"
                       onClick={handleCreateNew}

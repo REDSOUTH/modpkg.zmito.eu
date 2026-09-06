@@ -1,9 +1,12 @@
 import { useRef, useState, ChangeEvent, DragEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileCode } from "lucide-react";
+import { usePack } from "@/context/pack-context";
+import notification from "@/functions/notification";
 
 export default function ImportPackageInput() {
   const navigate = useNavigate();
+  const { importPack } = usePack();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -12,10 +15,18 @@ export default function ImportPackageInput() {
     reader.onload = (e) => {
       try {
         const text = e.target?.result as string;
-        const parsedJson = JSON.parse(text);
-        navigate('/editor', { state: { parsedJson } });
-      } catch (error) {
-        console.log('Error reading JSON:', error);
+        let parsedJson: any;
+        try {
+          parsedJson = JSON.parse(text);
+        } catch {
+          throw new Error("Invalid JSON syntax: could not parse file contents.");
+        }
+        const imported = importPack(parsedJson);
+        notification.default(`Imported: ${imported.name} (${imported.id})`);
+        navigate("/editor");
+      } catch (error: any) {
+        console.error("Error reading or importing JSON:", error);
+        notification.warn(error?.message || "Error importing project: Invalid file format");
       }
     };
     reader.readAsText(file);
@@ -59,17 +70,17 @@ export default function ImportPackageInput() {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <FileCode className="w-16 h-16 mb-3.5 text-white group-hover:scale-105 group-hover:text-[#FE5000] transition-all duration-300" />
-        <p className="text-2xl font-bold text-white tracking-wide mb-2 text-center w-full group-hover:text-white transition-colors">Import Project</p>
-        <p className="text-xs text-white/45 max-w-[270px] leading-relaxed text-center mx-auto">
-          Load an existing <span className="font-mono text-white/60">.mpkg.json</span><br /> or project index file.
+        <FileCode className="w-16 h-16 mb-3.5 text-foreground group-hover:scale-105 group-hover:text-[#FE5000] transition-all duration-300" />
+        <p className="text-2xl font-bold text-foreground tracking-wide mb-2 text-center w-full group-hover:text-[#FE5000] transition-colors">Import Project</p>
+        <p className="text-xs text-muted-foreground max-w-[270px] leading-relaxed text-center mx-auto">
+          Load an existing <span className="font-mono text-foreground/80">.mdpkg.json</span><br /> or project index file.
         </p>
         <div className="mt-4 flex items-center justify-center gap-2 text-center mx-auto">
-          <span className="px-3 py-1.5 rounded-xl bg-white/5 text-xs font-mono text-white/60">.mpkg.json</span>
-          <span className="px-3 py-1.5 rounded-xl bg-white/5 text-xs font-mono text-white/60">.json</span>
+          <span className="px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 text-xs font-mono text-muted-foreground">.mdpkg.json</span>
+          <span className="px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 text-xs font-mono text-muted-foreground">.mpkg-proj.json</span>
         </div>
       </label>
-      <input type="file" name="" id="input-file" accept=".modpkg.json,.mpkg.json,.json,application/json" hidden ref={fileInputRef} onChange={handleFileSelect} />
+      <input type="file" name="" id="input-file" accept=".mdpkg.json,.modpkg.json,.mpkg-proj.json,.mpkg.json,.json,application/json" hidden ref={fileInputRef} onChange={handleFileSelect} />
     </>
   );
 }

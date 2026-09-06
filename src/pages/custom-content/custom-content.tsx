@@ -103,7 +103,7 @@ export default function CustomContentPage() {
       {/* Topbar */}
       <CustomContentTopbar onOpenAddModal={() => { setEditingItem(null); setIsAddDialogOpen(true); }} />
 
-      <div className="flex flex-col w-full max-w-[1920px] mx-auto bg-black min-h-screen">
+      <div className="flex flex-col w-full max-w-[1920px] mx-auto bg-background min-h-screen">
         <div className="flex flex-1 min-w-0 relative">
           
           {/* Left Sidebar */}
@@ -127,10 +127,10 @@ export default function CustomContentPage() {
             <div className="flex flex-col px-6 pt-3 pb-6">
               
               {/* Header Title */}
-              <div className="flex items-center justify-between mb-4 mt-0 z-10 bg-black">
+              <div className="flex items-center justify-between mb-4 mt-0 z-10 bg-background">
                 <div>
-                  <h2 className="text-3xl font-bold text-white">Browse Custom Content</h2>
-                  <p className="text-xs text-white/50 mt-1">
+                  <h2 className="text-3xl font-bold text-foreground">Browse Custom Content</h2>
+                  <p className="text-xs text-muted-foreground mt-1">
                     Showing {filteredItems.length} custom content item{filteredItems.length === 1 ? "" : "s"}
                   </p>
                 </div>
@@ -159,8 +159,8 @@ export default function CustomContentPage() {
                         <EmptyMedia variant="icon" className="bg-blue-500/10 text-blue-400">
                           <PlusCircle className="w-8 h-8" />
                         </EmptyMedia>
-                        <EmptyTitle className="text-white text-xl font-bold">No custom content found</EmptyTitle>
-                        <EmptyDescription className="text-white/60 max-w-md mx-auto text-sm">
+                        <EmptyTitle className="text-foreground text-xl font-bold">No custom content found</EmptyTitle>
+                        <EmptyDescription className="text-muted-foreground max-w-md mx-auto text-sm">
                           {items.length === 0
                             ? "You haven't added any custom content yet. Click below to add your first direct download URL or resource."
                             : "No items match your selected sidebar filters or search query."}

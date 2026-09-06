@@ -1,16 +1,25 @@
-import { Plus, Check, X, ExternalLink, Pencil } from "lucide-react";
+import { Plus, Check, X, ExternalLink, Pencil, Download, Loader2, ChevronDown } from "lucide-react";
 import { ProviderIcon } from "@/components/common/provider-icon";
 import { ContentTypeIcon } from "@/components/common/content-type-icon";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { usePack } from "@/context/pack-context";
 import { getModVersions } from "@/lib/api/mods";
 import { ModVersion, CustomContentItem } from "@/types";
 import { deleteCustomContentItem, getCustomContentItems } from "@/lib/storage/custom-content-storage";
 import { AddCustomContentDialog } from "@/components/views/add-custom-content-dialog";
+import notification from "@/functions/notification";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export type CardContentType = "mod" | "resourcepack" | "shader" | "datapack" | "world" | "override";
 export type CardProviderType = "modrinth" | "curseforge" | "custom" | "local_override" | "all";
@@ -52,11 +61,27 @@ const normalizeProvider = (p: string) => {
   return p;
 };
 
+const triggerBrowserDownload = (url: string, fileName?: string) => {
+  const link = document.createElement("a");
+  link.href = url;
+  if (fileName) {
+    link.download = fileName;
+  }
+  document.body.appendChild(link);
+  link.click();
+  setTimeout(() => {
+    if (document.body.contains(link)) {
+      document.body.removeChild(link);
+    }
+  }, 200);
+};
+
 export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModCardComponentProps) {
   const [isTitleHovered, setIsTitleHovered] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [versions, setVersions] = useState<ModVersion[]>([]);
   const [isLoadingVersions, setIsLoadingVersions] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [isEditingCustom, setIsEditingCustom] = useState(false);
   
   const { packSettings, installedContent, addContent, removeContent } = usePack();
@@ -64,7 +89,19 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
   
   const isAdded = installedContent.some(i => i.id === mod.id);
   const installedItem = installedContent.find(i => i.id === mod.id);
-  const currentVersionId = installedItem?.versionId || "latest";
+  const [selectedVersionId, setSelectedVersionId] = useState<string>(installedItem?.versionId || "latest");
+
+  useEffect(() => {
+    if (installedItem?.versionId) {
+      setSelectedVersionId(installedItem.versionId);
+    }
+  }, [installedItem?.versionId]);
+
+  const selectedVersionName = selectedVersionId === "latest"
+    ? "Latest"
+    : selectedVersionId === "latest-unstable"
+      ? "Latest Unstable"
+      : versions.find(v => v.id === selectedVersionId)?.name || selectedVersionId;
 
   const isCustom = mod.provider === "custom";
   const globalCustomItems = getCustomContentItems();
@@ -82,8 +119,8 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
           name: mod.name,
           provider: isCustom ? "custom" : (normalizeProvider(mod.provider || "modrinth") as CardProviderType),
           iconUrl: mod.iconUrl,
-          versionId: isCustom ? "custom" : "latest",
-          versionName: isCustom ? "Custom URL" : "Latest",
+          versionId: isCustom ? "custom" : selectedVersionId,
+          versionName: isCustom ? "Custom URL" : selectedVersionName,
           contentType: normalizeType(mod.type || "mod"),
           downloadUrl: isCustom ? ((mod as any).customItem?.downloadUrl || mod.websiteUrl || mod.description) : undefined,
           author: mod.author,
@@ -94,6 +131,133 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
           isPackageOnly: isCustom ? !isFromMyResources : undefined,
         });
       }
+    }
+  };
+
+  const handleSelectVersion = (val: string, name?: string) => {
+    setSelectedVersionId(val);
+    if (mod.id && isAdded) {
+      addContent({
+        id: mod.id,
+        name: mod.name,
+        provider: normalizeProvider(mod.provider || "modrinth") as CardProviderType,
+        iconUrl: mod.iconUrl,
+        versionId: val,
+        versionName: val === "latest" ? "Latest" : val === "latest-unstable" ? "Latest Unstable" : name || versions.find(v => v.id === val)?.name || val,
+        contentType: normalizeType(mod.type || "mod")
+      });
+    }
+  };
+
+  const handleDirectDownload = async (targetVersionIdOverride?: string) => {
+    if (isDownloading) return;
+
+    const versionToUse = targetVersionIdOverride || selectedVersionId;
+
+    try {
+      setIsDownloading(true);
+
+      // 1. Custom content
+      if (isCustom) {
+        const customUrl = (mod as any).customItem?.downloadUrl || mod.websiteUrl || mod.description;
+        if (!customUrl || !customUrl.startsWith("http")) {
+          notification.error("No direct download URL available for this custom item");
+          return;
+        }
+        const ext = normalizeType(mod.type || "mod") === "resourcepack" ? "zip" : "jar";
+        const filename = customUrl.split("/").pop()?.split("?")[0] || `${mod.name}.${ext}`;
+        triggerBrowserDownload(customUrl, filename);
+        notification.success(`Downloading ${mod.name}...`);
+        return;
+      }
+
+      // 2. Modrinth / CurseForge
+      const provider = normalizeProvider(mod.provider || "modrinth");
+      const modId = mod.id;
+      if (!modId) {
+        notification.error("Content ID not found");
+        return;
+      }
+
+      let currentVersionsList = versions;
+      if (currentVersionsList.length === 0) {
+        setIsLoadingVersions(true);
+        currentVersionsList = await getModVersions(
+          provider,
+          modId,
+          mcVersion,
+          loader,
+          normalizeType(mod.type || "mod")
+        );
+        setVersions(currentVersionsList);
+        setIsLoadingVersions(false);
+      }
+
+      if (currentVersionsList.length === 0) {
+        notification.warn(`No compatible files found for Minecraft ${mcVersion} (${loader})`);
+        return;
+      }
+
+      // Resolve version object to download
+      let targetVer: ModVersion | undefined;
+      if (versionToUse === "latest-unstable") {
+        targetVer = currentVersionsList[0];
+      } else if (versionToUse === "latest") {
+        targetVer = currentVersionsList.find(v => v.stable) || currentVersionsList[0];
+      } else {
+        targetVer = currentVersionsList.find(v => v.id === versionToUse) || currentVersionsList[0];
+      }
+
+      if (!targetVer) {
+        notification.error("Could not determine version to download");
+        return;
+      }
+
+      let downloadUrl = targetVer.downloadUrl;
+      let fileName = targetVer.fileName;
+
+      // Special handling for CurseForge if downloadUrl was not included in file list
+      if (provider === "curseforge" && !downloadUrl) {
+        const apiKey = import.meta.env.VITE_CURSEFORGE_API_KEY;
+        if (apiKey) {
+          try {
+            const res = await fetch(`https://api.curseforge.com/v1/mods/${modId}/files/${targetVer.id}/download-url`, {
+              headers: { "x-api-key": apiKey }
+            });
+            if (res.ok) {
+              const resJson = await res.json();
+              if (resJson?.data) {
+                downloadUrl = resJson.data;
+              }
+            }
+          } catch {
+            // fallback below
+          }
+        }
+      }
+
+      const ext = normalizeType(mod.type || "mod") === "resourcepack" ? "zip" : "jar";
+
+      // Fallback for Curseforge if direct download URL is restricted by author
+      if (!downloadUrl && provider === "curseforge") {
+        const fallbackUrl = `https://www.curseforge.com/minecraft/mc-mods/${mod.slug || modId}/download/${targetVer.id}`;
+        triggerBrowserDownload(fallbackUrl, fileName || `${mod.name}.${ext}`);
+        notification.success(`Opening download for ${mod.name} (${targetVer.name})...`);
+        return;
+      }
+
+      if (!downloadUrl) {
+        notification.error(`No download URL available for ${mod.name}`);
+        return;
+      }
+
+      triggerBrowserDownload(downloadUrl, fileName || `${mod.name}.${ext}`);
+      notification.success(`Downloading ${mod.name} (${targetVer.name})...`);
+    } catch (err: any) {
+      console.error("Direct download error:", err);
+      notification.error(`Failed to download ${mod.name}: ${err?.message || "Unknown error"}`);
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -150,7 +314,7 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
   return (
     <motion.div 
       onClick={handleAddAction}
-      className="group relative bg-[#1E1E1E] rounded-2xl p-5 flex flex-col gap-4 overflow-hidden outline outline-3 outline-transparent transition-all duration-200 hover:outline-[#FE5000] hover:outline-offset-4 active:scale-95 cursor-pointer h-full"
+      className="group relative bg-card dark:bg-[#1E1E1E] rounded-2xl p-5 flex flex-col gap-4 overflow-hidden ring-1 ring-inset ring-border/50 dark:ring-0 outline outline-3 outline-transparent transition-all duration-200 hover:outline-[#FE5000] hover:outline-offset-4 active:scale-95 cursor-pointer h-full shadow-sm dark:shadow-none"
     >
 
       <div className="flex items-start justify-between relative z-10 w-full">
@@ -172,12 +336,12 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
             />
           ) : (
             <div 
-              className="w-14 h-14 rounded-xl bg-[#141414] border border-white/5 flex items-center justify-center shrink-0 cursor-pointer p-3 select-none"
+              className="w-14 h-14 rounded-xl bg-muted border border-border flex items-center justify-center shrink-0 cursor-pointer p-3 select-none"
               onClick={handleOpenProject}
               onMouseEnter={() => setIsTitleHovered(true)}
               onMouseLeave={() => setIsTitleHovered(false)}
             >
-              <ContentTypeIcon type={mod.type || "mod"} iconClassName="w-7 h-7 text-neutral-400" />
+              <ContentTypeIcon type={mod.type || "mod"} iconClassName="w-7 h-7 text-muted-foreground" />
             </div>
           )}
 
@@ -191,7 +355,7 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
                     onMouseEnter={() => setIsTitleHovered(true)}
                     onMouseLeave={() => setIsTitleHovered(false)}
                   >
-                    <h4 className={`font-semibold text-base leading-tight truncate ${isTitleHovered ? 'text-[#FE5000] underline' : 'text-white'}`}>
+                    <h4 className={`font-semibold text-base leading-tight truncate ${isTitleHovered ? 'text-[#FE5000] underline' : 'text-foreground'}`}>
                       {mod.name}
                     </h4>
                     {mod.websiteUrl && (
@@ -199,16 +363,16 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
                     )}
                   </div>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="bg-[#1E1E1E] text-white border border-[#333] shadow-xl text-xs rounded-lg p-2 max-w-xs z-50">
+                <TooltipContent side="top" className="border-0 shadow-xl text-xs rounded-lg p-2 max-w-xs z-50">
                   <p className="font-semibold">{mod.name}</p>
-                  <p className="text-[10px] text-white/50">{mod.author}</p>
+                  <p className="text-[10px] text-muted-foreground">{mod.author}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
             
             {/* Subline: Author */}
             <div 
-              className="flex items-center gap-1.5 text-white/40 text-xs w-fit group/author cursor-pointer mt-0.5"
+              className="flex items-center gap-1.5 text-muted-foreground text-xs w-fit group/author cursor-pointer mt-0.5"
               onClick={handleOpenAuthor}
             >
               <span className="truncate transition-colors group-hover/author:text-[#FE5000] group-hover/author:underline">
@@ -223,10 +387,12 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
         
         {/* Add button & Version Select Group */}
         {isCustom ? (
-          /* For Custom Content: Show + / Check button AND Delete button */
+          /* For Custom Content: Show + / Check button AND Edit button */
           <div 
-            className={`absolute top-0 right-0 flex items-center ml-2 rounded-full overflow-hidden border border-transparent transition-all flex-shrink-0 shadow-sm z-30 ${
-              isAdded ? "bg-[#FE5000] text-white" : "bg-black text-white"
+            className={`absolute top-0 right-0 flex items-center ml-2 rounded-full overflow-hidden transition-all flex-shrink-0 shadow-sm z-30 ${
+              isAdded 
+                ? "bg-[#FE5000] text-white shadow-lg shadow-[#FE5000]/25 border border-transparent" 
+                : "bg-muted dark:bg-black text-foreground hover:bg-muted/80 dark:hover:bg-neutral-900 border border-border dark:border-white/5"
             }`}
             onClick={(e) => e.stopPropagation()}
           >
@@ -234,7 +400,9 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button 
-                    className="group/btn w-8 h-8 flex items-center justify-center hover:bg-white/20 transition-all"
+                    className={`group/btn w-8 h-8 flex items-center justify-center transition-all ${
+                      isAdded ? "hover:bg-white/20 text-white" : "hover:bg-foreground/10 dark:hover:bg-white/20"
+                    }`}
                     onClick={handleAddAction}
                   >
                     {!isAdded && <Plus className="w-4 h-4" />}
@@ -246,19 +414,21 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
                     )}
                   </button>
                 </TooltipTrigger>
-                <TooltipContent className="bg-[#1E1E1E] text-white border-transparent text-xs">
+                <TooltipContent className="border-0 text-xs">
                   <p>{isAdded ? "Remove from Package" : "Add to Package"}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
 
-            <div className="w-px h-4 bg-white/20 transition-colors" />
+            <div className={`w-px h-4 transition-colors ${isAdded ? "bg-white/20" : "bg-border dark:bg-white/20"}`} />
 
             <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button 
-                    className="w-8 h-8 flex items-center justify-center hover:bg-white/20 transition-all text-white/80"
+                    className={`w-8 h-8 flex items-center justify-center transition-all ${
+                      isAdded ? "hover:bg-white/20 text-white/90" : "hover:bg-foreground/10 dark:hover:bg-white/20 text-foreground/80"
+                    }`}
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -279,17 +449,19 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent className="bg-[#1E1E1E] text-white border-transparent text-xs">
+                <TooltipContent className="border-0 text-xs">
                   <p>Edit Custom Content</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
         ) : (
-          /* Standard Provider Card: Show + Button AND Version Select Dropdown */
+          /* Standard Provider Card: Show + Button AND Version/Download Dropdown Trigger */
           <div 
-            className={`absolute top-0 right-0 flex items-center ml-2 rounded-full overflow-hidden border border-transparent transition-all flex-shrink-0 shadow-sm z-30 ${
-              isAdded ? "bg-[#FE5000] text-white" : "bg-black text-white"
+            className={`absolute top-0 right-0 flex items-center ml-2 rounded-full overflow-hidden transition-all flex-shrink-0 shadow-sm z-30 ${
+              isAdded 
+                ? "bg-[#FE5000] text-white shadow-lg shadow-[#FE5000]/25 border border-transparent" 
+                : "bg-muted dark:bg-black text-foreground hover:bg-muted/80 dark:hover:bg-neutral-900 border border-border dark:border-white/5"
             }`}
             onClick={(e) => e.stopPropagation()}
           >
@@ -297,7 +469,9 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button 
-                    className="group/btn w-8 h-8 flex items-center justify-center hover:bg-white/20 transition-all"
+                    className={`group/btn w-8 h-8 flex items-center justify-center transition-all ${
+                      isAdded ? "hover:bg-white/20 text-white" : "hover:bg-foreground/10 dark:hover:bg-white/20"
+                    }`}
                     onClick={handleAddAction}
                   >
                     {!isAdded && <Plus className="w-4 h-4" />}
@@ -309,66 +483,149 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
                     )}
                   </button>
                 </TooltipTrigger>
-                <TooltipContent className="bg-[#1E1E1E] text-white border-transparent text-xs">
-                  <p>{isAdded ? "Remove" : "Add Latest"}</p>
+                <TooltipContent className="border-0 text-xs">
+                  <p>{isAdded ? "Remove from Package" : `Add to Package (${selectedVersionName})`}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
 
-            <div className="w-px h-4 bg-white/20 transition-colors" />
+            <div className={`w-px h-4 transition-colors ${isAdded ? "bg-white/20" : "bg-border dark:bg-white/20"}`} />
 
-            <Select 
-              value={currentVersionId}
-              onOpenChange={handleOpenChange}
-              onValueChange={(val) => {
-                if (mod.id) {
-                  addContent({
-                    id: mod.id,
-                    name: mod.name,
-                    provider: normalizeProvider(mod.provider || "modrinth") as CardProviderType,
-                    iconUrl: mod.iconUrl,
-                    versionId: val,
-                    versionName: val === "latest" ? "Latest" : val === "latest-unstable" ? "Latest Unstable" : versions.find(v => v.id === val)?.name || val,
-                    contentType: normalizeType(mod.type || "mod")
-                  });
-                }
-              }}
-            >
-              <SelectTrigger 
-                className="w-8 h-8 p-0 border-none bg-transparent hover:bg-white/20 focus:ring-0 shadow-none flex items-center justify-center rounded-none transition-colors [&>svg]:w-4 [&>svg]:h-4 [&>span]:hidden [&>svg]:opacity-100 [&>svg]:text-white"
+            <DropdownMenu onOpenChange={handleOpenChange}>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className={`w-8 h-8 p-0 border-none bg-transparent focus:ring-0 shadow-none flex items-center justify-center rounded-none transition-colors outline-none cursor-pointer ${
+                    isAdded 
+                      ? "hover:bg-white/20 text-white" 
+                      : "hover:bg-foreground/10 dark:hover:bg-white/20 text-foreground dark:text-white"
+                  }`}
+                  title={`Versions & Download (${selectedVersionName})`}
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent 
+                align="end" 
+                sideOffset={4}
+                className="bg-popover text-popover-foreground border border-border rounded-xl shadow-xl z-50 w-72 p-1.5"
+                onClick={(e) => e.stopPropagation()}
               >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-[#1E1E1E] text-white border-[#333] rounded-xl shadow-xl z-50">
-                <SelectItem value="latest" className="focus:bg-black focus:text-[#FE5000] text-xs font-medium">Latest</SelectItem>
-                <SelectItem value="latest-unstable" className="focus:bg-black focus:text-[#FE5000] text-xs font-medium">Latest Unstable</SelectItem>
-                {isLoadingVersions ? (
-                  <div className="text-xs text-white/40 px-2 py-2 text-center animate-pulse">Loading versions...</div>
-                ) : versions.length === 0 ? (
-                  <div className="text-xs text-white/40 px-2 py-2 text-center">No versions found</div>
-                ) : (
-                  <>
-                    <div className="h-px bg-white/10 my-1 mx-2" />
-                    {versions.map(v => (
-                      <SelectItem key={v.id} value={v.id} className="focus:bg-black focus:text-[#FE5000] text-xs">
-                        {v.name}
-                        {!v.stable && (
-                          <span className="text-white/40 text-[10px] ml-1.5">(Unstable)</span>
-                        )}
-                        {v.recommended && (
-                          <span className="text-[10px] font-bold text-blue-500 ml-1">★</span>
-                        )}
-                      </SelectItem>
-                    ))}
-                  </>
-                )}
-              </SelectContent>
-            </Select>
+                {/* 1. Direct Download Button for Selected Version */}
+                <DropdownMenuItem
+                  className="flex items-center gap-2.5 p-2.5 rounded-xl cursor-pointer bg-[#FE5000] text-white hover:bg-[#e04700] focus:bg-[#e04700] focus:text-white transition-colors shadow-sm shadow-[#FE5000]/20 font-medium text-xs group/dl"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDirectDownload();
+                  }}
+                  disabled={isDownloading}
+                >
+                  {isDownloading ? (
+                    <Loader2 className="w-4 h-4 text-white animate-spin shrink-0" />
+                  ) : (
+                    <Download className="w-4 h-4 text-white shrink-0" />
+                  )}
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <span className="font-semibold text-white leading-tight">Descargar archivo directo</span>
+                    <span className="text-[10px] text-white/80 truncate">
+                      {selectedVersionName} ({mcVersion} · {loader})
+                    </span>
+                  </div>
+                </DropdownMenuItem>
+
+                {/* Separator — mx-0 cancels the default -mx-1 so it aligns with button/label padding */}
+                <DropdownMenuSeparator className="mx-0 my-2 h-[1.5px] bg-border dark:bg-[#333333]" />
+
+                <DropdownMenuLabel className="text-[10px] uppercase font-semibold tracking-wider text-muted-foreground px-2 py-1">
+                  Versiones ({mcVersion} · {loader})
+                </DropdownMenuLabel>
+
+                <ScrollArea className="max-h-56 pr-1">
+                  <div className="space-y-0.5 pr-1">
+                    {/* Latest */}
+                    <DropdownMenuItem
+                      className="flex items-center justify-between px-2 py-1.5 rounded-md text-xs cursor-pointer focus:bg-muted"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectVersion("latest");
+                      }}
+                    >
+                      <span className={`truncate min-w-0 flex-1 ${selectedVersionId === "latest" ? "font-semibold text-[#FE5000]" : "text-foreground"}`}>
+                        Latest (Recomendada)
+                      </span>
+                      {selectedVersionId === "latest" && (
+                        <Check className="w-3.5 h-3.5 text-[#FE5000] shrink-0 ml-2" />
+                      )}
+                    </DropdownMenuItem>
+
+                    {/* Latest Unstable */}
+                    <DropdownMenuItem
+                      className="flex items-center justify-between px-2 py-1.5 rounded-md text-xs cursor-pointer focus:bg-muted"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectVersion("latest-unstable");
+                      }}
+                    >
+                      <span className={`truncate min-w-0 flex-1 ${selectedVersionId === "latest-unstable" ? "font-semibold text-[#FE5000]" : "text-foreground"}`}>
+                        Latest Unstable
+                      </span>
+                      {selectedVersionId === "latest-unstable" && (
+                        <Check className="w-3.5 h-3.5 text-[#FE5000] shrink-0 ml-2" />
+                      )}
+                    </DropdownMenuItem>
+
+                    {isLoadingVersions ? (
+                      <div className="text-xs text-muted-foreground px-2 py-3 text-center animate-pulse flex items-center justify-center gap-2">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-[#FE5000]" />
+                        <span>Cargando versiones...</span>
+                      </div>
+                    ) : versions.length === 0 ? (
+                      <div className="text-xs text-muted-foreground px-2 py-2 text-center">
+                        No se encontraron versiones
+                      </div>
+                    ) : (
+                      versions.map((v) => {
+                        const isSelected = selectedVersionId === v.id;
+                        return (
+                          <DropdownMenuItem
+                            key={v.id}
+                            className="flex items-center justify-between px-2 py-1.5 rounded-md text-xs cursor-pointer focus:bg-muted"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectVersion(v.id, v.name);
+                            }}
+                          >
+                            {/* Name — truncates, fills available space */}
+                            <span className={`truncate min-w-0 flex-1 ${isSelected ? "font-semibold text-[#FE5000]" : "text-foreground"}`}>
+                              {v.name}
+                            </span>
+
+                            {/* Badges + check on the right */}
+                            <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                              {!v.stable && (
+                                <span className="text-[10px] text-muted-foreground">(Unstable)</span>
+                              )}
+                              {v.recommended && (
+                                <span className="text-[10px] font-bold text-blue-500">★</span>
+                              )}
+                              {isSelected && (
+                                <Check className="w-3.5 h-3.5 text-[#FE5000]" />
+                              )}
+                            </div>
+                          </DropdownMenuItem>
+                        );
+                      })
+                    )}
+                  </div>
+                </ScrollArea>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )}
       </div>
 
-      <p className="text-sm text-white/60 line-clamp-2 break-words relative z-10 mt-1 leading-relaxed">
+      <p className="text-sm text-muted-foreground line-clamp-2 break-words relative z-10 mt-1 leading-relaxed">
         {mod.description}
       </p>
 
@@ -380,7 +637,7 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
           <div className="flex items-center gap-1.5 shrink min-w-0" onClick={(e) => e.stopPropagation()}>
             <Badge 
               variant="secondary" 
-              className="bg-black/50 text-white/60 rounded-md text-[10px] uppercase tracking-wider font-medium border border-transparent select-none cursor-default"
+              className="bg-muted dark:bg-black text-muted-foreground rounded-md text-[10px] uppercase tracking-wider font-medium border border-border/50 dark:border-white/5 select-none cursor-default"
             >
               MY RESOURCES
             </Badge>
@@ -391,7 +648,7 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
               <Badge 
                 key={cat} 
                 variant="secondary" 
-                className="bg-black/50 hover:bg-black text-white/60 hover:text-white rounded-md text-[10px] uppercase tracking-wider font-medium border border-transparent transition-colors cursor-pointer truncate shrink min-w-0 max-w-[120px]"
+                className="bg-muted dark:bg-black hover:bg-muted/80 dark:hover:bg-neutral-900 text-muted-foreground hover:text-foreground rounded-md text-[10px] uppercase tracking-wider font-medium border border-border/50 dark:border-white/5 transition-colors cursor-pointer truncate shrink min-w-0 max-w-[120px]"
                 onClick={(e) => {
                   e.stopPropagation();
                   onCategoryClick?.(cat);
@@ -407,19 +664,19 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
                     <div className="inline-flex cursor-help shrink-0" onClick={(e) => e.stopPropagation()}>
                       <Badge 
                         variant="secondary" 
-                        className="bg-black/50 hover:bg-black text-white/60 hover:text-white rounded-md text-[10px] uppercase tracking-wider font-medium border border-transparent transition-colors shrink-0"
+                        className="bg-muted dark:bg-black hover:bg-muted/80 dark:hover:bg-neutral-900 text-muted-foreground hover:text-foreground rounded-md text-[10px] uppercase tracking-wider font-medium border border-border/50 dark:border-white/5 transition-colors shrink-0"
                       >
                         +{mod.categories.length - 2}
                       </Badge>
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="bg-[#1E1E1E] text-white border-[#333] shadow-xl p-2 z-50">
+                  <TooltipContent side="top" className="border-0 shadow-xl p-2 z-50">
                     <div className="flex flex-wrap gap-1.5 max-w-[200px]">
                       {mod.categories.slice(2).map((cat) => (
                         <Badge 
                           key={cat} 
                           variant="secondary" 
-                          className="bg-black/50 hover:bg-black text-white/60 hover:text-white rounded-md text-[10px] uppercase tracking-wider font-medium border border-transparent transition-colors cursor-pointer"
+                          className="bg-muted dark:bg-black hover:bg-muted/80 dark:hover:bg-neutral-900 text-muted-foreground hover:text-foreground rounded-md text-[10px] uppercase tracking-wider font-medium border border-border/50 dark:border-white/5 transition-colors cursor-pointer"
                           onClick={(e) => {
                             e.stopPropagation();
                             onCategoryClick?.(cat);
@@ -440,15 +697,15 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
         <div className="flex items-center gap-1.5 shrink-0 ml-auto">
           {mod.provider === "all" ? (
             <>
-              <div className="flex items-center justify-center w-6 h-6 rounded-md bg-black/40 border border-white/5 opacity-60 group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center justify-center w-6 h-6 rounded-md bg-muted dark:bg-black border border-border/50 dark:border-white/5 transition-colors">
                 <ProviderIcon provider="modrinth" size="sm" />
               </div>
-              <div className="flex items-center justify-center w-6 h-6 rounded-md bg-black/40 border border-white/5 opacity-60 group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center justify-center w-6 h-6 rounded-md bg-muted dark:bg-black border border-border/50 dark:border-white/5 transition-colors">
                 <ProviderIcon provider="curseforge" size="sm" />
               </div>
             </>
           ) : (
-            <div className="flex items-center justify-center w-6 h-6 rounded-md bg-black/40 border border-white/5 opacity-60 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center justify-center w-6 h-6 rounded-md bg-muted dark:bg-black border border-border/50 dark:border-white/5 transition-colors">
               <ProviderIcon provider={mod.provider || "modrinth"} size="sm" />
             </div>
           )}

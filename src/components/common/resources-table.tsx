@@ -35,7 +35,7 @@ export function ResourcesTable({
   const renderBadgeOverflow = (value: string | undefined, defaultLabel: string) => {
     if (!value || value === "Any") {
       return (
-        <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-medium bg-[#1E1E1E] text-white/60">
+        <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-medium bg-muted dark:bg-[#1E1E1E] text-muted-foreground">
           {defaultLabel}
         </span>
       );
@@ -47,12 +47,12 @@ export function ResourcesTable({
     return (
       <div className="flex items-center gap-1.5 flex-wrap">
         {visibleBadges.map((b) => (
-          <span key={b} className="inline-block px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#1E1E1E] text-white/90">
+          <span key={b} className="inline-block px-2.5 py-1 rounded-lg text-xs font-semibold bg-muted dark:bg-[#1E1E1E] text-foreground">
             {b}
           </span>
         ))}
         {hiddenCount > 0 && (
-          <span className="inline-block px-2 py-1 rounded-lg text-xs font-bold bg-[#1E1E1E] text-white/50" title={badges.join(", ")}>
+          <span className="inline-block px-2 py-1 rounded-lg text-xs font-bold bg-muted dark:bg-[#1E1E1E] text-muted-foreground" title={badges.join(", ")}>
             +{hiddenCount}
           </span>
         )}
@@ -62,10 +62,10 @@ export function ResourcesTable({
 
   return (
     <>
-      <div className="w-full overflow-x-auto rounded-2xl border border-[#1E1E1E] bg-[#0A0A0A] shadow-2xl">
+      <div className="w-full overflow-x-auto rounded-2xl border border-border bg-card shadow-sm">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-[#1E1E1E] bg-[#121212]/80 text-[11px] font-bold text-white/40 uppercase tracking-wider">
+            <tr className="border-b border-border bg-muted/50 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
               <th className="py-4 px-6 min-w-[240px]">Name</th>
               {isContentMode ? (
                 <>
@@ -86,7 +86,7 @@ export function ResourcesTable({
               <th className="py-4 px-6 text-right min-w-[180px]">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#1E1E1E] text-xs">
+          <tbody className="divide-y divide-border text-xs">
             {items.map((item) => {
               const contentItem = isContentMode ? (item as CustomContentItem) : null;
               const fileItem = !isContentMode ? (item as CustomFileItem) : null;
@@ -97,23 +97,23 @@ export function ResourcesTable({
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="hover:bg-[#1E1E1E]/40 transition-colors"
+                  className="hover:bg-muted/40 transition-colors"
                 >
                   {/* 1. Name Column with Neutral Dark/Grey Icon Box */}
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-[#1E1E1E] border border-white/5">
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-muted/70 dark:bg-[#1E1E1E] border border-border">
                         <ContentTypeIcon type={contentItem ? contentItem.contentType : fileItem ? fileItem.type : "mod"} />
                       </div>
                       <div className="flex flex-col gap-0.5 min-w-0">
-                        <span className="font-bold text-sm text-white transition-colors truncate max-w-[200px]">
+                        <span className="font-bold text-sm text-foreground transition-colors truncate max-w-[200px]">
                           {item.name}
                         </span>
                         {contentItem && (
-                          <div className="flex items-center gap-2 text-[11px] text-white/50">
-                            <span>By <strong className="text-white/80">{contentItem.author || "Unknown"}</strong></span>
+                          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                            <span>By <strong className="text-foreground font-semibold">{contentItem.author || "Unknown"}</strong></span>
                             {contentItem.targetPath && (
-                              <span className="font-mono text-[11px] text-white/60">
+                              <span className="font-mono text-[11px] text-muted-foreground/80">
                                 ({contentItem.targetPath})
                               </span>
                             )}
@@ -161,7 +161,7 @@ export function ResourcesTable({
                             URL
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#1E1E1E] text-white/60">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-muted dark:bg-[#1E1E1E] text-muted-foreground">
                             <Code2 className="w-3 h-3" />
                             Inline
                           </span>
@@ -205,14 +205,14 @@ export function ResourcesTable({
                             className={`group/addbtn h-8 px-3 rounded-xl border-2 transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
                               isOpen
                                 ? "border-[#FE5000] bg-transparent text-[#FE5000]"
-                                : "border-[#1E1E1E] bg-[#1E1E1E] text-white/60 hover:border-[#FE5000] hover:bg-transparent hover:text-[#FE5000]"
+                                : "border-border bg-muted dark:bg-[#1E1E1E] text-muted-foreground hover:border-[#FE5000] hover:bg-transparent hover:text-[#FE5000]"
                             }`}
                           >
-                            <Plus className={`w-3.5 h-3.5 transition-colors ${isOpen ? "text-[#FE5000]" : "text-white/60 group-hover/addbtn:text-[#FE5000]"}`} />
-                            <span className={`transition-colors font-semibold text-xs ${isOpen ? "text-[#FE5000]" : "text-white/80 group-hover/addbtn:text-[#FE5000]"}`}>
+                            <Plus className={`w-3.5 h-3.5 transition-colors ${isOpen ? "text-[#FE5000]" : "text-muted-foreground group-hover/addbtn:text-[#FE5000]"}`} />
+                            <span className={`transition-colors font-semibold text-xs ${isOpen ? "text-[#FE5000]" : "text-foreground group-hover/addbtn:text-[#FE5000]"}`}>
                               Add to Package
                             </span>
-                            <ChevronDown className={`w-3 h-3 transition-all duration-200 ml-0.5 ${isOpen ? "rotate-180 text-[#FE5000]" : "text-white/40 group-hover/addbtn:text-[#FE5000]"}`} />
+                            <ChevronDown className={`w-3 h-3 transition-all duration-200 ml-0.5 ${isOpen ? "rotate-180 text-[#FE5000]" : "text-muted-foreground group-hover/addbtn:text-[#FE5000]"}`} />
                           </button>
                         )}
                         onSelectPack={(targetPack, isCurrentlyAdded) => {
@@ -272,12 +272,12 @@ export function ResourcesTable({
                             <button
                               type="button"
                               onClick={() => onEdit(item)}
-                              className="h-8 w-8 rounded-xl border-2 border-[#1E1E1E] bg-[#1E1E1E] text-white/80 hover:border-blue-500 hover:text-blue-400 hover:bg-transparent flex items-center justify-center shrink-0 transition-all cursor-pointer"
+                              className="h-8 w-8 rounded-xl border border-border bg-muted dark:bg-[#1E1E1E] text-muted-foreground hover:border-blue-500 hover:text-blue-500 hover:bg-transparent flex items-center justify-center shrink-0 transition-all cursor-pointer"
                             >
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
                           </TooltipTrigger>
-                          <TooltipContent side="top" className="bg-[#1E1E1E] text-white border-[#333] shadow-xl text-xs py-1 px-2">
+                          <TooltipContent side="top" className="border-0 shadow-xl text-xs py-1 px-2">
                             Edit Resource
                           </TooltipContent>
                         </Tooltip>
@@ -287,12 +287,12 @@ export function ResourcesTable({
                             <button
                               type="button"
                               onClick={() => setItemToDelete({ id: item.id, name: item.name })}
-                              className="h-8 w-8 rounded-xl border-2 border-[#1E1E1E] bg-[#1E1E1E] text-white/80 hover:border-red-500 hover:text-red-400 hover:bg-transparent flex items-center justify-center shrink-0 transition-all cursor-pointer"
+                              className="h-8 w-8 rounded-xl border border-border bg-muted dark:bg-[#1E1E1E] text-muted-foreground hover:border-red-500 hover:text-red-500 hover:bg-transparent flex items-center justify-center shrink-0 transition-all cursor-pointer"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </TooltipTrigger>
-                          <TooltipContent side="top" className="bg-[#1E1E1E] text-white border-[#333] shadow-xl text-xs py-1 px-2">
+                          <TooltipContent side="top" className="border-0 shadow-xl text-xs py-1 px-2">
                             Delete Resource
                           </TooltipContent>
                         </Tooltip>

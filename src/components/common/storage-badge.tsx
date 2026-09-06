@@ -15,7 +15,7 @@ export function StorageBadge({ storageType, showLabel = true, className, ...prop
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#1E1E1E] text-white/90 border-0 whitespace-nowrap transition-colors",
+        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-muted text-foreground dark:bg-[#1E1E1E] dark:text-white/90 border-0 whitespace-nowrap transition-colors",
         className
       )}
       title={isCloud ? "Synced with REDSOUTH Account" : "Saved in Local Browser Storage"}

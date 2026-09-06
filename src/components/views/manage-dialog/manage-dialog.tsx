@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { X } from "lucide-react";
 import svg from '../../../assets/svg';
 import dlpackage from '../../../functions/dlpackage';
 
@@ -31,12 +32,12 @@ interface ModCardProps {
 const ModCard: React.FC<ModCardProps> = ({ name, icon, onClick }) => {
   return (
     <div
-      className="flex-grow bg-[#1E1E1E] rounded-md h-[50px] w-[300px] flex items-center select-none cursor-pointer group"
+      className="flex-grow bg-muted dark:bg-[#1E1E1E] border border-border dark:border-transparent rounded-md h-[50px] w-[300px] flex items-center select-none cursor-pointer group text-foreground"
       onClick={onClick}
     >
       {icon && <img src={icon} alt={name + " icon"} className="rounded-md h-[50px] w-[50px] object-cover" />}
       <div className="flex items-center justify-between w-full">
-        <p className="m-0 mx-2.5 text-white">{name}</p>
+        <p className="m-0 mx-2.5 text-foreground">{name}</p>
         <span className="[&>svg]:w-[30px] [&>svg]:h-[30px] [&>svg]:mx-1.5 [&>svg]:opacity-0 [&>svg]:transition-all [&>svg]:duration-100 group-hover:[&>svg]:rotate-90 group-hover:[&>svg]:opacity-100 flex items-center">
           {svg.close}
         </span>
@@ -88,30 +89,30 @@ export default function ManageDialog({ selectedModsState, version, loader }: Man
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent
           hideClose
-          className="bg-[#1E1E1E] border-0 rounded-xl text-white p-0 w-full max-w-[1000px] max-h-[600px] h-[90dvh] flex flex-col gap-0 [&>button]:hidden"
+          className="bg-card dark:bg-[#1E1E1E] border border-border dark:border-0 rounded-xl text-foreground p-0 w-full max-w-[1000px] max-h-[600px] h-[90dvh] flex flex-col gap-0 [&>button]:hidden"
         >
           {/* Title bar */}
           <div className="border-b-2 border-[#FE5000] flex justify-between items-center mx-5 select-none">
-            <DialogTitle className="my-5 font-semibold text-xl text-white">
+            <DialogTitle className="my-5 font-semibold text-xl text-foreground">
               Manage Package
             </DialogTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-md w-9 h-9 text-white hover:bg-[#FE5000] transition-colors [&>svg]:h-[30px] [&>svg]:w-[30px]"
+            <button
+              type="button"
+              title="Close"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-foreground hover:bg-muted transition-colors cursor-pointer"
               onClick={() => setIsOpen(false)}
             >
-              {svg.close}
-            </Button>
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
           {/* Main content */}
           <div className="flex flex-col gap-5 mx-5 h-full max-h-[calc(100%_-_72px)] pt-5 pb-5">
             {/* Selected mods list */}
-            <div className="flex flex-col bg-black rounded-xl h-full max-h-[348px] w-full select-none">
+            <div className="flex flex-col bg-muted/50 dark:bg-black rounded-xl h-full max-h-[348px] w-full select-none text-foreground">
               <h4 className="font-medium leading-[30px] text-lg m-5 mb-0 text-center">Selected mods</h4>
               {selectedMods.length === 0 ? (
-                <p className="text-center m-0 p-4 text-gray-400">No mods selected</p>
+                <p className="text-center m-0 p-4 text-muted-foreground">No mods selected</p>
               ) : (
                 <div className="overflow-x-auto flex flex-wrap gap-2.5 px-2.5 m-2.5 mb-5">
                   {selectedMods.map(mod => (
@@ -144,16 +145,16 @@ export default function ManageDialog({ selectedModsState, version, loader }: Man
               </div>
 
               {/* Download status */}
-              <div className="flex flex-col items-center justify-center bg-black rounded-xl w-full select-none gap-0.5 px-5">
+              <div className="flex flex-col items-center justify-center bg-muted/50 dark:bg-black rounded-xl w-full select-none gap-0.5 px-5 text-foreground">
                 {modsDownloaded === -1 ? (
                   <>
                     <h3 className="m-0 font-medium text-lg">Download status</h3>
-                    <p className="m-0 mb-2.5 text-gray-400">No downloads</p>
+                    <p className="m-0 mb-2.5 text-muted-foreground">No downloads</p>
                   </>
                 ) : (
                   <>
                     <h3 className="m-0 font-medium text-lg">Download status</h3>
-                    <p className="m-0 mb-2.5 text-gray-400">Downloading {modsDownloaded} of {modsToDownload} mods</p>
+                    <p className="m-0 mb-2.5 text-muted-foreground">Downloading {modsDownloaded} of {modsToDownload} mods</p>
                     <Progress
                       className="w-[calc(100%-40px)] h-2.5 rounded-md"
                       value={modsDownloaded}

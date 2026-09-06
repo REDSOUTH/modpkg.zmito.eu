@@ -32,6 +32,7 @@ import {
   detectFileType, 
   detectMonacoLanguage 
 } from "@/lib/storage/config-files-storage";
+import { useTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -63,6 +64,8 @@ export function CustomFilesWorkspace({
   onSelectFile,
   onOpenAddDialog,
 }: CustomFilesWorkspaceProps) {
+  const { theme } = useTheme();
+  const monacoTheme = theme === "light" ? "light" : "vs-dark";
   const { customFiles, updateCustomFile, removeCustomFile } = usePack();
 
   const file = customFiles.find((f) => f.id === selectedFileId) || null;
@@ -209,16 +212,16 @@ export function CustomFilesWorkspace({
   // When no file is selected
   if (!file) {
     return (
-      <div className="flex-1 min-w-0 bg-[#0A0A0A] flex flex-col items-center justify-center p-8 text-center min-h-[calc(100vh-121px)]">
+      <div className="flex-1 min-w-0 bg-background flex flex-col items-center justify-center p-8 text-center min-h-[calc(100vh-121px)]">
         <Empty className="max-w-md">
           <EmptyHeader>
             <EmptyMedia variant="icon" className="bg-amber-400/10 border border-amber-400/20 text-amber-400">
               <FileSliders className="w-7 h-7" />
             </EmptyMedia>
-            <EmptyTitle className="text-white text-xl font-bold">
+            <EmptyTitle className="text-foreground text-xl font-bold">
               {customFiles.length === 0 ? "No Custom Files in this Package" : "No Custom File Selected"}
             </EmptyTitle>
-            <EmptyDescription className="text-white/50 text-xs">
+            <EmptyDescription className="text-muted-foreground text-xs">
               {customFiles.length === 0
                 ? "Add configuration files, scripts, data, or multimedia overrides directly into your modpack package."
                 : "Select a custom file from the sidebar to inspect and edit its content, or add a new one."}
@@ -237,12 +240,12 @@ export function CustomFilesWorkspace({
   }
 
   return (
-    <div className="flex-1 min-w-0 bg-[#0A0A0A] flex flex-col min-h-[calc(100vh-121px)] h-[calc(100vh-121px)] overflow-hidden">
+    <div className="flex-1 min-w-0 bg-background flex flex-col min-h-[calc(100vh-121px)] h-[calc(100vh-121px)] overflow-hidden">
       {/* Top Header Bar */}
-      <div className="p-3.5 px-6 border-b border-[#1E1E1E] bg-[#0E0E0E] flex items-center justify-between gap-4 shrink-0 flex-wrap">
+      <div className="p-3.5 px-6 border-b border-border bg-card flex items-center justify-between gap-4 shrink-0 flex-wrap">
         {/* Left: Icon, Name and Target Path inputs (tightly together) */}
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="w-9 h-9 rounded-xl bg-[#1E1E1E] border border-white/5 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-muted border border-border flex items-center justify-center shrink-0">
             <FileTypeIcon type={draftType} />
           </div>
 
@@ -252,7 +255,7 @@ export function CustomFilesWorkspace({
               value={draftName}
               onChange={(e) => setDraftName(e.target.value)}
               placeholder="File name"
-              className="bg-transparent text-white font-bold text-sm leading-tight focus:bg-[#1E1E1E] px-1.5 py-0.5 rounded-md border border-transparent focus:border-amber-400/50 focus:outline-none transition-all truncate"
+              className="bg-transparent text-foreground font-bold text-sm leading-tight focus:bg-muted px-1.5 py-0.5 rounded-md border border-transparent focus:border-amber-400/50 focus:outline-none transition-all truncate"
             />
             <input
               type="text"
@@ -266,7 +269,7 @@ export function CustomFilesWorkspace({
                 }
               }}
               placeholder="/config/options.txt"
-              className="bg-transparent text-white/45 font-mono text-[11px] leading-tight focus:bg-[#1E1E1E] px-1.5 py-0.5 rounded-md border border-transparent focus:border-amber-400/50 focus:outline-none transition-all w-80 truncate"
+              className="bg-transparent text-muted-foreground font-mono text-[11px] leading-tight focus:bg-muted px-1.5 py-0.5 rounded-md border border-transparent focus:border-amber-400/50 focus:outline-none transition-all w-80 truncate"
             />
           </div>
         </div>
@@ -275,14 +278,14 @@ export function CustomFilesWorkspace({
         <div className="flex items-center gap-2 shrink-0">
           {/* Content Mode Tabs */}
           {draftType === "multimedia" ? (
-            <div className="flex items-center gap-1.5 bg-[#1E1E1E]/60 p-1 rounded-xl">
+            <div className="flex items-center gap-1.5 bg-muted/60 p-1 rounded-xl">
               <span className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-400 text-black shadow-sm">
                 <Globe className="w-3.5 h-3.5" />
                 URL
               </span>
             </div>
           ) : (
-            <div className="flex items-center gap-1 bg-[#1E1E1E]/60 p-1 rounded-xl border border-white/5">
+            <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border">
               {MODE_TABS.map((tab) => (
                 <button
                   key={tab.id}
@@ -292,7 +295,7 @@ export function CustomFilesWorkspace({
                     "flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all cursor-pointer",
                     draftContentMode === tab.id
                       ? "bg-amber-400 text-black shadow-sm"
-                      : "text-white/60 hover:text-white hover:bg-white/5"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
                   )}
                 >
                   {tab.icon}
@@ -302,18 +305,18 @@ export function CustomFilesWorkspace({
             </div>
           )}
 
-          <div className="h-4 w-px bg-white/10 mx-1" />
+          <div className="h-4 w-px bg-border mx-1" />
 
           <StorageBadge storageType={file.storageLocation} />
 
-          <div className="h-4 w-px bg-white/10 mx-1" />
+          <div className="h-4 w-px bg-border mx-1" />
 
           {isDirty && (
             <Button
               variant="ghost"
               size="sm"
               onClick={handleReset}
-              className="text-white/60 hover:text-white hover:bg-[#1E1E1E] rounded-xl text-xs h-9 px-3 gap-1.5 cursor-pointer"
+              className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl text-xs h-9 px-3 gap-1.5 cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               Reset
@@ -351,12 +354,12 @@ export function CustomFilesWorkspace({
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsEditDialogOpen(true)}
-                  className="h-9 w-9 rounded-xl text-white/60 hover:text-white hover:bg-[#1E1E1E] cursor-pointer"
+                  className="h-9 w-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
                 >
                   <Pencil className="w-4 h-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="bg-[#1E1E1E] text-white text-xs border border-[#333]">
+              <TooltipContent side="bottom" className="border-0 text-xs shadow-xl">
                 Edit Full Details
               </TooltipContent>
             </Tooltip>
@@ -367,12 +370,12 @@ export function CustomFilesWorkspace({
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsConfirmDeleteOpen(true)}
-                  className="h-9 w-9 rounded-xl text-white/60 hover:text-red-400 hover:bg-red-500/10 cursor-pointer"
+                  className="h-9 w-9 rounded-xl text-muted-foreground hover:text-red-500 hover:bg-red-500/10 cursor-pointer"
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="bg-[#1E1E1E] text-white text-xs border border-[#333]">
+              <TooltipContent side="bottom" className="border-0 text-xs shadow-xl">
                 Delete Custom File
               </TooltipContent>
             </Tooltip>
@@ -383,12 +386,12 @@ export function CustomFilesWorkspace({
                   variant="ghost"
                   size="icon"
                   onClick={() => onSelectFile(null)}
-                  className="h-9 w-9 rounded-xl text-white/40 hover:text-white hover:bg-white/10 cursor-pointer"
+                  className="h-9 w-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="bg-[#1E1E1E] text-white text-xs border border-[#333]">
+              <TooltipContent side="bottom" className="border-0 text-xs shadow-xl">
                 Close File
               </TooltipContent>
             </Tooltip>
@@ -397,7 +400,7 @@ export function CustomFilesWorkspace({
       </div>
 
       {/* Editor Main Content Area */}
-      <div className="flex-1 min-h-0 relative flex flex-col overflow-hidden bg-[#0A0A0A]">
+      <div className="flex-1 min-h-0 relative flex flex-col overflow-hidden bg-background">
         {/* EDIT MODE: Monaco Code Editor */}
         {draftContentMode === "edit" && draftType !== "multimedia" && (
           <div className="flex-1 w-full h-full">
@@ -406,7 +409,7 @@ export function CustomFilesWorkspace({
               language={monacoLang}
               value={draftContent}
               onChange={(v) => setDraftContent(v ?? "")}
-              theme="vs-dark"
+              theme={monacoTheme}
               options={{
                 automaticLayout: true,
                 fontSize: 13,
@@ -447,33 +450,33 @@ export function CustomFilesWorkspace({
                 "flex flex-col items-center justify-center gap-3 w-full h-44 rounded-2xl border-2 border-dashed transition-all cursor-pointer select-none",
                 isDragging
                   ? "border-amber-400 bg-amber-400/10 text-amber-400 scale-[0.99]"
-                  : "border-[#1E1E1E] hover:border-amber-400/50 bg-[#121212] hover:bg-amber-400/5 text-white/50 hover:text-amber-400"
+                  : "border-border hover:border-amber-400/50 bg-muted/40 hover:bg-amber-400/5 text-muted-foreground hover:text-amber-500"
               )}
             >
               <Upload className={cn("w-8 h-8", isDragging && "animate-bounce")} />
               <div className="flex flex-col gap-1">
-                <span className="text-sm font-semibold text-white/80">
+                <span className="text-sm font-semibold text-foreground">
                   {isDragging ? "Drop file to upload" : "Click or drag & drop to replace file content"}
                 </span>
-                <span className="text-xs text-white/40">JSON, YAML, TOML, TXT, Config, Scripts, etc.</span>
+                <span className="text-xs text-muted-foreground">JSON, YAML, TOML, TXT, Config, Scripts, etc.</span>
               </div>
             </button>
 
             {uploadFileName && (
               <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-400/10 border border-amber-400/20 rounded-xl w-fit">
                 <Check className="w-4 h-4 text-amber-400 shrink-0" />
-                <span className="text-xs text-white/90 font-mono">{uploadFileName}</span>
+                <span className="text-xs text-foreground font-mono">{uploadFileName}</span>
               </div>
             )}
 
             {draftContent && (
-              <div className="flex-1 min-h-[360px] rounded-2xl overflow-hidden border border-[#1E1E1E] bg-[#121212]">
+              <div className="flex-1 min-h-[360px] rounded-2xl overflow-hidden border border-border bg-card">
                 <Editor
                   height="360px"
                   language={monacoLang}
                   value={draftContent}
                   onChange={(v) => setDraftContent(v ?? "")}
-                  theme="vs-dark"
+                  theme={monacoTheme}
                   options={{
                     automaticLayout: true,
                     fontSize: 12,
@@ -494,16 +497,16 @@ export function CustomFilesWorkspace({
         {(draftContentMode === "url" || draftType === "multimedia") && (
           <div className="flex-1 p-6 flex flex-col gap-6 max-w-4xl overflow-y-auto custom-scrollbar">
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-semibold text-white/50 uppercase tracking-wider">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Direct File URL
               </label>
               <Input
                 value={draftSourceUrl}
                 onChange={(e) => handleUrlChange(e.target.value)}
                 placeholder="https://example.com/asset.png or https://example.com/config.json"
-                className="bg-[#141414] border-[#1E1E1E] text-white h-11 rounded-xl font-mono text-sm focus-visible:border-amber-400"
+                className="bg-muted/50 border-border text-foreground h-11 rounded-xl font-mono text-sm focus-visible:border-amber-400"
               />
-              <p className="text-xs text-white/40">
+              <p className="text-xs text-muted-foreground">
                 Direct downloadable asset URL. Images, audio, and videos will render with preview players below.
               </p>
             </div>
@@ -522,11 +525,11 @@ export function CustomFilesWorkspace({
 
                 {/* Media Preview */}
                 {mediaType === "image" && (
-                  <div className="flex flex-col gap-2 p-5 bg-[#121212] border border-[#1E1E1E] rounded-2xl">
-                    <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">
+                  <div className="flex flex-col gap-2 p-5 bg-card border border-border rounded-2xl">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Image Preview
                     </span>
-                    <div className="flex items-center justify-center p-4 bg-black/60 rounded-xl overflow-hidden border border-white/5 min-h-[260px]">
+                    <div className="flex items-center justify-center p-4 bg-muted/40 rounded-xl overflow-hidden border border-border min-h-[260px]">
                       <img
                         src={draftSourceUrl}
                         alt="Media Preview"
@@ -540,22 +543,22 @@ export function CustomFilesWorkspace({
                 )}
 
                 {mediaType === "video" && (
-                  <div className="flex flex-col gap-2 p-5 bg-[#121212] border border-[#1E1E1E] rounded-2xl">
-                    <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">
+                  <div className="flex flex-col gap-2 p-5 bg-card border border-border rounded-2xl">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Video Preview
                     </span>
-                    <div className="flex items-center justify-center p-4 bg-black/60 rounded-xl overflow-hidden border border-white/5">
+                    <div className="flex items-center justify-center p-4 bg-muted/40 rounded-xl overflow-hidden border border-border">
                       <video src={draftSourceUrl} controls className="max-h-96 w-full rounded-lg shadow-xl" />
                     </div>
                   </div>
                 )}
 
                 {mediaType === "audio" && (
-                  <div className="flex flex-col gap-2 p-5 bg-[#121212] border border-[#1E1E1E] rounded-2xl">
-                    <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">
+                  <div className="flex flex-col gap-2 p-5 bg-card border border-border rounded-2xl">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Audio Player
                     </span>
-                    <div className="p-4 bg-black/60 rounded-xl border border-white/5">
+                    <div className="p-4 bg-muted/40 rounded-xl border border-border">
                       <audio src={draftSourceUrl} controls className="w-full" />
                     </div>
                   </div>

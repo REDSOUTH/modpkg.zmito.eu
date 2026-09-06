@@ -9,7 +9,7 @@ import { ContentTypeIcon } from "@/components/common/content-type-icon";
 import { CustomStorageType } from "@/components/common/storage-badge";
 import { PackageDropdownSelector } from "@/components/common/package-dropdown-selector";
 import { DeleteConfirmDialog } from "@/components/common/delete-confirm-dialog";
-import { PlusCircle, Pencil, Check, Sparkles, Package, Globe, AlertTriangle, Trash2 } from "lucide-react";
+import { PlusCircle, Pencil, Check, Sparkles, Package, Globe, AlertTriangle, Trash2, X } from "lucide-react";
 import { useState, useEffect, ChangeEvent } from "react";
 import { 
   saveCustomContentItem, 
@@ -350,23 +350,35 @@ export function AddCustomContentDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
         hideClose 
-        className="sm:max-w-4xl bg-[#0A0A0A] border border-[#1E1E1E] p-0 gap-0 overflow-hidden shadow-2xl rounded-2xl"
+        className="dialog-accent-blue sm:max-w-4xl bg-card border border-border p-0 gap-0 overflow-hidden shadow-2xl rounded-2xl text-foreground"
       >
         
-        <DialogHeader className="p-5 px-6 border-b border-[#1E1E1E] flex flex-row items-center gap-4 shrink-0 space-y-0">
-          {editItem ? (
-            <Pencil className="w-8 h-8 text-blue-400 shrink-0" />
-          ) : (
-            <PlusCircle className="w-8 h-8 text-blue-400 shrink-0" />
-          )}
-          <div className="flex flex-col text-left justify-center">
-            <DialogTitle className="text-white text-lg font-bold leading-tight">
-              {editItem ? "Edit Custom Content" : "Add Custom Content"}
-            </DialogTitle>
-            <p className="text-xs text-white/50 mt-0.5">
-              {editItem ? "Modify custom content properties and compatibility settings" : "Register a custom provider download URL or local file override"}
-            </p>
+        <DialogHeader className="p-5 px-6 border-b border-border flex flex-row items-center justify-between shrink-0 space-y-0">
+          <div className="flex items-center gap-4">
+            {editItem ? (
+              <Pencil className="w-8 h-8 text-blue-400 shrink-0" />
+            ) : (
+              <PlusCircle className="w-8 h-8 text-blue-400 shrink-0" />
+            )}
+            <div className="flex flex-col text-left justify-center">
+              <DialogTitle className="text-foreground text-lg font-bold leading-tight">
+                {editItem ? "Edit Custom Content" : "Add Custom Content"}
+              </DialogTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {editItem ? "Modify custom content properties and compatibility settings" : "Register a custom provider download URL or local file override"}
+              </p>
+            </div>
           </div>
+          <DialogClose asChild>
+            <button
+              type="button"
+              onClick={onClose}
+              title="Close"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-foreground hover:bg-muted transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </DialogClose>
         </DialogHeader>
 
         {/* Scrollable Content Body with Radix ScrollArea */}
@@ -378,7 +390,7 @@ export function AddCustomContentDialog({
               
               {/* Download URL */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-white/50 uppercase tracking-wider">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Download URL / Direct Link
                 </label>
                 <Input 
@@ -386,7 +398,7 @@ export function AddCustomContentDialog({
                   value={downloadUrl}
                   onChange={handleUrlChange}
                   placeholder="https://example.com/file.jar"
-                  className="bg-[#1E1E1E] border-[#1E1E1E] text-white h-11 rounded-xl focus-visible:border-blue-500"
+                  className="bg-muted/70 border-border text-foreground h-11 rounded-xl focus-visible:border-blue-500"
                 />
                 {detectedTypeNote && (
                   <span className="text-[11px] text-blue-400 flex items-center gap-1 mt-0.5">
@@ -398,48 +410,48 @@ export function AddCustomContentDialog({
 
               {/* Resource Name */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-white/50 uppercase tracking-wider">Resource Name</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Resource Name</label>
                 <Input 
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Custom OptiFine"
-                  className="bg-[#1E1E1E] border-[#1E1E1E] text-white h-11 rounded-xl focus-visible:border-blue-500"
+                  className="bg-muted/70 border-border text-foreground h-11 rounded-xl focus-visible:border-blue-500"
                 />
               </div>
 
               {/* Content Type */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-white/50 uppercase tracking-wider">Content Type</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Content Type</label>
                 <Select value={contentType} onValueChange={handleTypeChange}>
-                  <SelectTrigger className="bg-[#1E1E1E] border-2 border-[#1E1E1E] text-white focus:ring-0 focus:border-blue-500 h-11 rounded-xl">
+                  <SelectTrigger className="bg-muted/70 border-2 border-border text-foreground focus:ring-0 focus:border-blue-500 h-11 rounded-xl">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#0A0A0A] border-2 border-[#1E1E1E] text-white rounded-xl">
-                    <SelectItem value="mod" className="focus:bg-[#1E1E1E] focus:text-blue-400">
+                  <SelectContent className="bg-popover border-2 border-border text-popover-foreground rounded-xl">
+                    <SelectItem value="mod" className="focus:bg-muted focus:text-blue-400">
                       <div className="flex items-center gap-2">
                         <ContentTypeIcon type="mod" />
                         <span>Mod</span>
                       </div>
                     </SelectItem>
-                    <SelectItem value="resourcepack" className="focus:bg-[#1E1E1E] focus:text-blue-400">
+                    <SelectItem value="resourcepack" className="focus:bg-muted focus:text-blue-400">
                       <div className="flex items-center gap-2">
                         <ContentTypeIcon type="resourcepack" />
                         <span>Resourcepack</span>
                       </div>
                     </SelectItem>
-                    <SelectItem value="shader" className="focus:bg-[#1E1E1E] focus:text-blue-400">
+                    <SelectItem value="shader" className="focus:bg-muted focus:text-blue-400">
                       <div className="flex items-center gap-2">
                         <ContentTypeIcon type="shader" />
                         <span>Shader</span>
                       </div>
                     </SelectItem>
-                    <SelectItem value="datapack" className="focus:bg-[#1E1E1E] focus:text-blue-400">
+                    <SelectItem value="datapack" className="focus:bg-muted focus:text-blue-400">
                       <div className="flex items-center gap-2">
                         <ContentTypeIcon type="datapack" />
                         <span>Datapack</span>
                       </div>
                     </SelectItem>
-                    <SelectItem value="world" className="focus:bg-[#1E1E1E] focus:text-blue-400">
+                    <SelectItem value="world" className="focus:bg-muted focus:text-blue-400">
                       <div className="flex items-center gap-2">
                         <ContentTypeIcon type="world" />
                         <span>World</span>
@@ -451,14 +463,14 @@ export function AddCustomContentDialog({
 
               {/* Author */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-white/50 uppercase tracking-wider">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Author (Optional)
                 </label>
                 <Input 
                   value={author}
                   onChange={(e) => setAuthor(e.target.value)}
                   placeholder="e.g. sp614x"
-                  className="bg-[#1E1E1E] border-[#1E1E1E] text-white h-11 rounded-xl focus-visible:border-blue-500"
+                  className="bg-muted/70 border-border text-foreground h-11 rounded-xl focus-visible:border-blue-500"
                 />
               </div>
 
@@ -496,12 +508,12 @@ export function AddCustomContentDialog({
             </div>
 
             {/* Right Column: Compatibility Filters */}
-            <div className="flex flex-col gap-5 border-l border-[#1E1E1E] pl-0 md:pl-6">
+            <div className="flex flex-col gap-5 border-l border-border pl-0 md:pl-6">
               
               {/* Supported Mod Loaders (Modrinth API) */}
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-white/50 uppercase tracking-wider">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Supported Loader(s)
                   </label>
                   <button
@@ -521,7 +533,7 @@ export function AddCustomContentDialog({
                       className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-all border ${
                         selectedLoaders.includes("Any")
                           ? "bg-blue-500 text-white border-blue-500"
-                          : "bg-[#1E1E1E] text-white/60 border-transparent hover:text-white"
+                          : "bg-muted text-muted-foreground border-border hover:text-foreground"
                       }`}
                     >
                       All Loaders
@@ -536,7 +548,7 @@ export function AddCustomContentDialog({
                           className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-all border ${
                             isSelected && !selectedLoaders.includes("Any")
                               ? "bg-blue-500 text-white border-blue-500"
-                              : "bg-[#1E1E1E] text-white/60 border-transparent hover:text-white"
+                              : "bg-muted text-muted-foreground border-border hover:text-foreground"
                           }`}
                         >
                           {ldr.name}
@@ -550,7 +562,7 @@ export function AddCustomContentDialog({
               {/* Supported MC Versions (Mojang API) */}
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-white/50 uppercase tracking-wider">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Supported MC Version(s)
                   </label>
                   <button
@@ -570,7 +582,7 @@ export function AddCustomContentDialog({
                       className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-all border ${
                         selectedMcVersions.includes("Any")
                           ? "bg-blue-500 text-white border-blue-500"
-                          : "bg-[#1E1E1E] text-white/60 border-transparent hover:text-white"
+                          : "bg-muted text-muted-foreground border-border hover:text-foreground"
                       }`}
                     >
                       All Versions
@@ -585,7 +597,7 @@ export function AddCustomContentDialog({
                           className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-all border ${
                             isSelected && !selectedMcVersions.includes("Any")
                               ? "bg-blue-500 text-white border-blue-500"
-                              : "bg-[#1E1E1E] text-white/60 border-transparent hover:text-white"
+                              : "bg-muted text-muted-foreground border-border hover:text-foreground"
                           }`}
                         >
                           {ver}
@@ -602,13 +614,13 @@ export function AddCustomContentDialog({
         </ScrollArea>
 
         {/* Footer matching PackSettingsModal style */}
-        <DialogFooter className="p-4 px-6 border-t border-[#1E1E1E] bg-[#0A0A0A] flex sm:justify-between items-center gap-3 shrink-0">
+        <DialogFooter className="p-4 px-6 border-t border-border bg-card flex sm:justify-between items-center gap-3 shrink-0">
           {editItem ? (
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               onClick={handlePromptDelete}
-              className="h-11 rounded-xl border-2 border-[#1E1E1E] bg-[#1E1E1E] text-white hover:border-[#FE5000] hover:text-[#FE5000] hover:bg-transparent px-4 font-semibold text-xs transition-colors shrink-0 gap-2 flex items-center"
+              className="h-11 rounded-xl bg-muted dark:bg-[#1E1E1E] text-muted-foreground hover:text-red-400 hover:bg-red-500/10 ring-1 ring-inset ring-border/40 dark:ring-0 hover:ring-2 hover:ring-red-500/60 px-4 font-semibold text-xs transition-all shrink-0 gap-2 flex items-center cursor-pointer"
             >
               <Trash2 className="w-4 h-4" />
               <span>Delete</span>
@@ -617,20 +629,13 @@ export function AddCustomContentDialog({
             <div />
           )}
 
-          <div className="flex items-center gap-3">
-            <DialogClose asChild>
-              <Button variant="ghost" className="text-white/60 hover:text-white hover:bg-[#1E1E1E] rounded-xl px-5 h-11 border-0">
-                Cancel
-              </Button>
-            </DialogClose>
-            <Button 
-              onClick={handleSave} 
-              disabled={!name.trim() || !downloadUrl.trim() || isOrphanedSave}
-              className="bg-blue-500 text-white hover:bg-blue-600 rounded-xl px-5 h-11 font-semibold outline outline-2 outline-transparent hover:outline-blue-500/50 hover:outline-offset-2 active:scale-95 transition-all disabled:opacity-40"
-            >
-              {editItem ? "Update Custom Content" : "Add Custom Content"}
-            </Button>
-          </div>
+          <Button 
+            onClick={handleSave} 
+            disabled={!name.trim() || !downloadUrl.trim() || isOrphanedSave}
+            className="bg-blue-500 text-white hover:bg-blue-600 rounded-xl px-6 h-11 font-semibold outline outline-2 outline-transparent hover:outline-blue-500/50 hover:outline-offset-2 active:scale-95 transition-all disabled:opacity-40"
+          >
+            {editItem ? "Update Custom Content" : "Add Custom Content"}
+          </Button>
         </DialogFooter>
 
       </DialogContent>

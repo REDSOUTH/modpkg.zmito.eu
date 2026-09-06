@@ -82,7 +82,7 @@ export function ConfigFilesTab({
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-3xl font-bold text-white">Custom Files</h2>
+            <h2 className="text-3xl font-bold text-foreground">Overrides & Custom Files</h2>
             <p className="text-xs text-amber-400 font-semibold mt-1">
               Showing {filteredItems.length} item{filteredItems.length === 1 ? "" : "s"} in your library
             </p>
@@ -114,8 +114,8 @@ export function ConfigFilesTab({
                   <EmptyMedia variant="icon" className="bg-amber-400/10 text-amber-400">
                     <FileSliders className="w-8 h-8" />
                   </EmptyMedia>
-                  <EmptyTitle className="text-white text-xl font-bold">No custom files yet</EmptyTitle>
-                  <EmptyDescription className="text-white/60 max-w-md mx-auto text-sm">
+                  <EmptyTitle className="text-foreground text-xl font-bold">No custom files yet</EmptyTitle>
+                  <EmptyDescription className="text-muted-foreground max-w-md mx-auto text-sm">
                     Save reusable custom configuration files, scripts, and data files to quickly import them into any package.
                   </EmptyDescription>
                 </EmptyHeader>

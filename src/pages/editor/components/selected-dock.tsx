@@ -95,7 +95,7 @@ export default function SelectedDock() {
 
   return (
     <motion.aside
-      className="border-l border-[#1E1E1E] bg-black flex flex-col flex-shrink-0 z-30 overflow-hidden sticky top-[121px] h-[calc(100vh-121px)]"
+      className="border-l border-border bg-background flex flex-col flex-shrink-0 z-30 overflow-hidden sticky top-[121px] h-[calc(100vh-121px)]"
       initial={false}
       animate={{ width: isExpanded ? 340 : 80 }}
       transition={{ duration: 0.25, ease: "easeInOut" }}
@@ -103,7 +103,7 @@ export default function SelectedDock() {
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Header: MODPKG Overview */}
-      <div className="h-14 flex items-center shrink-0 relative border-b border-[#1E1E1E] w-full overflow-hidden">
+      <div className="h-14 flex items-center shrink-0 relative border-b border-border w-full overflow-hidden">
         {/* Fixed 80px icon container matching collapsed dock width */}
         <div className="w-[80px] h-full flex items-center justify-center shrink-0">
           <Package className="w-5 h-5 text-[#FE5000] shrink-0" />
@@ -119,8 +119,8 @@ export default function SelectedDock() {
               transition={{ duration: 0.2 }}
               className="flex flex-col whitespace-nowrap overflow-hidden pr-12"
             >
-              <span className="font-bold text-white text-sm tracking-wide">MODPKG Overview</span>
-              <span className="text-[10px] text-white/40">{installedContent.length} total items</span>
+              <span className="font-bold text-foreground text-sm tracking-wide">MODPKG Overview</span>
+              <span className="text-[10px] text-muted-foreground">{installedContent.length} total items</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -134,10 +134,10 @@ export default function SelectedDock() {
               exit={{ opacity: 0 }}
               onClick={togglePin}
               title={isPinned ? "Unpin dock" : "Pin dock open"}
-              className={`h-8 w-8 rounded-xl border border-[#1E1E1E] flex items-center justify-center transition-all absolute right-6 ${
+              className={`h-8 w-8 rounded-xl border flex items-center justify-center transition-all absolute right-6 ${
                 isPinned 
                   ? 'border-[#FE5000] text-[#FE5000] bg-[#FE5000]/10' 
-                  : 'bg-[#1E1E1E] text-white/60 hover:border-[#FE5000] hover:text-[#FE5000] hover:bg-transparent'
+                  : 'bg-muted border-border text-muted-foreground hover:border-[#FE5000] hover:text-[#FE5000]'
               }`}
             >
               {isPinned ? <PinOff className="w-3.5 h-3.5" /> : <Pin className="w-3.5 h-3.5" />}
@@ -149,12 +149,12 @@ export default function SelectedDock() {
       <TooltipProvider delayDuration={400}>
         {/* Expanded Clickable Filter Tags Header */}
         {isExpanded && (
-          <div className="pl-4 pr-6 py-4 border-b border-[#1E1E1E] flex flex-col gap-3 shrink-0">
+          <div className="pl-4 pr-6 py-4 border-b border-border flex flex-col gap-3 shrink-0">
             <ContentTypeFilterBadges
               showLabel={false}
               value={filterType}
               onValueChange={setFilterType}
-              activeColorClass="bg-[#FE5000] text-white shadow-md shadow-[#FE5000]/20"
+              activeColorClass="bg-[#FE5000] text-white"
               items={[
                 { id: "all", type: "all", label: "All", count: installedContent.length },
                 ...(modsCount > 0 ? [{ id: "mod", type: "mod", label: "Mods", count: modsCount }] : []),
@@ -167,7 +167,7 @@ export default function SelectedDock() {
             />
 
             {/* Provider Breakdown Row */}
-            <div className="flex items-center justify-between text-[11px] text-white/40 pt-1.5 border-t border-[#1E1E1E] h-6 shrink-0">
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1.5 border-t border-border h-6 shrink-0">
               <span className="font-semibold uppercase tracking-wider text-[10px]">Sources</span>
               <div className="flex items-center gap-3">
                 {modrinthCount > 0 && (
@@ -221,34 +221,34 @@ export default function SelectedDock() {
                   }}
                   className={`flex items-center rounded-xl transition-colors group relative max-w-full ${
                     isExpanded 
-                      ? "w-full min-w-0 overflow-hidden gap-3 p-2.5 bg-[#141414] border border-[#1E1E1E] hover:bg-[#1E1E1E]" 
-                      : "justify-center p-1 w-11 h-11 shrink-0 border border-transparent hover:bg-[#1E1E1E]/80 hover:border-[#1E1E1E]"
+                      ? "w-full min-w-0 overflow-hidden gap-3 p-2.5 bg-card dark:bg-[#141414] border border-border dark:border-[#1E1E1E] hover:bg-muted/80 dark:hover:bg-[#1E1E1E]" 
+                      : "justify-center p-1 w-11 h-11 shrink-0 border border-transparent hover:bg-muted hover:border-border"
                   }`}
                 >
                   {/* Item Image / Avatar */}
                   {isOverride ? (
-                    <div className="w-10 h-10 min-w-[40px] min-h-[40px] max-w-[40px] max-h-[40px] rounded-lg bg-[#1E1E1E] flex items-center justify-center text-amber-400 shrink-0 border border-white/5 select-none pointer-events-none">
+                    <div className="w-10 h-10 min-w-[40px] min-h-[40px] max-w-[40px] max-h-[40px] rounded-lg bg-muted flex items-center justify-center text-amber-400 shrink-0 border border-border select-none pointer-events-none">
                       <FileBraces className="w-5 h-5 text-amber-400 shrink-0" />
                     </div>
                   ) : item.iconUrl && item.iconUrl !== "/logo.svg" ? (
                     <img 
                       src={item.iconUrl} 
                       alt={item.name} 
-                      className="w-10 h-10 min-w-[40px] min-h-[40px] max-w-[40px] max-h-[40px] rounded-lg bg-black shrink-0 object-cover border border-white/5 select-none pointer-events-none" 
+                      className="w-10 h-10 min-w-[40px] min-h-[40px] max-w-[40px] max-h-[40px] rounded-lg bg-black shrink-0 object-cover border border-border select-none pointer-events-none" 
                       draggable={false}
                       onError={(e) => {
                         (e.target as HTMLElement).style.display = "none";
                         const parent = (e.target as HTMLElement).parentElement;
                         if (parent) {
                           const fallback = document.createElement("div");
-                          fallback.className = "w-10 h-10 min-w-[40px] min-h-[40px] max-w-[40px] max-h-[40px] rounded-lg bg-[#181818] flex items-center justify-center shrink-0 border border-white/5 select-none pointer-events-none";
+                          fallback.className = "w-10 h-10 min-w-[40px] min-h-[40px] max-w-[40px] max-h-[40px] rounded-lg bg-muted flex items-center justify-center shrink-0 border border-border select-none pointer-events-none";
                           parent.appendChild(fallback);
                         }
                       }}
                     />
                   ) : (
-                    <div className="w-10 h-10 min-w-[40px] min-h-[40px] max-w-[40px] max-h-[40px] rounded-lg bg-[#141414] flex items-center justify-center shrink-0 border border-white/5 select-none pointer-events-none">
-                      <ContentTypeIcon type={item.contentType} iconClassName="w-5 h-5 text-neutral-400" />
+                    <div className="w-10 h-10 min-w-[40px] min-h-[40px] max-w-[40px] max-h-[40px] rounded-lg bg-muted flex items-center justify-center shrink-0 border border-border select-none pointer-events-none">
+                      <ContentTypeIcon type={item.contentType} iconClassName="w-5 h-5 text-muted-foreground" />
                     </div>
                   )}
 
@@ -258,29 +258,29 @@ export default function SelectedDock() {
                       <div className="w-fit max-w-full">
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span className="font-medium text-sm text-white inline-block max-w-full truncate cursor-pointer hover:text-[#FE5000] transition-colors text-left align-bottom">
+                            <span className="font-medium text-sm text-foreground inline-block max-w-full truncate cursor-pointer hover:text-[#FE5000] transition-colors text-left align-bottom">
                               {item.name}
                             </span>
                           </TooltipTrigger>
-                          <TooltipContent side="top" className="bg-[#1E1E1E] text-white border border-[#333] shadow-xl text-xs rounded-lg p-2 max-w-xs">
+                          <TooltipContent side="top" className="border-0 shadow-xl text-xs rounded-lg p-2 max-w-xs">
                             <p className="font-semibold">{item.name}</p>
-                            <p className="text-[10px] text-white/50">{isOverride ? item.path : (item.versionName || item.versionId)}</p>
+                            <p className="text-[10px] text-muted-foreground">{isOverride ? item.path : (item.versionName || item.versionId)}</p>
                           </TooltipContent>
                         </Tooltip>
                       </div>
 
                       {/* Sub-line: [version/size] · [Provider Logo] (only if not override) · [Type Icon with color] */}
-                      <div className="flex items-center gap-1.5 text-[10px] leading-none text-white/40 mt-1 min-w-0 w-full overflow-hidden h-4">
+                      <div className="flex items-center gap-1.5 text-[10px] leading-none text-muted-foreground mt-1 min-w-0 w-full overflow-hidden h-4">
                         <span className="truncate min-w-0 shrink leading-none">{isOverride ? "Local Override" : (item.versionName || item.versionId)}</span>
                         
                         {!isOverride && (
                           <>
-                            <span className="text-white/20 select-none shrink-0 leading-none flex items-center">•</span>
+                            <span className="text-muted-foreground/30 select-none shrink-0 leading-none flex items-center">•</span>
                             <ProviderIcon provider={item.provider} size="sm" />
                           </>
                         )}
 
-                        <span className="text-white/20 select-none shrink-0 leading-none flex items-center">•</span>
+                        <span className="text-muted-foreground/30 select-none shrink-0 leading-none flex items-center">•</span>
 
                         {/* Type Icon with specific color */}
                         <ContentTypeIcon type={item.contentType} />
@@ -293,7 +293,7 @@ export default function SelectedDock() {
                     <button 
                       onClick={() => removeItem(item.id)}
                       title="Remove item"
-                      className="flex opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 rounded-xl border border-[#1E1E1E] bg-[#1E1E1E] text-white hover:border-[#FE5000] hover:text-[#FE5000] hover:bg-transparent items-center justify-center shrink-0 ml-1"
+                      className="flex opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 rounded-xl border border-border bg-muted text-muted-foreground hover:border-[#FE5000] hover:text-[#FE5000] hover:bg-transparent items-center justify-center shrink-0 ml-1"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -305,13 +305,23 @@ export default function SelectedDock() {
 
           {filteredItems.length === 0 && isExpanded && (
             <div className="flex flex-col items-center justify-center text-center py-16 px-4 my-auto">
-              <Package className="w-8 h-8 text-white/20 mb-2.5" />
-              <p className="text-white/50 text-xs font-medium">
+              <svg 
+                className="w-10 h-10 mb-2.5 text-zinc-400 dark:text-zinc-600" 
+                viewBox="0 0 190 200" 
+                fill="currentColor"
+              >
+                <path 
+                  fillRule="evenodd" 
+                  clipRule="evenodd" 
+                  d="M94.5358 0L189.072 46.7937V153.206L94.5358 200L0 153.206V46.7937L94.5358 0ZM17.1883 65.9994V142.508L85.9416 176.539V100.031L17.1883 65.9994ZM103.13 100.031V176.539L171.883 142.508V65.9994L146.101 78.7614V112.914L128.912 121.523V87.2697L103.13 100.031ZM161.078 52.1425L138.683 63.2268C138.193 62.8213 137.649 62.4645 137.055 62.1672L72.7811 29.974L94.5358 19.2057L161.078 52.1425ZM53.4502 39.5424L119.598 72.6741L94.5358 85.0795L27.9945 52.1425L53.4502 39.5424Z" 
+                />
+              </svg>
+              <p className="text-muted-foreground text-xs font-medium">
                 {installedContent.length === 0 
                   ? "No items in this package yet" 
                   : "No items match this category"}
               </p>
-              <p className="text-white/30 text-[11px] mt-1 max-w-[200px] leading-relaxed">
+              <p className="text-muted-foreground/60 text-[11px] mt-1 max-w-[200px] leading-relaxed">
                 {installedContent.length === 0 
                   ? "Browse content and click 'Add to Package' to start building." 
                   : "Try selecting 'All' or a different filter tag above."}
@@ -322,10 +332,10 @@ export default function SelectedDock() {
         </ScrollArea>
       </TooltipProvider>
 
-      <Separator className="bg-[#1E1E1E]" />
+      <Separator className="bg-border" />
 
       {/* Export button */}
-      <div className={`bg-black shrink-0 border-t border-[#1E1E1E] w-full sticky bottom-0 z-50 transition-all ${isExpanded ? "pl-4 pr-6 py-4" : "p-4 flex justify-center"}`}>
+      <div className={`bg-background shrink-0 border-t border-border w-full sticky bottom-0 z-50 transition-all ${isExpanded ? "pl-4 pr-6 py-4" : "p-4 flex justify-center"}`}>
         <button 
           onClick={handleExportModpack}
           title="Export MODPKG"

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { PackSettings, Loader, MojangVersion, ModrinthLoaderTag, PackContextType, InstalledItem, CustomFileItem } from "@/types";
+import { PackSettings, Loader, MojangVersion, ModrinthLoaderTag, PackContextType, InstalledItem, CustomFileItem, PackReleaseData } from "@/types";
 import { 
   getPackagesIndex, 
   savePackagesIndex, 
@@ -8,6 +8,7 @@ import {
   deletePackStorage,
   PackExclusiveData 
 } from "@/lib/storage/package-storage";
+import { detectFileType } from "@/lib/storage/config-files-storage";
 
 const PackContext = createContext<PackContextType | null>(null);
 
@@ -35,9 +36,38 @@ export const generateRandomPackId = (): string => {
   return `modpkg-${randomStr}`;
 };
 
+export const resolveSafeImportId = (rawId: string, existingList: PackSettings[]): string => {
+  let cleanId = (rawId || "imported-pack")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9._-]/g, "");
+
+  if (!cleanId) {
+    cleanId = "imported-pack";
+  }
+
+  const existingIds = new Set(existingList.map(p => p.id.toLowerCase()));
+  
+  if (!existingIds.has(cleanId)) {
+    return cleanId;
+  }
+
+  // If ID ends in -N, extract base prefix and start counting from N + 1
+  const baseMatch = cleanId.match(/^(.*?)-(\d+)$/);
+  const basePrefix = baseMatch ? baseMatch[1] : cleanId;
+  let counter = baseMatch ? parseInt(baseMatch[2], 10) + 1 : 2;
+
+  while (existingIds.has(`${basePrefix}-${counter}`)) {
+    counter++;
+  }
+  return `${basePrefix}-${counter}`;
+};
+
 const DEFAULT_FALLBACK_PACK: PackSettings = {
   id: "modpkg-default",
   name: "MODPKG",
+  slug: "modpkg-default",
   mcVersion: "1.20.4",
   loader: "fabric",
   versions: ["v1.0.0"],
@@ -73,7 +103,7 @@ export function PackProvider({ children }: { children: ReactNode }) {
       }
       return;
     }
-    const current = packagesList.find(p => p.id === activePackId);
+    const current = packagesList.find(p => p.id === activePackId) || getPackagesIndex().find(p => p.id === activePackId);
     if (current) {
       setPackSettings(current);
       const data = getPackData(current.id);
@@ -191,6 +221,7 @@ export function PackProvider({ children }: { children: ReactNode }) {
     const newPack: PackSettings = {
       id: newId,
       name: packData.name || "MODPKG",
+      slug: newId,
       mcVersion: packData.mcVersion || latestMcRelease,
       loader: packData.loader || "fabric",
       versions: [newVersion],
@@ -236,8 +267,372 @@ export function PackProvider({ children }: { children: ReactNode }) {
     return newPack;
   };
 
+  // Import package from JSON file (.mpkg-proj.json, .modpkg.json, .mdpkg.json, .mpkg.json, manifest.json, or legacy JSON)
+  const importPack = (parsedJson: any): PackSettings => {
+    // 0. Verify JSON structure to prevent errors
+    if (!parsedJson || typeof parsedJson !== "object" || Array.isArray(parsedJson)) {
+      throw new Error("Invalid JSON: The file must contain a valid JSON object.");
+    }
+
+    const hasRecognizedStructure = Boolean(
+      parsedJson.project ||
+      parsedJson.releases ||
+      parsedJson.metadata ||
+      parsedJson.dependencies ||
+      parsedJson.content ||
+      parsedJson.mods ||
+      parsedJson.minecraftVersion ||
+      parsedJson.installedContent ||
+      parsedJson.files ||
+      parsedJson.overrides ||
+      parsedJson.customFiles
+    );
+
+    if (!hasRecognizedStructure) {
+      throw new Error("The JSON structure is not recognized. It does not contain MODPKG metadata, releases, or mods.");
+    }
+
+    const currentList = getPackagesIndex();
+
+    // Check if full project export (.mpkg-proj.json format or has project + releases)
+    const isFullProject = Boolean(
+      parsedJson.project && (parsedJson.releases || parsedJson.project.versions || parsedJson.project.releases)
+    );
+
+    if (isFullProject) {
+      const proj = parsedJson.project || {};
+      const rawId = proj.id || parsedJson.id || "imported-project";
+      const targetId = resolveSafeImportId(rawId, currentList);
+      const packName = proj.name || parsedJson.name || "Imported Project";
+      const description = proj.description || parsedJson.description || "";
+
+      const rawReleases = parsedJson.releases || proj.releases || {};
+      const releaseKeys = Object.keys(rawReleases);
+      const rawVersions = Array.isArray(proj.versions) && proj.versions.length > 0
+        ? proj.versions
+        : releaseKeys;
+      const allVersionSet = new Set([...rawVersions, ...releaseKeys]);
+      const versions = allVersionSet.size > 0 ? Array.from(allVersionSet) : ["v1.0.0"];
+      const currentVersion = proj.currentVersion && versions.includes(proj.currentVersion)
+        ? proj.currentVersion
+        : versions[0];
+
+      const finalReleases: Record<string, PackReleaseData> = {};
+
+      versions.forEach((ver: string) => {
+        const r = rawReleases[ver] || {};
+        finalReleases[ver] = {
+          releaseId: ver,
+          minecraft: r.minecraft || proj.mcVersion || "1.20.4",
+          loader: {
+            type: r.loader?.type || proj.loader || "fabric",
+            version: r.loader?.version || proj.loaderVersion || "latest",
+          },
+          installedContent: Array.isArray(r.installedContent) ? r.installedContent : [],
+          customFiles: Array.isArray(r.customFiles) ? r.customFiles : [],
+          publishedAt: r.publishedAt || new Date().toISOString(),
+          updatedAt: r.updatedAt || new Date().toISOString(),
+        };
+      });
+
+      const activeRelease = finalReleases[currentVersion] || Object.values(finalReleases)[0];
+      const activeInstalledContent = activeRelease ? activeRelease.installedContent : [];
+      const activeCustomFiles = activeRelease ? activeRelease.customFiles : [];
+
+      const newPack: PackSettings = {
+        id: targetId,
+        name: packName,
+        slug: proj.slug || targetId,
+        mcVersion: proj.mcVersion || activeRelease?.minecraft || "1.20.4",
+        loader: proj.loader || activeRelease?.loader?.type || "fabric",
+        loaderVersion: proj.loaderVersion || activeRelease?.loader?.version || "latest",
+        versions,
+        currentVersion,
+        description,
+        author: proj.author || "Zmito",
+        authorId: proj.authorId || "usuario-redsouth-uuid",
+        isPublic: proj.isPublic ?? true,
+        tags: proj.tags || [],
+        createdAt: proj.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      const packData: PackExclusiveData = {
+        id: targetId,
+        installedContent: activeInstalledContent,
+        customContent: [],
+        customFiles: activeCustomFiles,
+        releases: finalReleases,
+      };
+
+      // 1. Save data directly to localStorage
+      savePackData(targetId, packData);
+
+      // 2. Save packages index
+      const updatedList = [newPack, ...currentList.filter(p => p.id !== targetId)];
+      savePackagesIndex(updatedList);
+
+      // 3. Update React states
+      setPackagesList(updatedList);
+      setActivePackId(targetId);
+      setPackSettings(newPack);
+      setInstalledContent(activeInstalledContent);
+      setCustomFiles(activeCustomFiles);
+      setIsCreatePackModalOpen(false);
+
+      return newPack;
+    }
+
+    // Check if legacy MODPKG format: contains minecraftVersion or mods without modern metadata/project wrappers
+    const isLegacyFormat = Boolean(
+      (parsedJson.minecraftVersion || (parsedJson.mods && !parsedJson.content)) &&
+      !parsedJson.metadata &&
+      !parsedJson.project &&
+      !parsedJson.formatVersion
+    );
+
+    // Single version / release format (.modpkg.json / .mdpkg.json / .mpkg.json / manifest / legacy JSON)
+    const metadata = parsedJson.metadata || {};
+    const dependencies = parsedJson.dependencies || {};
+
+    const packName = isLegacyFormat
+      ? (parsedJson.name || "MODPKG")
+      : (metadata.name || parsedJson.name || "Imported Modpack");
+
+    const randomLegacySuffix = Math.random().toString(36).substring(2, 8);
+    const rawId = isLegacyFormat
+      ? `modpkg-legacy-${randomLegacySuffix}`
+      : (metadata.projectId || parsedJson.id || packName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9._-]/g, "") || "modpkg");
+    const targetId = resolveSafeImportId(rawId, currentList);
+
+    const versionId = isLegacyFormat
+      ? "v1.0.0"
+      : (metadata.versionId || parsedJson.currentVersion || parsedJson.version || "v1.0.0");
+
+    const description = isLegacyFormat
+      ? (parsedJson.description || "Legacy MODPKG package")
+      : (metadata.description || parsedJson.description || "Imported package");
+
+    const mcVersion = parsedJson.minecraftVersion || dependencies.minecraft || parsedJson.mcVersion || parsedJson.gameVersion || "1.20.4";
+    const loader = (typeof dependencies.loader === "object" ? dependencies.loader.type : dependencies.loader)
+      || (typeof parsedJson.loader === "object" ? parsedJson.loader.id || parsedJson.loader.type : parsedJson.loader)
+      || "fabric";
+    const loaderVersion = (typeof dependencies.loader === "object" ? dependencies.loader.version : undefined)
+      || (typeof parsedJson.loader === "object" ? parsedJson.loader.version : undefined)
+      || "latest";
+
+    // 1. Extract installed content
+    const parsedInstalledContent: InstalledItem[] = [];
+    const contentRoot = parsedJson.content || parsedJson.mods;
+
+    if (contentRoot && typeof contentRoot === "object") {
+      if (Array.isArray(contentRoot.modrinth)) {
+        contentRoot.modrinth.forEach((m: any) => {
+          if (m && (m.id || m.projectId || m.slug)) {
+            const id = String(m.id || m.projectId || m.slug);
+            parsedInstalledContent.push({
+              id,
+              name: m.name || id,
+              provider: "modrinth",
+              iconUrl: m.iconUrl || m.icon || "",
+              versionId: m.versionId || "latest",
+              versionName: m.versionName || m.versionId || "Latest",
+              contentType: m.type || m.contentType || "mod",
+              downloadUrl: m.url || m.downloadUrl,
+            });
+          }
+        });
+      }
+      if (Array.isArray(contentRoot.curseforge)) {
+        contentRoot.curseforge.forEach((m: any) => {
+          if (m && (m.id || m.projectId || m.fileId)) {
+            const id = String(m.id || m.projectId || m.fileId);
+            parsedInstalledContent.push({
+              id,
+              name: m.name || id,
+              provider: "curseforge",
+              iconUrl: m.iconUrl || m.icon || "",
+              versionId: String(m.fileId || m.versionId || "latest"),
+              versionName: m.fileName || m.versionName || "Latest",
+              contentType: m.type || m.contentType || "mod",
+              downloadUrl: m.url || m.downloadUrl,
+            });
+          }
+        });
+      }
+      const customItems = contentRoot.custom || contentRoot.directUrls;
+      if (Array.isArray(customItems)) {
+        customItems.forEach((m: any) => {
+          if (m && (m.url || m.downloadUrl || m.name || m.id)) {
+            parsedInstalledContent.push({
+              id: m.id || `custom-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+              name: m.name || m.fileName || "Custom Resource",
+              provider: "custom",
+              iconUrl: m.iconUrl || m.icon || "",
+              versionId: "custom",
+              versionName: "Custom URL",
+              contentType: m.type || m.contentType || "mod",
+              downloadUrl: m.url || m.downloadUrl,
+              targetPath: m.targetPath,
+            });
+          }
+        });
+      }
+    }
+
+    if (parsedInstalledContent.length === 0 && Array.isArray(parsedJson.installedContent)) {
+      parsedJson.installedContent.forEach((item: any) => {
+        if (item && item.id) parsedInstalledContent.push(item);
+      });
+    } else if (parsedInstalledContent.length === 0 && Array.isArray(parsedJson.files)) {
+      // CurseForge manifest or modpack manifest format
+      parsedJson.files.forEach((f: any) => {
+        if (f.projectID || f.fileId || f.id) {
+          parsedInstalledContent.push({
+            id: String(f.projectID || f.fileId || f.id),
+            name: f.name || `Project ${f.projectID || f.fileId || f.id}`,
+            provider: "curseforge",
+            iconUrl: "",
+            versionId: String(f.fileID || f.versionId || "latest"),
+            versionName: "Latest",
+            contentType: "mod",
+          });
+        }
+      });
+    }
+
+    // 2. Extract overrides / custom files
+    const parsedCustomFiles: CustomFileItem[] = [];
+    if (Array.isArray(parsedJson.overrides)) {
+      parsedJson.overrides.forEach((o: any) => {
+        const rawPath = o.path || o.targetPath;
+        if (rawPath) {
+          const cleanPath = rawPath.startsWith("/") ? rawPath : `/${rawPath}`;
+          const filename = o.name || cleanPath.split("/").pop() || "options.txt";
+          parsedCustomFiles.push({
+            id: o.id || `file-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            name: filename,
+            targetPath: cleanPath,
+            type: o.fileType || detectFileType(filename) || "config",
+            content: o.type === "text" || !o.type ? (o.content ?? "") : undefined,
+            sourceUrl: o.type === "url" || o.url ? (o.url || o.sourceUrl) : undefined,
+            storageLocation: "local_browser",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          });
+        }
+      });
+    }
+    
+    if (parsedCustomFiles.length === 0 && Array.isArray(parsedJson.customFiles)) {
+      parsedJson.customFiles.forEach((file: any) => {
+        if (file && (file.id || file.name)) parsedCustomFiles.push(file);
+      });
+    }
+
+    // Single-release project (only this version)
+    const singleRelease: PackReleaseData = {
+      releaseId: versionId,
+      minecraft: mcVersion,
+      loader: {
+        type: loader,
+        version: loaderVersion,
+      },
+      installedContent: parsedInstalledContent,
+      customFiles: parsedCustomFiles,
+      publishedAt: parsedJson.exportedAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const newPack: PackSettings = {
+      id: targetId,
+      name: packName,
+      slug: targetId,
+      mcVersion,
+      loader,
+      loaderVersion,
+      versions: [versionId], // ONLY this version
+      currentVersion: versionId,
+      description,
+      author: metadata.author || "Zmito",
+      authorId: metadata.authorId || "usuario-redsouth-uuid",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const packData: PackExclusiveData = {
+      id: targetId,
+      installedContent: parsedInstalledContent,
+      customContent: [],
+      customFiles: parsedCustomFiles,
+      releases: {
+        [versionId]: singleRelease,
+      },
+    };
+
+    // 1. Save data directly to localStorage
+    savePackData(targetId, packData);
+
+    // 2. Save packages index
+    const updatedList = [newPack, ...currentList.filter(p => p.id !== targetId)];
+    savePackagesIndex(updatedList);
+
+    // 3. Update React states
+    setPackagesList(updatedList);
+    setActivePackId(targetId);
+    setPackSettings(newPack);
+    setInstalledContent(parsedInstalledContent);
+    setCustomFiles(parsedCustomFiles);
+    setIsCreatePackModalOpen(false);
+
+    return newPack;
+  };
+
   // Switch active pack
   const switchPack = (packId: string) => {
+    // If clicking the currently active pack, ensure memory state is flushed to storage and do not reset
+    if (activePackId === packId) {
+      if (activePackId) {
+        const curData = getPackData(activePackId);
+        if (!curData.releases) curData.releases = {};
+        const curVer = packSettings.currentVersion || "v1.0.0";
+        curData.releases[curVer] = {
+          ...(curData.releases[curVer] || {
+            releaseId: curVer,
+            minecraft: packSettings.mcVersion,
+            loader: { type: packSettings.loader, version: packSettings.loaderVersion || "latest" },
+          }),
+          installedContent: installedContent,
+          customFiles: customFiles,
+          updatedAt: new Date().toISOString(),
+        };
+        curData.installedContent = installedContent;
+        curData.customFiles = customFiles;
+        savePackData(activePackId, curData);
+      }
+      return;
+    }
+
+    // Save previous active pack's release data before switching away
+    if (activePackId) {
+      const prevData = getPackData(activePackId);
+      if (!prevData.releases) prevData.releases = {};
+      const prevVer = packSettings.currentVersion || "v1.0.0";
+      prevData.releases[prevVer] = {
+        ...(prevData.releases[prevVer] || {
+          releaseId: prevVer,
+          minecraft: packSettings.mcVersion,
+          loader: { type: packSettings.loader, version: packSettings.loaderVersion || "latest" },
+        }),
+        installedContent: installedContent,
+        customFiles: customFiles,
+        updatedAt: new Date().toISOString(),
+      };
+      prevData.installedContent = installedContent;
+      prevData.customFiles = customFiles;
+      savePackData(activePackId, prevData);
+    }
+
     const target = packagesList.find(p => p.id === packId);
     if (!target) return;
     setActivePackId(packId);
@@ -282,62 +677,96 @@ export function PackProvider({ children }: { children: ReactNode }) {
 
   const updatePackSettings = (newSettings: Partial<PackSettings>) => {
     setPackSettings(prev => {
+      const prevId = prev.id;
+      const targetId = (newSettings.id || prev.id).trim();
+      const isChangingId = Boolean(targetId && targetId !== prevId);
+
       const prevVersion = prev.currentVersion;
       const newVersion = newSettings.currentVersion ?? prevVersion;
       const isSwitchingVersion = newVersion !== prevVersion;
 
-      if (activePackId) {
-        const packData = getPackData(activePackId);
-        if (!packData.releases) packData.releases = {};
+      // Determine which packId to load current data from
+      const sourcePackId = activePackId || prevId;
+      const packData = getPackData(sourcePackId);
+      if (!packData.releases) packData.releases = {};
 
-        // 1. Save current active version state
-        packData.releases[prevVersion] = {
-          ...(packData.releases[prevVersion] || {
-            releaseId: prevVersion,
-            minecraft: prev.mcVersion,
-            loader: { type: prev.loader, version: prev.loaderVersion || "latest" },
-          }),
-          installedContent: installedContent,
-          customFiles: customFiles,
+      // 1. Save current active version state
+      packData.releases[prevVersion] = {
+        ...(packData.releases[prevVersion] || {
+          releaseId: prevVersion,
+          minecraft: prev.mcVersion,
+          loader: { type: prev.loader, version: prev.loaderVersion || "latest" },
+        }),
+        installedContent: installedContent,
+        customFiles: customFiles,
+        updatedAt: new Date().toISOString(),
+      };
+
+      // 2. If switching to new version, load its contents
+      if (isSwitchingVersion) {
+        const targetRelease = packData.releases[newVersion] || {
+          releaseId: newVersion,
+          minecraft: newSettings.mcVersion || prev.mcVersion,
+          loader: {
+            type: newSettings.loader || prev.loader,
+            version: prev.loaderVersion || "latest",
+          },
+          installedContent: [],
+          customFiles: [],
+          publishedAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
+        packData.releases[newVersion] = targetRelease;
+        packData.installedContent = targetRelease.installedContent || [];
+        packData.customFiles = targetRelease.customFiles || [];
 
-        // 2. If switching to new version, load its contents
-        if (isSwitchingVersion) {
-          const targetRelease = packData.releases[newVersion] || {
-            releaseId: newVersion,
-            minecraft: newSettings.mcVersion || prev.mcVersion,
-            loader: {
-              type: newSettings.loader || prev.loader,
-              version: prev.loaderVersion || "latest",
-            },
-            installedContent: [],
-            customFiles: [],
-            publishedAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+        setInstalledContent(targetRelease.installedContent || []);
+        setCustomFiles(targetRelease.customFiles || []);
+      } else {
+        // Updating settings on the same version
+        if (newSettings.mcVersion) packData.releases[prevVersion].minecraft = newSettings.mcVersion;
+        if (newSettings.loader) {
+          packData.releases[prevVersion].loader = {
+            type: newSettings.loader,
+            version: prev.loaderVersion || "latest",
           };
-          packData.releases[newVersion] = targetRelease;
-          packData.installedContent = targetRelease.installedContent || [];
-          packData.customFiles = targetRelease.customFiles || [];
-
-          setInstalledContent(targetRelease.installedContent || []);
-          setCustomFiles(targetRelease.customFiles || []);
-        } else {
-          // Updating settings on the same version
-          if (newSettings.mcVersion) packData.releases[prevVersion].minecraft = newSettings.mcVersion;
-          if (newSettings.loader) {
-            packData.releases[prevVersion].loader = {
-              type: newSettings.loader,
-              version: prev.loaderVersion || "latest",
-            };
-          }
         }
-
-        savePackData(activePackId, packData);
       }
 
-      const updated = { ...prev, ...newSettings };
-      const updatedList = packagesList.map(p => p.id === prev.id ? updated : p);
+      // 3. If ID is changing, migrate storage to the new ID
+      if (isChangingId) {
+        packData.id = targetId;
+        savePackData(targetId, packData);
+        deletePackStorage(prevId);
+
+        // Also migrate hidden custom items if present
+        try {
+          const oldHiddenKey = `modpkg_hidden_custom_${prevId}`;
+          const newHiddenKey = `modpkg_hidden_custom_${targetId}`;
+          const hiddenData = localStorage.getItem(oldHiddenKey);
+          if (hiddenData) {
+            localStorage.setItem(newHiddenKey, hiddenData);
+            localStorage.removeItem(oldHiddenKey);
+          }
+        } catch {
+          // Ignore localStorage errors
+        }
+
+        setActivePackId(targetId);
+      } else {
+        savePackData(sourcePackId, packData);
+      }
+
+      // Guarantee slug is always identical to id
+      const finalId = isChangingId ? targetId : prevId;
+      const updated: PackSettings = { 
+        ...prev, 
+        ...newSettings, 
+        id: finalId, 
+        slug: finalId 
+      };
+
+      const updatedList = packagesList.map(p => p.id === prevId ? updated : p);
       setPackagesList(updatedList);
       savePackagesIndex(updatedList);
       return updated;
@@ -580,6 +1009,7 @@ export function PackProvider({ children }: { children: ReactNode }) {
         packagesList,
         activePackId,
         createPack,
+        importPack,
         switchPack,
         deletePack,
         updatePackSettings,

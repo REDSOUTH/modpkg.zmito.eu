@@ -67,8 +67,8 @@ export function AppErrorView({ error: customError, onReset }: AppErrorViewProps)
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200 select-none">
-      <div className="w-full max-w-lg rounded-2xl bg-[#141414] border border-[#262626] shadow-2xl p-6 sm:p-7 flex flex-col text-left overflow-hidden">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200 select-none">
+      <div className="w-full max-w-lg rounded-2xl bg-card border-2 border-border shadow-2xl p-6 sm:p-7 flex flex-col text-left overflow-hidden text-foreground">
         
         {/* Top Header Row */}
         <div className="flex items-start justify-between gap-4 mb-4">
@@ -78,26 +78,26 @@ export function AppErrorView({ error: customError, onReset }: AppErrorViewProps)
 
           <div className="flex items-center gap-2">
             {statusCode && (
-              <span className="px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-xs font-mono text-white/60">
+              <span className="px-2.5 py-0.5 rounded-full bg-muted border border-border text-xs font-mono text-muted-foreground">
                 HTTP {statusCode}
               </span>
             )}
-            <span className="px-2.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-xs font-mono text-red-400 font-medium">
+            <span className="px-2.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-xs font-mono text-red-500 dark:text-red-400 font-medium">
               Application Error
             </span>
           </div>
         </div>
 
         {/* Title & Explanation */}
-        <h2 className="text-xl font-bold text-white tracking-tight">
+        <h2 className="text-xl font-bold text-foreground tracking-tight">
           Something went wrong
         </h2>
-        <p className="text-xs sm:text-sm text-white/50 mt-1 leading-relaxed">
+        <p className="text-xs sm:text-sm text-muted-foreground mt-1 leading-relaxed">
           The application ran into an unexpected error. You can reload the page or return to the home screen.
         </p>
 
         {/* Simplified Error Box */}
-        <div className="mt-4 p-3.5 rounded-xl bg-black/60 border border-white/5 font-mono text-xs text-red-400 break-words select-text">
+        <div className="mt-4 p-3.5 rounded-xl bg-muted/60 dark:bg-black/40 border border-border/80 font-mono text-xs text-red-500 dark:text-red-400 break-words select-text">
           {errorMessage}
         </div>
 
@@ -106,14 +106,14 @@ export function AppErrorView({ error: customError, onReset }: AppErrorViewProps)
           <div className="mt-2">
             <button
               onClick={() => setShowDetails(!showDetails)}
-              className="text-[11px] text-white/40 hover:text-white flex items-center gap-1 font-medium transition-colors cursor-pointer"
+              className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 font-medium transition-colors cursor-pointer"
             >
               <span>{showDetails ? "Hide stack trace" : "Show stack trace"}</span>
               {showDetails ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
             </button>
 
             {showDetails && (
-              <pre className="mt-2 max-h-36 overflow-y-auto p-3 rounded-xl bg-black text-[10px] font-mono text-white/40 leading-relaxed custom-scrollbar select-text border border-white/5">
+              <pre className="mt-2 max-h-36 overflow-y-auto p-3 rounded-xl bg-muted/40 dark:bg-black/60 text-[10px] font-mono text-muted-foreground leading-relaxed custom-scrollbar select-text border border-border">
                 {errorStack}
               </pre>
             )}
@@ -121,11 +121,11 @@ export function AppErrorView({ error: customError, onReset }: AppErrorViewProps)
         )}
 
         {/* Action Buttons */}
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-[#1E1E1E]">
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-border">
           <div className="flex items-center gap-2">
             <Button
               onClick={handleReload}
-              className="bg-[#FE5000] hover:bg-[#E04700] text-white font-semibold rounded-xl h-10 px-4 gap-2 border-0 active:scale-95 transition-all shadow-md shadow-[#FE5000]/20"
+              className="bg-[#FE5000] hover:bg-[#E04700] text-white font-semibold rounded-xl h-10 px-4 gap-2 border-0 active:scale-95 transition-all shadow-md shadow-[#FE5000]/20 cursor-pointer"
             >
               <RotateCw className="w-4 h-4" />
               <span>Reload Page</span>
@@ -134,7 +134,7 @@ export function AppErrorView({ error: customError, onReset }: AppErrorViewProps)
             <Button
               onClick={handleGoHome}
               variant="ghost"
-              className="text-white/70 hover:text-white hover:bg-[#1E1E1E] rounded-xl h-10 px-4 gap-2 transition-all"
+              className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl h-10 px-4 gap-2 transition-all cursor-pointer"
             >
               <Home className="w-4 h-4" />
               <span>Home</span>
@@ -144,7 +144,7 @@ export function AppErrorView({ error: customError, onReset }: AppErrorViewProps)
           <Button
             onClick={handleCopyReport}
             variant="outline"
-            className="rounded-xl border-[#262626] text-white/60 hover:text-white hover:bg-[#1E1E1E] h-10 px-3 gap-1.5 text-xs transition-all ml-auto"
+            className="rounded-xl border-border text-muted-foreground hover:text-foreground hover:bg-muted h-10 px-3 gap-1.5 text-xs transition-all ml-auto cursor-pointer"
             title="Copy full crash details to report a bug"
           >
             {copied ? <Check className="w-3.5 h-3.5 text-[#45D66F]" /> : <Copy className="w-3.5 h-3.5" />}

@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { User, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { motion } from "framer-motion";
 import modpkgLogo from "/banner.svg";
 import { useState, useEffect } from "react";
@@ -31,7 +32,7 @@ export default function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-[#1E1E1E] bg-black/80 backdrop-blur supports-[backdrop-filter]:bg-black/60">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-colors duration-200">
       <div className="flex h-16 items-center justify-between px-6 max-w-[1920px] mx-auto w-full">
 
         <div className="relative flex items-center h-full">
@@ -62,29 +63,44 @@ export default function Header() {
             transition={{ type: "spring", stiffness: 200, damping: 30 }}
             className="hidden md:flex items-center gap-6"
           >
-            {navLinks.map((link) => (
-              <Link
-                key={link.name}
-                to={link.path}
-                className={`text-sm font-medium transition-colors hover:text-[#FE5000] ${
-                  location.pathname === link.path 
-                    ? "text-[#FE5000] underline underline-offset-[6px] decoration-2 decoration-[#FE5000]" 
-                    : "text-white/80"
-                }`}
-              >
-                {link.name}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              const isActive = location.pathname === link.path;
+              return (
+                <Link
+                  key={link.name}
+                  to={link.path}
+                  className={`text-sm font-medium transition-colors duration-150 hover:text-[#FE5000] dark:hover:text-[#FE5000] active:text-[#FE5000] dark:active:text-[#FE5000] focus:text-[#FE5000] dark:focus:text-[#FE5000] ${
+                    isActive 
+                      ? "text-[#FE5000] dark:text-[#FE5000] underline underline-offset-[6px] decoration-2 decoration-[#FE5000]" 
+                      : "text-zinc-600 dark:text-zinc-300"
+                  }`}
+                >
+                  {link.name}
+                </Link>
+              );
+            })}
           </motion.nav>
         </div>
 
         <div className="flex items-center gap-4">
-          <Button variant="ghost" className="hidden md:flex items-center gap-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full px-4">
-            <User className="h-5 w-5" />
-            <span className="text-base font-normal">Sign In</span>
-          </Button>
+          <TooltipProvider delayDuration={150}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="hidden md:flex items-center gap-2 text-zinc-600 dark:text-zinc-300 hover:text-[#FE5000] dark:hover:text-[#FE5000] hover:bg-muted/50 rounded-xl px-4 cursor-pointer"
+                >
+                  <User className="h-5 w-5" />
+                  <span className="text-base font-normal">Sign In</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={8} className="font-medium text-xs shadow-xl border-0">
+                <p>Coming soon</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
-          <Button variant="ghost" size="icon" className="md:hidden text-white hover:bg-white/10 rounded-md">
+          <Button variant="ghost" size="icon" className="md:hidden text-zinc-600 dark:text-zinc-300 hover:text-[#FE5000] dark:hover:text-[#FE5000] hover:bg-muted/50 rounded-xl">
             <Menu className="h-6 w-6" />
           </Button>
         </div>

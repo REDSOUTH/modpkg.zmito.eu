@@ -44,7 +44,7 @@ export interface MyResourcesSidebarProps {
 }
 
 const STORAGE_OPTIONS: { id: string; label: string; icon: React.ReactNode }[] = [
-  { id: "all",   label: "All Storage",      icon: <Layers className="w-4 h-4 text-white" /> },
+  { id: "all",   label: "All Storage",      icon: <Layers className="w-4 h-4 text-foreground" /> },
   { id: "local", label: "Local Browser",    icon: <HardDrive className="w-4 h-4 text-blue-400" /> },
   { id: "cloud", label: "REDSOUTH Account", icon: <img src="/redsouth/logo-colored.svg" alt="REDSOUTH" className="w-4 h-4 object-contain" /> },
 ];
@@ -77,7 +77,7 @@ export function MyResourcesSidebar({
     },
     {
       id: "custom-files",
-      label: "Custom Files",
+      label: "Overrides & Custom Files",
       icon: <FileSliders className="w-4 h-4 text-amber-400" />,
       activeColorClass: "text-amber-400",
     },
@@ -86,7 +86,7 @@ export function MyResourcesSidebar({
   const isCustomContent = activeTab === "custom-content";
 
   const storageOptions: { id: string; label: string; icon: React.ReactNode }[] = [
-    { id: "all",   label: "All Storage",      icon: <Layers className="w-4 h-4 text-white" /> },
+    { id: "all",   label: "All Storage",      icon: <Layers className="w-4 h-4 text-foreground" /> },
     { id: "local", label: "Local Browser",    icon: <HardDrive className={cn("w-4 h-4", isCustomContent ? "text-blue-400" : "text-amber-400")} /> },
     { id: "cloud", label: "REDSOUTH Account", icon: <img src="/redsouth/logo-colored.svg" alt="REDSOUTH" className="w-4 h-4 object-contain" /> },
   ];
@@ -140,7 +140,7 @@ export function MyResourcesSidebar({
 
   return (
     <aside
-      className="w-80 shrink-0 border-r border-[#1E1E1E] bg-black flex flex-col z-30 overflow-hidden sticky"
+      className="w-80 shrink-0 border-r border-border bg-background flex flex-col z-30 overflow-hidden sticky transition-colors duration-200"
       style={{ top: 65, height: "calc(100vh - 65px)" }}
     >
       {/* Top section — tabs + add button */}
@@ -156,7 +156,7 @@ export function MyResourcesSidebar({
         {isCustomContent ? (
           <button
             onClick={onAddResource}
-            className="w-full bg-blue-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl active:scale-95 transition-all duration-200 flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/10 cursor-pointer"
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold px-4 py-2.5 rounded-xl active:scale-95 transition-all duration-200 flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/10 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5 shrink-0" />
             <span>Add Custom Content</span>
@@ -164,7 +164,7 @@ export function MyResourcesSidebar({
         ) : (
           <button
             onClick={onAddConfigFile}
-            className="w-full bg-amber-400 text-black text-xs font-semibold px-4 py-2.5 rounded-xl active:scale-95 transition-all duration-200 flex items-center justify-center gap-1.5 shadow-md shadow-amber-400/10 cursor-pointer"
+            className="w-full bg-amber-400 hover:bg-amber-500 text-black text-xs font-semibold px-4 py-2.5 rounded-xl active:scale-95 transition-all duration-200 flex items-center justify-center gap-1.5 shadow-md shadow-amber-400/10 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5 shrink-0" />
             <span>Add Custom File</span>
@@ -173,7 +173,7 @@ export function MyResourcesSidebar({
       </div>
 
       <div className="px-5 shrink-0">
-        <Separator className="bg-[#1E1E1E] w-full" />
+        <Separator className="bg-border w-full" />
       </div>
 
       {/* Scrollable filters — Search on top, followed by Storage Source Badges, Content/File Types, Loaders, and MC Versions */}
@@ -190,7 +190,7 @@ export function MyResourcesSidebar({
 
           {/* 2. STORAGE SOURCE BADGES */}
           <div className="flex flex-col gap-2.5 w-full">
-            <h3 className="text-[11px] font-bold text-white/40 uppercase tracking-widest pl-1">
+            <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest pl-1">
               STORAGE SOURCE
             </h3>
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -203,7 +203,7 @@ export function MyResourcesSidebar({
                 const isBlackActive = isActive && !isCustomContent;
                 const iconColor = isActive
                   ? (isBlackActive ? "text-black" : "text-white")
-                  : "text-white/70";
+                  : "text-muted-foreground";
 
                 const renderBadgeIcon = () => {
                   if (badge.id === "all") {
@@ -223,9 +223,9 @@ export function MyResourcesSidebar({
                       "flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer select-none",
                       isActive
                         ? isCustomContent
-                          ? "bg-blue-500 text-white shadow-md shadow-blue-500/20"
-                          : "bg-amber-400 text-black shadow-md shadow-amber-400/20"
-                        : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
+                          ? "bg-blue-500 text-white"
+                          : "bg-amber-400 text-black"
+                        : "bg-muted dark:bg-[#1E1E1E] text-muted-foreground hover:bg-muted/80 dark:hover:bg-[#252525] hover:text-foreground"
                     )}
                   >
                     {renderBadgeIcon()}
@@ -244,23 +244,23 @@ export function MyResourcesSidebar({
                 value={selectedType}
                 onValueChange={setSelectedType}
                 items={contentTypeFilterItems}
-                activeColorClass="bg-blue-500 text-white shadow-md shadow-blue-500/20"
+                activeColorClass="bg-blue-500 text-white"
               />
 
               {availableLoaders.length > 0 && (
                 <div className="flex flex-col gap-2.5">
-                  <h3 className="text-[11px] font-bold text-white/40 uppercase tracking-widest pl-1">LOADER</h3>
+                  <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest pl-1">LOADER</h3>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <button
                       onClick={() => setSelectedLoader("all")}
                       className={cn(
                         "flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer select-none",
                         selectedLoader === "all"
-                          ? "bg-blue-500 text-white shadow-md shadow-blue-500/20"
-                          : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
+                          ? "bg-blue-500 text-white"
+                          : "bg-muted dark:bg-[#1E1E1E] text-muted-foreground hover:bg-muted/80 dark:hover:bg-[#252525] hover:text-foreground"
                       )}
                     >
-                      <Layers className={cn("w-3.5 h-3.5 shrink-0", selectedLoader === "all" ? "text-white" : "text-white/70")} />
+                      <Layers className={cn("w-3.5 h-3.5 shrink-0", selectedLoader === "all" ? "text-white" : "text-muted-foreground")} />
                       <span>All ({counts.all})</span>
                     </button>
                     {availableLoaders.map((ldr) => (
@@ -269,8 +269,8 @@ export function MyResourcesSidebar({
                         onClick={() => setSelectedLoader(ldr.id)}
                         className={`text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer ${
                           selectedLoader === ldr.id
-                            ? "bg-blue-500 text-white shadow-md shadow-blue-500/20"
-                            : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
+                            ? "bg-blue-500 text-white"
+                            : "bg-muted dark:bg-[#1E1E1E] text-muted-foreground hover:bg-muted/80 dark:hover:bg-[#252525] hover:text-foreground"
                         }`}
                       >
                         {ldr.label} ({ldr.count})
@@ -282,18 +282,18 @@ export function MyResourcesSidebar({
 
               {availableMcVersions.length > 0 && (
                 <div className="flex flex-col gap-2.5">
-                  <h3 className="text-[11px] font-bold text-white/40 uppercase tracking-widest pl-1">MINECRAFT VERSION</h3>
+                  <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest pl-1">MINECRAFT VERSION</h3>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <button
                       onClick={() => setSelectedMcVersion("all")}
                       className={cn(
                         "flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer select-none",
                         selectedMcVersion === "all"
-                          ? "bg-blue-500 text-white shadow-md shadow-blue-500/20"
-                          : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
+                          ? "bg-blue-500 text-white"
+                          : "bg-muted dark:bg-[#1E1E1E] text-muted-foreground hover:bg-muted/80 dark:hover:bg-[#252525] hover:text-foreground"
                       )}
                     >
-                      <Layers className={cn("w-3.5 h-3.5 shrink-0", selectedMcVersion === "all" ? "text-white" : "text-white/70")} />
+                      <Layers className={cn("w-3.5 h-3.5 shrink-0", selectedMcVersion === "all" ? "text-white" : "text-muted-foreground")} />
                       <span>All ({counts.all})</span>
                     </button>
                     {availableMcVersions.map((ver) => (
@@ -302,8 +302,8 @@ export function MyResourcesSidebar({
                         onClick={() => setSelectedMcVersion(ver.id)}
                         className={`text-xs font-semibold px-3 py-1.5 rounded-xl border-0 transition-all cursor-pointer ${
                           selectedMcVersion === ver.id
-                            ? "bg-blue-500 text-white shadow-md shadow-blue-500/20"
-                            : "bg-[#1E1E1E] text-white/70 hover:bg-[#252525] hover:text-white"
+                            ? "bg-blue-500 text-white"
+                            : "bg-muted dark:bg-[#1E1E1E] text-muted-foreground hover:bg-muted/80 dark:hover:bg-[#252525] hover:text-foreground"
                         }`}
                       >
                         {ver.label} ({ver.count})
@@ -319,7 +319,7 @@ export function MyResourcesSidebar({
               value={selectedType}
               onValueChange={setSelectedType}
               items={fileTypeFilterItems}
-              activeColorClass="bg-amber-400 text-black shadow-md shadow-amber-400/20"
+              activeColorClass="bg-amber-400 text-black"
             />
           )}
 

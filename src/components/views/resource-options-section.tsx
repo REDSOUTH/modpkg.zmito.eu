@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Package, PlusCircle, FileSliders } from "lucide-react";
@@ -40,6 +41,7 @@ export function ResourceOptionsSection({
   isLoggedIn = false,
   className,
 }: ResourceOptionsSectionProps) {
+  const { t } = useTranslation();
   const isStandalone = context === "standalone";
 
   // Accent color classes
@@ -49,13 +51,13 @@ export function ResourceOptionsSection({
 
   const iconColorClass = accentColor === "amber" ? "text-amber-400" : "text-blue-400";
 
-  const libraryTitle = "Save to My Resources";
+  const libraryTitle = t("resourceOptions.saveToMyResources");
   const LibraryIcon = resourceType === "content" ? PlusCircle : FileSliders;
 
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-        Storage & Options
+        {t("resourceOptions.storageAndOptions")}
       </label>
 
       <div className="flex flex-col gap-2.5">
@@ -73,8 +75,12 @@ export function ResourceOptionsSection({
             <div className="flex items-center gap-2.5">
               <Package className="w-4 h-4 shrink-0 text-[#FE5000]" />
               <div className="flex flex-col text-left">
-                <span className="text-xs font-semibold text-foreground">Add directly to current package</span>
-                <span className="text-[11px] text-muted-foreground">Install to active modpkg version list</span>
+                <span className="text-xs font-semibold text-foreground">
+                  {t("resourceOptions.addToCurrentPackage")}
+                </span>
+                <span className="text-[11px] text-muted-foreground">
+                  {t("resourceOptions.addToCurrentPackageDesc")}
+                </span>
               </div>
             </div>
           </div>
@@ -95,7 +101,9 @@ export function ResourceOptionsSection({
               <LibraryIcon className={cn("w-4 h-4 shrink-0", iconColorClass)} />
               <div className="flex flex-col text-left">
                 <span className="text-xs font-semibold text-foreground">{libraryTitle}</span>
-                <span className="text-[11px] text-muted-foreground">Make accessible across all your modpkgs</span>
+                <span className="text-[11px] text-muted-foreground">
+                  {t("resourceOptions.saveToMyResourcesDesc")}
+                </span>
               </div>
             </div>
           </div>
@@ -126,9 +134,11 @@ export function ResourceOptionsSection({
                   <div className="flex items-center gap-2.5">
                     <img src="/redsouth/logo-colored.svg" alt="REDSOUTH Account" className="w-4 h-4 object-contain shrink-0" />
                     <div className="flex flex-col text-left">
-                      <span className="text-xs font-semibold text-foreground">Save to REDSOUTH Account</span>
+                      <span className="text-xs font-semibold text-foreground">
+                        {t("resourceOptions.saveToCloud")}
+                      </span>
                       <span className="text-[11px] text-muted-foreground">
-                        {isLoggedIn ? "Sync across your REDSOUTH devices" : "Sign in to sync across devices"}
+                        {isLoggedIn ? t("resourceOptions.syncAcrossDevices") : t("resourceOptions.signInToSync")}
                       </span>
                     </div>
                   </div>
@@ -136,7 +146,7 @@ export function ResourceOptionsSection({
               </TooltipTrigger>
               {!isLoggedIn && (
                 <TooltipContent side="top" sideOffset={8} className="font-medium text-xs shadow-xl max-w-xs">
-                  <p>Sign in to your REDSOUTH Account to sync resources across devices.</p>
+                  <p>{t("resourceOptions.signInTooltip")}</p>
                 </TooltipContent>
               )}
             </Tooltip>

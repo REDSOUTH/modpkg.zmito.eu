@@ -20,6 +20,7 @@ import { deleteCustomContentItem, getCustomContentItems } from "@/lib/storage/cu
 import { AddCustomContentDialog } from "@/components/views/add-custom-content-dialog";
 import notification from "@/functions/notification";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useTranslation } from "react-i18next";
 
 export type CardContentType = "mod" | "resourcepack" | "shader" | "datapack" | "world" | "override";
 export type CardProviderType = "modrinth" | "curseforge" | "custom" | "local_override" | "all";
@@ -77,6 +78,7 @@ const triggerBrowserDownload = (url: string, fileName?: string) => {
 };
 
 export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModCardComponentProps) {
+  const { t } = useTranslation();
   const [isTitleHovered, setIsTitleHovered] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [versions, setVersions] = useState<ModVersion[]>([]);
@@ -98,9 +100,9 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
   }, [installedItem?.versionId]);
 
   const selectedVersionName = selectedVersionId === "latest"
-    ? "Latest"
+    ? t("editor.card.latest")
     : selectedVersionId === "latest-unstable"
-      ? "Latest Unstable"
+      ? t("editor.card.latestUnstable")
       : versions.find(v => v.id === selectedVersionId)?.name || selectedVersionId;
 
   const isCustom = mod.provider === "custom";
@@ -161,13 +163,13 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
       if (isCustom) {
         const customUrl = (mod as any).customItem?.downloadUrl || mod.websiteUrl || mod.description;
         if (!customUrl || !customUrl.startsWith("http")) {
-          notification.error("No direct download URL available for this custom item");
+          notification.error(t("toast.noDirectDownloadUrl"));
           return;
         }
         const ext = normalizeType(mod.type || "mod") === "resourcepack" ? "zip" : "jar";
         const filename = customUrl.split("/").pop()?.split("?")[0] || `${mod.name}.${ext}`;
         triggerBrowserDownload(customUrl, filename);
-        notification.success(`Downloading ${mod.name}...`);
+        notification.success(t("toast.downloading", { name: mod.name }));
         return;
       }
 
@@ -175,7 +177,7 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
       const provider = normalizeProvider(mod.provider || "modrinth");
       const modId = mod.id;
       if (!modId) {
-        notification.error("Content ID not found");
+        notification.error(t("toast.contentIdNotFound"));
         return;
       }
 
@@ -194,7 +196,7 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
       }
 
       if (currentVersionsList.length === 0) {
-        notification.warn(`No compatible files found for Minecraft ${mcVersion} (${loader})`);
+        notification.warn(t("toast.noCompatibleFiles", { mcVersion, loader }));
         return;
       }
 
@@ -209,7 +211,7 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
       }
 
       if (!targetVer) {
-        notification.error("Could not determine version to download");
+        notification.error(t("toast.couldNotDetermineVersion"));
         return;
       }
 
@@ -242,20 +244,20 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
       if (!downloadUrl && provider === "curseforge") {
         const fallbackUrl = `https://www.curseforge.com/minecraft/mc-mods/${mod.slug || modId}/download/${targetVer.id}`;
         triggerBrowserDownload(fallbackUrl, fileName || `${mod.name}.${ext}`);
-        notification.success(`Opening download for ${mod.name} (${targetVer.name})...`);
+        notification.success(t("toast.openingDownload", { name: mod.name, version: targetVer.name }));
         return;
       }
 
       if (!downloadUrl) {
-        notification.error(`No download URL available for ${mod.name}`);
+        notification.error(t("toast.noDownloadUrl", { name: mod.name }));
         return;
       }
 
       triggerBrowserDownload(downloadUrl, fileName || `${mod.name}.${ext}`);
-      notification.success(`Downloading ${mod.name} (${targetVer.name})...`);
+      notification.success(t("toast.downloadingWithVersion", { name: mod.name, version: targetVer.name }));
     } catch (err: any) {
       console.error("Direct download error:", err);
-      notification.error(`Failed to download ${mod.name}: ${err?.message || "Unknown error"}`);
+      notification.error(t("toast.downloadFailed", { name: mod.name, error: err?.message || "Unknown error" }));
     } finally {
       setIsDownloading(false);
     }
@@ -415,7 +417,7 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
                   </button>
                 </TooltipTrigger>
                 <TooltipContent className="text-xs">
-                  <p>{isAdded ? "Remove from Package" : "Add to Package"}</p>
+                  <p>{isAdded ? t("editor.card.removeFromPackage") : t("editor.card.addToPackage")}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -450,7 +452,7 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
                   </button>
                 </TooltipTrigger>
                 <TooltipContent className="text-xs">
-                  <p>Edit Custom Content</p>
+                  <p>{t("editor.card.editCustomContent")}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -484,7 +486,7 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
                   </button>
                 </TooltipTrigger>
                 <TooltipContent className="text-xs">
-                  <p>{isAdded ? "Remove from Package" : `Add to Package (${selectedVersionName})`}</p>
+                  <p>{isAdded ? t("editor.card.removeFromPackage") : t("editor.card.addToPackageVersion", { version: selectedVersionName })}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -509,7 +511,7 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
                     </DropdownMenuTrigger>
                   </TooltipTrigger>
                   <TooltipContent className="text-xs">
-                    <p>Versions & Download ({selectedVersionName})</p>
+                    <p>{t("editor.card.versionsAndDownload", { version: selectedVersionName })}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -517,12 +519,12 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
               <DropdownMenuContent 
                 align="end" 
                 sideOffset={4}
-                className="bg-popover text-popover-foreground border border-border rounded-xl shadow-xl z-50 w-72 p-1.5"
+                className="bg-popover text-popover-foreground border border-border dark:border-[#333333] rounded-xl shadow-xl z-50 w-72 p-1.5"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* 1. Label de versiones */}
                 <DropdownMenuLabel className="text-[10px] uppercase font-semibold tracking-wider text-muted-foreground px-2.5 pt-1.5 pb-1">
-                  Versiones ({mcVersion} · {loader})
+                  {t("editor.card.versionsHeader", { mcVersion, loader })}
                 </DropdownMenuLabel>
 
                 {/* 2. Lista nativa de selección de versión con truncate estricto */}
@@ -531,13 +533,14 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
                     {/* Latest */}
                     <DropdownMenuItem
                       className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs cursor-pointer focus:bg-muted font-medium w-full min-w-0"
+                      onSelect={(e) => e.preventDefault()}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleSelectVersion("latest");
                       }}
                     >
                       <span className={`truncate min-w-0 flex-1 block ${selectedVersionId === "latest" ? "font-semibold text-[#FE5000]" : "text-foreground"}`}>
-                        Latest
+                        {t("editor.card.latest")}
                       </span>
                       {selectedVersionId === "latest" && (
                         <Check className="w-3.5 h-3.5 text-[#FE5000] shrink-0 ml-2" />
@@ -547,13 +550,14 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
                     {/* Latest Unstable */}
                     <DropdownMenuItem
                       className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs cursor-pointer focus:bg-muted font-medium w-full min-w-0"
+                      onSelect={(e) => e.preventDefault()}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleSelectVersion("latest-unstable");
                       }}
                     >
                       <span className={`truncate min-w-0 flex-1 block ${selectedVersionId === "latest-unstable" ? "font-semibold text-[#FE5000]" : "text-foreground"}`}>
-                        Latest Unstable
+                        {t("editor.card.latestUnstable")}
                       </span>
                       {selectedVersionId === "latest-unstable" && (
                         <Check className="w-3.5 h-3.5 text-[#FE5000] shrink-0 ml-2" />
@@ -563,11 +567,11 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
                     {isLoadingVersions ? (
                       <div className="text-xs text-muted-foreground px-2 py-3 text-center animate-pulse flex items-center justify-center gap-2">
                         <Loader2 className="w-3.5 h-3.5 animate-spin text-[#FE5000]" />
-                        <span>Cargando versiones...</span>
+                        <span>{t("editor.card.loadingVersions")}</span>
                       </div>
                     ) : versions.length === 0 ? (
                       <div className="text-xs text-muted-foreground px-2 py-2 text-center">
-                        No se encontraron versiones
+                        {t("editor.card.noVersionsFound")}
                       </div>
                     ) : (
                       versions.map((v) => {
@@ -576,6 +580,7 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
                           <DropdownMenuItem
                             key={v.id}
                             className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs cursor-pointer focus:bg-muted w-full min-w-0"
+                            onSelect={(e) => e.preventDefault()}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleSelectVersion(v.id, v.name);
@@ -598,7 +603,7 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
                             {/* Badges + check on the right */}
                             <div className="flex items-center gap-1 shrink-0 ml-2">
                               {!v.stable && (
-                                <span className="text-[10px] text-muted-foreground font-normal shrink-0">(Unstable)</span>
+                                <span className="text-[10px] text-muted-foreground font-normal shrink-0">{t("editor.card.unstable")}</span>
                               )}
                               {v.recommended && (
                                 <span className="text-[10px] font-bold text-blue-500 shrink-0">★</span>
@@ -620,6 +625,7 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
                 {/* 4. Botón de descarga de la versión seleccionada */}
                 <DropdownMenuItem
                   className="flex items-center gap-2.5 p-2.5 rounded-xl cursor-pointer bg-[#FE5000] text-white hover:bg-[#e04700] focus:bg-[#e04700] focus:text-white transition-colors shadow-sm shadow-[#FE5000]/20 font-medium text-xs group/dl"
+                  onSelect={(e) => e.preventDefault()}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDirectDownload();
@@ -632,7 +638,7 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
                     <Download className="w-4 h-4 text-white shrink-0" />
                   )}
                   <div className="flex flex-col min-w-0 flex-1">
-                    <span className="font-semibold text-white leading-tight">Descargar archivo directo</span>
+                    <span className="font-semibold text-white leading-tight">{t("editor.card.downloadDirectFile")}</span>
                     <span className="text-[10px] text-white/80 truncate">
                       {selectedVersionName} ({mcVersion} · {loader})
                     </span>
@@ -658,7 +664,7 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
               variant="secondary" 
               className="bg-muted dark:bg-black text-muted-foreground rounded-md text-[10px] uppercase tracking-wider font-medium border border-border/50 dark:border-white/5 select-none cursor-default"
             >
-              MY RESOURCES
+              {t("editor.card.myResources")}
             </Badge>
           </div>
         ) : mod.categories && mod.categories.length > 0 ? (

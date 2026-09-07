@@ -1,4 +1,5 @@
 import { Layers, Globe, HardDrive, Plus, PlusCircle, FileSliders } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { IconTabSelector, IconTabOption } from "@/components/common/icon-tab-selector";
 import { SearchInput } from "@/components/common/search-input";
 import { ContentTypeFilterBadges, FilterBadgeItem } from "@/components/common/content-type-filter-badges";
@@ -43,12 +44,6 @@ export interface MyResourcesSidebarProps {
   onAddConfigFile: () => void;
 }
 
-const STORAGE_OPTIONS: { id: string; label: string; icon: React.ReactNode }[] = [
-  { id: "all",   label: "All Storage",      icon: <Layers className="w-4 h-4 text-foreground" /> },
-  { id: "local", label: "Local Browser",    icon: <HardDrive className="w-4 h-4 text-blue-400" /> },
-  { id: "cloud", label: "REDSOUTH Account", icon: <img src="/redsouth/logo-colored.svg" alt="REDSOUTH" className="w-4 h-4 object-contain" /> },
-];
-
 export function MyResourcesSidebar({
   activeTab,
   onTabChange,
@@ -67,17 +62,18 @@ export function MyResourcesSidebar({
   onAddResource,
   onAddConfigFile,
 }: MyResourcesSidebarProps) {
+  const { t } = useTranslation();
 
   const TAB_OPTIONS: IconTabOption[] = [
     {
       id: "custom-content",
-      label: "Custom Content",
+      label: t("myResources.tabs.customContent"),
       icon: <PlusCircle className="w-4 h-4 text-blue-400" />,
       activeColorClass: "text-blue-400",
     },
     {
       id: "custom-files",
-      label: "Overrides & Custom Files",
+      label: t("myResources.tabs.customFiles"),
       icon: <FileSliders className="w-4 h-4 text-amber-400" />,
       activeColorClass: "text-amber-400",
     },
@@ -85,30 +81,24 @@ export function MyResourcesSidebar({
 
   const isCustomContent = activeTab === "custom-content";
 
-  const storageOptions: { id: string; label: string; icon: React.ReactNode }[] = [
-    { id: "all",   label: "All Storage",      icon: <Layers className="w-4 h-4 text-foreground" /> },
-    { id: "local", label: "Local Browser",    icon: <HardDrive className={cn("w-4 h-4", isCustomContent ? "text-blue-400" : "text-amber-400")} /> },
-    { id: "cloud", label: "REDSOUTH Account", icon: <img src="/redsouth/logo-colored.svg" alt="REDSOUTH" className="w-4 h-4 object-contain" /> },
-  ];
-
   // Derived filter data for Custom Content
   const contentTypeFilterItems: FilterBadgeItem[] = [
-    { id: "all",       type: "all",         label: "All",          count: counts.all },
-    { id: "mods",      type: "mod",         label: "Mods",         count: counts.mods },
-    { id: "textures",  type: "resourcepack",label: "Resourcepacks", count: counts.textures },
-    { id: "shaders",   type: "shader",      label: "Shaders",      count: counts.shaders },
-    { id: "datapacks", type: "datapack",    label: "Datapacks",    count: counts.datapacks },
-    { id: "worlds",    type: "world",       label: "Worlds",       count: counts.worlds },
+    { id: "all",       type: "all",         label: t("myResources.types.all"),          count: counts.all },
+    { id: "mods",      type: "mod",         label: t("myResources.types.mods"),         count: counts.mods },
+    { id: "textures",  type: "resourcepack",label: t("myResources.types.textures"),     count: counts.textures },
+    { id: "shaders",   type: "shader",      label: t("myResources.types.shaders"),      count: counts.shaders },
+    { id: "datapacks", type: "datapack",    label: t("myResources.types.datapacks"),    count: counts.datapacks },
+    { id: "worlds",    type: "world",       label: t("myResources.types.worlds"),       count: counts.worlds },
   ].filter((item) => item.type === "all" || (item.count && item.count > 0));
 
   // Derived filter data for Custom Files
   const fileTypeFilterItems: FilterBadgeItem[] = [
-    { id: "all",        type: "all",        label: "All" },
-    { id: "config",     type: "config",     label: "Config" },
-    { id: "script",     type: "script",     label: "Script" },
-    { id: "data",       type: "data",       label: "Data" },
-    { id: "multimedia", type: "multimedia", label: "Multimedia" },
-    { id: "other",      type: "other",      label: "Other" },
+    { id: "all",        type: "all",        label: t("myResources.types.all") },
+    { id: "config",     type: "config",     label: t("myResources.types.config") },
+    { id: "script",     type: "script",     label: t("myResources.types.script") },
+    { id: "data",       type: "data",       label: t("myResources.types.data") },
+    { id: "multimedia", type: "multimedia", label: t("myResources.types.multimedia") },
+    { id: "other",      type: "other",      label: t("myResources.types.other") },
   ];
 
   const loaderCountsMap: Record<string, number> = {};
@@ -146,7 +136,7 @@ export function MyResourcesSidebar({
       {/* Top section — tabs + add button */}
       <div className="p-5 pb-4 flex flex-col gap-4 shrink-0">
         <IconTabSelector
-          label="RESOURCE TYPE"
+          label={t("myResources.resourceType")}
           value={activeTab}
           onValueChange={(v) => onTabChange(v as ActiveTab)}
           options={TAB_OPTIONS}
@@ -159,7 +149,7 @@ export function MyResourcesSidebar({
             className="w-full bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold px-4 py-2.5 rounded-xl active:scale-95 transition-all duration-200 flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/10 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5 shrink-0" />
-            <span>Add Custom Content</span>
+            <span>{t("myResources.addResource")}</span>
           </button>
         ) : (
           <button
@@ -167,7 +157,7 @@ export function MyResourcesSidebar({
             className="w-full bg-amber-400 hover:bg-amber-500 text-black text-xs font-semibold px-4 py-2.5 rounded-xl active:scale-95 transition-all duration-200 flex items-center justify-center gap-1.5 shadow-md shadow-amber-400/10 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5 shrink-0" />
-            <span>Add Custom File</span>
+            <span>{t("myResources.addConfigFile")}</span>
           </button>
         )}
       </div>
@@ -184,20 +174,20 @@ export function MyResourcesSidebar({
           <SearchInput
             value={searchQuery}
             onChange={setSearchQuery}
-            placeholder={isCustomContent ? "Search custom content..." : "Search custom files..."}
-            label="SEARCH"
+            placeholder={isCustomContent ? t("myResources.searchContentPlaceholder") : t("myResources.searchFilesPlaceholder")}
+            label={t("myResources.search")}
           />
 
           {/* 2. STORAGE SOURCE BADGES */}
           <div className="flex flex-col gap-2.5 w-full">
             <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest pl-1">
-              STORAGE SOURCE
+              {t("myResources.storageSource")}
             </h3>
             <div className="flex items-center gap-1.5 flex-wrap">
               {[
-                { id: "all", label: "All Storage" },
-                { id: "local", label: "Local Browser" },
-                { id: "cloud", label: "REDSOUTH Account" },
+                { id: "all", label: t("myResources.storage.all") },
+                { id: "local", label: t("myResources.storage.local") },
+                { id: "cloud", label: t("myResources.storage.cloud") },
               ].map((badge) => {
                 const isActive = selectedStorage === badge.id;
                 const isBlackActive = isActive && !isCustomContent;
@@ -240,7 +230,7 @@ export function MyResourcesSidebar({
           {isCustomContent ? (
             <>
               <ContentTypeFilterBadges
-                label="CONTENT TYPE"
+                label={t("myResources.contentType")}
                 value={selectedType}
                 onValueChange={setSelectedType}
                 items={contentTypeFilterItems}
@@ -249,7 +239,7 @@ export function MyResourcesSidebar({
 
               {availableLoaders.length > 0 && (
                 <div className="flex flex-col gap-2.5">
-                  <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest pl-1">LOADER</h3>
+                  <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest pl-1">{t("myResources.loader")}</h3>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <button
                       onClick={() => setSelectedLoader("all")}
@@ -261,7 +251,7 @@ export function MyResourcesSidebar({
                       )}
                     >
                       <Layers className={cn("w-3.5 h-3.5 shrink-0", selectedLoader === "all" ? "text-white" : "text-muted-foreground")} />
-                      <span>All ({counts.all})</span>
+                      <span>{t("myResources.all")} ({counts.all})</span>
                     </button>
                     {availableLoaders.map((ldr) => (
                       <button
@@ -282,7 +272,7 @@ export function MyResourcesSidebar({
 
               {availableMcVersions.length > 0 && (
                 <div className="flex flex-col gap-2.5">
-                  <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest pl-1">MINECRAFT VERSION</h3>
+                  <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest pl-1">{t("myResources.mcVersion")}</h3>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <button
                       onClick={() => setSelectedMcVersion("all")}
@@ -294,7 +284,7 @@ export function MyResourcesSidebar({
                       )}
                     >
                       <Layers className={cn("w-3.5 h-3.5 shrink-0", selectedMcVersion === "all" ? "text-white" : "text-muted-foreground")} />
-                      <span>All ({counts.all})</span>
+                      <span>{t("myResources.all")} ({counts.all})</span>
                     </button>
                     {availableMcVersions.map((ver) => (
                       <button
@@ -315,7 +305,7 @@ export function MyResourcesSidebar({
             </>
           ) : (
             <ContentTypeFilterBadges
-              label="FILE TYPE"
+              label={t("myResources.fileType")}
               value={selectedType}
               onValueChange={setSelectedType}
               items={fileTypeFilterItems}

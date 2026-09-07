@@ -4,9 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { motion } from "framer-motion";
 import modpkgLogo from "/banner.svg";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
+import { AlertsDropdown } from "./alerts-dropdown";
 
 export default function Header() {
+  const { t } = useTranslation();
   const location = useLocation();
   const isHome = location.pathname === "/";
 
@@ -14,21 +17,32 @@ export default function Header() {
   // Logo aspect ratio is 586:200 with height 36px (h-9) -> width ~105.5px + 24px gap = ~130px
   const LOGO_NAV_OFFSET = 130;
 
-  // Disable pointer events on the logo during the spring animation
+  // Only disable pointer events during the layout spring animation when transitioning to/from Home
   const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
+  const prevPathRef = useRef<string>(location.pathname);
+
   useEffect(() => {
-    setIsTransitioning(true);
-    const t = setTimeout(() => setIsTransitioning(false), 750);
-    return () => clearTimeout(t);
+    const fromHome = prevPathRef.current === "/";
+    const toHome = location.pathname === "/";
+    prevPathRef.current = location.pathname;
+
+    // Only apply temporary transition lock if animating between home and an internal page
+    if (fromHome !== toHome) {
+      setIsTransitioning(true);
+      const t = setTimeout(() => setIsTransitioning(false), 500);
+      return () => clearTimeout(t);
+    } else {
+      setIsTransitioning(false);
+    }
   }, [location.pathname]);
 
   const navLinks = [
-    { name: "Home", path: "/" },
-    { name: "Editor", path: "/editor" },
-    { name: "My Resources", path: "/my-resources" },
-    { name: "My MODPKGs", path: "/library" },
-    { name: "Discover", path: "/discover" },
-    { name: "Docs", path: "/docs" },
+    { name: t("nav.home"), path: "/" },
+    { name: t("nav.editor"), path: "/editor" },
+    { name: t("nav.myResources"), path: "/my-resources" },
+    { name: t("nav.myModpkgs"), path: "/library" },
+    { name: t("nav.discover"), path: "/discover" },
+    { name: t("nav.docs"), path: "/docs" },
   ];
 
   return (
@@ -82,20 +96,22 @@ export default function Header() {
           </motion.nav>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <AlertsDropdown />
+
           <TooltipProvider delayDuration={150}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="hidden md:flex items-center gap-2 text-zinc-600 dark:text-zinc-300 hover:text-[#FE5000] dark:hover:text-[#FE5000] hover:bg-muted/50 rounded-xl px-4 cursor-pointer"
+                <button
+                  type="button"
+                  className="hidden md:flex items-center gap-2 bg-[#FE5000] hover:bg-[#E04700] text-white font-medium rounded-xl px-4 h-9 shadow-sm shadow-[#FE5000]/25 outline outline-2 outline-transparent hover:outline-[#FE5000] hover:outline-offset-[3px] active:scale-95 duration-200 transition-all cursor-pointer border-0"
                 >
-                  <User className="h-5 w-5" />
-                  <span className="text-base font-normal">Sign In</span>
-                </Button>
+                  <User className="h-4 w-4 text-white" />
+                  <span className="text-sm font-semibold">{t("nav.signIn")}</span>
+                </button>
               </TooltipTrigger>
               <TooltipContent side="bottom" sideOffset={8} className="font-medium text-xs shadow-xl">
-                <p>Coming soon</p>
+                <p>{t("nav.comingSoon")}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

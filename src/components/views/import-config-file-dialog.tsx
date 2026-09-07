@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FileSliders, Download, Search, Check, Folder, X } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { getCustomFileItems, detectFileType } from "@/lib/storage/config-files-storage";
 import { CustomFileItem } from "@/types";
 import { FileTypeIcon } from "@/components/common/content-type-icon";
@@ -16,16 +17,17 @@ export interface ImportConfigFileDialogProps {
   onImport: (item: CustomFileItem, overridePath: string) => void;
 }
 
-const TYPE_FILTERS: { id: string; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "config", label: "Config" },
-  { id: "script", label: "Script" },
-  { id: "data", label: "Data" },
-  { id: "multimedia", label: "Multimedia" },
-  { id: "other", label: "Other" },
+const TYPE_FILTERS: { id: string; labelKey: string }[] = [
+  { id: "all", labelKey: "myResources.types.all" },
+  { id: "config", labelKey: "myResources.types.config" },
+  { id: "script", labelKey: "myResources.types.script" },
+  { id: "data", labelKey: "myResources.types.data" },
+  { id: "multimedia", labelKey: "myResources.types.multimedia" },
+  { id: "other", labelKey: "myResources.types.other" },
 ];
 
 export function ImportConfigFileDialog({ isOpen, onClose, onImport }: ImportConfigFileDialogProps) {
+  const { t } = useTranslation();
   const [items, setItems] = useState<CustomFileItem[]>([]);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -76,10 +78,10 @@ export function ImportConfigFileDialog({ isOpen, onClose, onImport }: ImportConf
             </div>
             <div className="flex flex-col text-left justify-center min-w-0">
               <DialogTitle className="text-foreground text-base font-bold leading-tight">
-                Import Custom File
+                {t("importConfigFile.title")}
               </DialogTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Choose a custom file or asset from your My Resources library
+                {t("importConfigFile.subtitle")}
               </p>
             </div>
           </div>
@@ -87,7 +89,7 @@ export function ImportConfigFileDialog({ isOpen, onClose, onImport }: ImportConf
             <button
               type="button"
               onClick={onClose}
-              title="Close"
+              title={t("common.close")}
               className="w-9 h-9 rounded-xl flex items-center justify-center text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
@@ -103,7 +105,7 @@ export function ImportConfigFileDialog({ isOpen, onClose, onImport }: ImportConf
               autoFocus
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search custom files by name or path..."
+              placeholder={t("importConfigFile.searchPlaceholder")}
               className="bg-muted/70 border-border text-foreground h-10 rounded-xl pl-9 pr-8 text-xs focus-visible:border-amber-400"
             />
             {search && (
@@ -131,7 +133,7 @@ export function ImportConfigFileDialog({ isOpen, onClose, onImport }: ImportConf
                     : "text-muted-foreground hover:text-foreground bg-muted hover:bg-muted/80"
                 )}
               >
-                {f.label}
+                {t(f.labelKey)}
               </button>
             ))}
           </div>
@@ -146,9 +148,11 @@ export function ImportConfigFileDialog({ isOpen, onClose, onImport }: ImportConf
                   <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center text-muted-foreground mb-1">
                     <FileSliders className="w-6 h-6" />
                   </div>
-                  <span className="text-sm font-semibold text-foreground">No custom files in library</span>
+                  <span className="text-sm font-semibold text-foreground">
+                    {t("importConfigFile.emptyLibraryTitle")}
+                  </span>
                   <span className="text-xs text-muted-foreground max-w-xs">
-                    You haven't saved any custom files in My Resources yet.
+                    {t("importConfigFile.emptyLibraryDesc")}
                   </span>
                 </>
               ) : (
@@ -156,9 +160,11 @@ export function ImportConfigFileDialog({ isOpen, onClose, onImport }: ImportConf
                   <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground mb-1">
                     <Search className="w-5 h-5" />
                   </div>
-                  <span className="text-sm font-semibold text-foreground">No files found</span>
+                  <span className="text-sm font-semibold text-foreground">
+                    {t("importConfigFile.noFilesTitle")}
+                  </span>
                   <span className="text-xs text-muted-foreground">
-                    No files match your search or selected filter.
+                    {t("importConfigFile.noFilesDesc")}
                   </span>
                 </>
               )}
@@ -218,7 +224,7 @@ export function ImportConfigFileDialog({ isOpen, onClose, onImport }: ImportConf
                           itemType === "other" && "bg-amber-400/15 text-amber-400 border border-amber-400/25"
                         )}
                       >
-                        {itemType}
+                        {t(`myResources.types.${itemType}`, { defaultValue: itemType })}
                       </span>
 
                       <StorageBadge storageType={item.storageLocation} />
@@ -247,7 +253,7 @@ export function ImportConfigFileDialog({ isOpen, onClose, onImport }: ImportConf
           <div className="px-5 py-4 border-t border-border shrink-0 bg-muted/40 flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
-                Destination Path in Package
+                {t("importConfigFile.destinationPath")}
               </label>
               {overridePath !== selected.targetPath && (
                 <button
@@ -255,7 +261,7 @@ export function ImportConfigFileDialog({ isOpen, onClose, onImport }: ImportConf
                   onClick={() => setOverridePath(selected.targetPath)}
                   className="text-[11px] text-amber-400 hover:underline cursor-pointer"
                 >
-                  Reset ({selected.targetPath})
+                  {t("importConfigFile.resetPath", { path: selected.targetPath })}
                 </button>
               )}
             </div>
@@ -266,7 +272,7 @@ export function ImportConfigFileDialog({ isOpen, onClose, onImport }: ImportConf
               className="bg-muted/70 border-border text-foreground h-10 rounded-xl font-mono text-xs focus-visible:border-amber-400"
             />
             <p className="text-[11px] text-muted-foreground">
-              The imported file will be placed at this relative path inside your modpack package.
+              {t("importConfigFile.destinationPathDesc")}
             </p>
           </div>
         )}
@@ -279,7 +285,7 @@ export function ImportConfigFileDialog({ isOpen, onClose, onImport }: ImportConf
             className="bg-amber-400 text-black hover:bg-amber-300 rounded-xl px-6 h-10 font-semibold active:scale-95 transition-all disabled:opacity-40 cursor-pointer shadow-none"
           >
             <Download className="w-4 h-4 mr-2" />
-            Import to Package
+            {t("importConfigFile.importBtn")}
           </Button>
         </DialogFooter>
 

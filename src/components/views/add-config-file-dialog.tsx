@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FileSliders, Pencil, Upload, Globe, Code2, Check, Trash2, X } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import Editor from "@monaco-editor/react";
 import { FileTypeIcon } from "@/components/common/content-type-icon";
 import { ResourceOptionsSection } from "@/components/views/resource-options-section";
@@ -39,10 +40,10 @@ export interface AddConfigFileDialogProps {
 
 type ContentMode = "edit" | "upload" | "url";
 
-const MODE_TABS: { id: ContentMode; label: string; icon: React.ReactNode }[] = [
-  { id: "edit", label: "Edit", icon: <Code2 className="w-3.5 h-3.5" /> },
-  { id: "upload", label: "Upload", icon: <Upload className="w-3.5 h-3.5" /> },
-  { id: "url", label: "URL", icon: <Globe className="w-3.5 h-3.5" /> },
+const MODE_TABS: { id: ContentMode; labelKey: string; icon: React.ReactNode }[] = [
+  { id: "edit", labelKey: "editor.customFiles.modes.edit", icon: <Code2 className="w-3.5 h-3.5" /> },
+  { id: "upload", labelKey: "editor.customFiles.modes.upload", icon: <Upload className="w-3.5 h-3.5" /> },
+  { id: "url", labelKey: "editor.customFiles.modes.url", icon: <Globe className="w-3.5 h-3.5" /> },
 ];
 
 const getUrlMediaType = (url: string, fileType?: CustomFileType): "image" | "video" | "audio" | "other" => {
@@ -67,6 +68,7 @@ export function AddConfigFileDialog({
   defaultSaveAsCommon = true,
   initialTargetPath,
 }: AddConfigFileDialogProps) {
+  const { t } = useTranslation();
   const { addCustomFile, updateCustomFile, removeCustomFile } = usePack();
   const { theme } = useTheme();
   const [name, setName] = useState("");
@@ -295,12 +297,12 @@ export function AddConfigFileDialog({
             )}
             <div className="flex flex-col text-left justify-center">
               <DialogTitle className="text-foreground text-lg font-bold leading-tight">
-                {editItem ? "Edit Custom File" : "Add Custom File"}
+                {editItem ? t("addConfigFile.editTitle") : t("addConfigFile.createTitle")}
               </DialogTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {editItem
-                  ? "Modify this custom file's name, path and content"
-                  : "Add a reusable custom file to your library"}
+                  ? t("addConfigFile.editSubtitle")
+                  : t("addConfigFile.createSubtitle")}
               </p>
             </div>
           </div>
@@ -308,7 +310,7 @@ export function AddConfigFileDialog({
             <button
               type="button"
               onClick={onClose}
-              title="Close"
+              title={t("common.close")}
               className="w-9 h-9 rounded-xl flex items-center justify-center text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
@@ -326,7 +328,7 @@ export function AddConfigFileDialog({
               {/* Friendly Name */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Display Name
+                  {t("addConfigFile.displayName")}
                 </label>
                 <Input
                   autoFocus={!editItem}
@@ -343,7 +345,7 @@ export function AddConfigFileDialog({
               {/* Target Path */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Target Path in Package
+                  {t("addConfigFile.targetPath")}
                 </label>
                 <Input
                   value={targetPath}
@@ -355,26 +357,28 @@ export function AddConfigFileDialog({
                   className="bg-muted/70 border-border text-foreground h-11 rounded-xl font-mono text-sm focus-visible:border-amber-400"
                 />
                 <p className="text-[11px] text-muted-foreground">
-                  Root-relative path in package (e.g. <span className="font-mono text-foreground/80">/config/options.txt</span>)
+                  {t("addConfigFile.targetPathHint")}
                 </p>
               </div>
 
               {/* File Type */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">File Type</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  {t("addConfigFile.fileType")}
+                </label>
                 <Select value={type} onValueChange={(v) => handleTypeChange(v as CustomFileType)}>
                   <SelectTrigger className="bg-muted/70 border-2 border-border text-foreground focus:ring-0 focus:border-amber-400 h-11 rounded-xl">
                     <div className="flex items-center gap-2">
                       <FileTypeIcon type={type} />
-                      <span>{type.charAt(0).toUpperCase() + type.slice(1)}</span>
+                      <span>{t(`myResources.types.${type}`, { defaultValue: type })}</span>
                     </div>
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-2 border-border text-popover-foreground rounded-xl">
-                    {CUSTOM_FILE_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value} className="focus:bg-muted focus:text-amber-400">
+                    {CUSTOM_FILE_TYPES.map((tItem) => (
+                      <SelectItem key={tItem.value} value={tItem.value} className="focus:bg-muted focus:text-amber-400">
                         <div className="flex items-center gap-2">
-                          <FileTypeIcon type={t.value} />
-                          <span>{t.label}</span>
+                          <FileTypeIcon type={tItem.value} />
+                          <span>{t(`myResources.types.${tItem.value}`, { defaultValue: tItem.label })}</span>
                         </div>
                       </SelectItem>
                     ))}
@@ -404,7 +408,9 @@ export function AddConfigFileDialog({
 
               {/* Content Mode Tabs */}
               <div className="flex flex-col gap-3">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Content Editor</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  {t("addConfigFile.contentEditor")}
+                </label>
 
                 {/* Mode toggle pills (URL only when type === "multimedia") */}
                 {type === "multimedia" ? (
@@ -415,7 +421,7 @@ export function AddConfigFileDialog({
                       className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1.5 rounded-lg bg-amber-400 text-black shadow-sm cursor-default"
                     >
                       <Globe className="w-3.5 h-3.5" />
-                      URL
+                      {t("editor.customFiles.modes.url")}
                     </button>
                   </div>
                 ) : (
@@ -432,7 +438,7 @@ export function AddConfigFileDialog({
                         }`}
                       >
                         {tab.icon}
-                        {tab.label}
+                        {t(tab.labelKey)}
                       </button>
                     ))}
                   </div>
@@ -493,9 +499,9 @@ export function AddConfigFileDialog({
                       >
                         <Upload className={cn("w-6 h-6", isDragging && "animate-bounce")} />
                         <span className="text-xs font-semibold">
-                          {isDragging ? "Drop file here to upload" : "Click or drag & drop to upload text/config file"}
+                          {isDragging ? t("addConfigFile.dropFile") : t("addConfigFile.clickOrDrag")}
                         </span>
-                        <span className="text-[11px] text-muted-foreground">JSON, YAML, TOML, TXT, Config, Scripts, etc.</span>
+                        <span className="text-[11px] text-muted-foreground">{t("addConfigFile.uploadFormats")}</span>
                       </button>
                       {uploadFileName && (
                         <div className="flex items-center gap-2 px-3 py-2 bg-amber-400/10 border border-amber-400/20 rounded-xl">
@@ -539,7 +545,7 @@ export function AddConfigFileDialog({
                           className="bg-muted/70 border-border text-foreground h-11 rounded-xl font-mono text-sm focus-visible:border-amber-400"
                         />
                         <p className="text-[11px] text-muted-foreground">
-                          Direct asset/file URL. Supports download links, images, videos, audio, and archives.
+                          {t("addConfigFile.urlHint")}
                         </p>
                       </div>
 
@@ -552,14 +558,14 @@ export function AddConfigFileDialog({
                             className="text-[11px] text-amber-400 hover:underline flex items-center gap-1 w-fit font-semibold"
                           >
                             <Globe className="w-3.5 h-3.5" />
-                            Open URL in new tab
+                            {t("addConfigFile.openUrl")}
                           </a>
 
                           {/* Media Preview Player/Viewer */}
                           {mediaType === "image" && (
                             <div className="flex flex-col gap-2 p-4 bg-muted/40 border border-border rounded-xl">
                               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                                Image Preview
+                                {t("addConfigFile.imagePreview")}
                               </span>
                               <div className="flex items-center justify-center p-3 bg-card rounded-xl overflow-hidden border border-border min-h-[220px]">
                                 <img
@@ -575,7 +581,7 @@ export function AddConfigFileDialog({
                           {mediaType === "video" && (
                             <div className="flex flex-col gap-2 p-4 bg-muted/40 border border-border rounded-xl">
                               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                                Video Preview
+                                {t("addConfigFile.videoPreview")}
                               </span>
                               <div className="flex items-center justify-center p-3 bg-card rounded-xl overflow-hidden border border-border min-h-[220px]">
                                 <video src={sourceUrl} controls className="max-h-72 w-full rounded-lg shadow-lg" />
@@ -586,7 +592,7 @@ export function AddConfigFileDialog({
                           {mediaType === "audio" && (
                             <div className="flex flex-col gap-2 p-4 bg-muted/40 border border-border rounded-xl">
                               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                                Audio Player
+                                {t("addConfigFile.audioPlayer")}
                               </span>
                               <div className="p-4 bg-card rounded-xl border border-border">
                                 <audio src={sourceUrl} controls className="w-full" />
@@ -616,7 +622,7 @@ export function AddConfigFileDialog({
               className="text-muted-foreground hover:text-red-400 hover:bg-red-500/10 rounded-xl px-4 h-11 transition-all"
             >
               <Trash2 className="w-4 h-4 mr-2" />
-              Delete
+              {t("common.delete")}
             </Button>
           ) : (
             <div />
@@ -626,7 +632,7 @@ export function AddConfigFileDialog({
             disabled={!isValid}
             className="bg-amber-400 text-black hover:bg-amber-300 rounded-xl px-6 h-11 font-semibold outline outline-2 outline-transparent hover:outline-amber-400/50 hover:outline-offset-2 active:scale-95 transition-all disabled:opacity-40"
           >
-            {editItem ? "Update Custom File" : "Save Custom File"}
+            {editItem ? t("addConfigFile.updateBtn") : t("addConfigFile.createBtn")}
           </Button>
         </DialogFooter>
 
@@ -636,7 +642,7 @@ export function AddConfigFileDialog({
         isOpen={isConfirmDeleteOpen}
         onClose={() => setIsConfirmDeleteOpen(false)}
         onConfirm={handleConfirmDelete}
-        title="Delete Custom File"
+        title={t("addConfigFile.deleteTitle")}
         itemName={name || editItem?.name}
       />
     </Dialog>

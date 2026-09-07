@@ -1,0 +1,59 @@
+[
+  {
+    "id": "introducing-modpkg-blog",
+    "type": "info",
+    "title": "Introducing MODPKG",
+    "description": "Read the official announcement blog post on REDSOUTH Studio to learn more about the project.",
+    "url": "https://redsouth.zmito.eu/blog/introducing-modpkg",
+    "translations": {
+      "es": {
+        "title": "Presentamos MODPKG",
+        "description": "Lee la publicación oficial de lanzamiento en el blog de REDSOUTH Studio para conocer más sobre el proyecto."
+      },
+      "en": {
+        "title": "Introducing MODPKG",
+        "description": "Read the official announcement blog post on REDSOUTH Studio to learn more about the project."
+      },
+      "pt": {
+        "title": "Apresentando o MODPKG",
+        "description": "Leia a publicação oficial de lançamento no blog do REDSOUTH Studio para saber mais sobre o projeto."
+      },
+      "fr": {
+        "title": "Présentation de MODPKG",
+        "description": "Lisez l'article d'annonce officiel sur le blog de REDSOUTH Studio pour en savoir plus sur le projet."
+      },
+      "de": {
+        "title": "Wir stellen vor: MODPKG",
+        "description": "Lies den offiziellen Ankündigungsbeitrag im Blog von REDSOUTH Studio, um mehr über das Projekt zu erfahren."
+      }
+    }
+  },
+  {
+    "id": "modpkg-beta-warning",
+    "type": "warning",
+    "title": "We are currently in Beta",
+    "description": "MODPKG is currently in testing phase. You may encounter bugs or unexpected behavior.",
+    "translations": {
+      "es": {
+        "title": "Actualmente estamos en Beta",
+        "description": "MODPKG se encuentra en fase de pruebas. Puedes experimentar errores o funciones incompletas."
+      },
+      "en": {
+        "title": "We are currently in Beta",
+        "description": "MODPKG is currently in testing phase. You may encounter bugs or unexpected behavior."
+      },
+      "pt": {
+        "title": "Estamos atualmente em Beta",
+        "description": "O MODPKG está atualmente em fase de testes. Você pode encontrar bugs ou comportamentos inesperados."
+      },
+      "fr": {
+        "title": "Nous sommes actuellement en version Bêta",
+        "description": "MODPKG est actuellement en phase de test. Vous pouvez rencontrer des bugs ou des comportements inattendus."
+      },
+      "de": {
+        "title": "Wir befinden uns derzeit in der Beta",
+        "description": "MODPKG befindet sich derzeit in der Testphase. Es können Fehler oder unerwartetes Verhalten auftreten."
+      }
+    }
+  }
+]

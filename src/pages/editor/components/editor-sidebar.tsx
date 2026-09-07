@@ -1,4 +1,5 @@
 import { Search, Compass, FileUp, Globe, PlusCircle, Plus, Monitor, Server, Check } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { SearchInput } from "@/components/common/search-input";
 import { IconTabSelector, IconTabOption } from "@/components/common/icon-tab-selector";
 import { ContentTypeIcon } from "@/components/common/content-type-icon";
@@ -54,6 +55,7 @@ export default function EditorSidebar({
   selectedEnvironments, 
   setSelectedEnvironments
 }: EditorSidebarProps) {
+  const { t } = useTranslation();
   const [categories, setCategories] = useState<UnifiedCategory[]>([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [isAddCustomDialogOpen, setIsAddCustomDialogOpen] = useState<boolean>(false);
@@ -89,28 +91,28 @@ export default function EditorSidebar({
   };
 
   const environments: EnvironmentItem[] = [
-    { id: "client", name: "Client", icon: Monitor, color: "text-blue-400" },
-    { id: "server", name: "Server", icon: Server, color: "text-emerald-400" },
+    { id: "client", name: t("editor.sidebar.client"), icon: Monitor, color: "text-blue-400" },
+    { id: "server", name: t("editor.sidebar.server"), icon: Server, color: "text-emerald-400" },
   ];
 
   const viewOptions: IconTabOption[] = [
-    { id: "browse", label: "Browse & Add Content", icon: <Compass className="w-4 h-4 text-[#FE5000]" />, activeColorClass: "text-[#FE5000]" },
-    { id: "overrides", label: "Overrides & Custom Files", icon: <FileUp className="w-4 h-4 text-amber-400" />, activeColorClass: "text-amber-400" },
+    { id: "browse", label: t("editor.sidebar.browseTab"), icon: <Compass className="w-4 h-4 text-[#FE5000]" />, activeColorClass: "text-[#FE5000]" },
+    { id: "overrides", label: t("editor.sidebar.overridesTab"), icon: <FileUp className="w-4 h-4 text-amber-400" />, activeColorClass: "text-amber-400" },
   ];
 
   const providerOptions: IconTabOption[] = [
-    { id: "all", label: "All Sources", icon: <Globe className="w-4 h-4 text-foreground dark:text-white" />, activeColorClass: "text-foreground dark:text-white" },
+    { id: "all", label: t("editor.sidebar.sources.all"), icon: <Globe className="w-4 h-4 text-foreground dark:text-white" />, activeColorClass: "text-foreground dark:text-white" },
     { id: "modrinth", label: "Modrinth", icon: <img src="/social/modrinth.svg" alt="Modrinth" className="w-4 h-4 object-contain select-none pointer-events-none" draggable={false} />, activeColorClass: "text-[#45D66F]" },
     { id: "curseforge", label: "CurseForge", icon: <img src="/social/curseforge.svg" alt="CurseForge" className="w-4 h-4 object-contain select-none pointer-events-none" draggable={false} />, activeColorClass: "text-[#F16436]" },
-    { id: "custom", label: "Custom", icon: <PlusCircle className="w-4 h-4 text-blue-400" />, activeColorClass: "text-blue-400" },
+    { id: "custom", label: t("editor.sidebar.sources.custom"), icon: <PlusCircle className="w-4 h-4 text-blue-400" />, activeColorClass: "text-blue-400" },
   ];
 
   const contentTypeOptions: IconTabOption[] = [
-    { id: "mods", label: "Mods", icon: <ContentTypeIcon type="mod" iconClassName="w-4 h-4" />, activeColorClass: "text-[#FE5000]" },
-    { id: "textures", label: "Resourcepacks", icon: <ContentTypeIcon type="resourcepack" iconClassName="w-4 h-4" />, activeColorClass: "text-blue-400" },
-    { id: "shaders", label: "Shaders", icon: <ContentTypeIcon type="shader" iconClassName="w-4 h-4" />, activeColorClass: "text-purple-400" },
-    { id: "datapacks", label: "Datapacks", icon: <ContentTypeIcon type="datapack" iconClassName="w-4 h-4" />, activeColorClass: "text-emerald-400" },
-    ...(provider !== "modrinth" ? [{ id: "worlds", label: "Worlds", icon: <ContentTypeIcon type="world" iconClassName="w-4 h-4" />, activeColorClass: "text-cyan-400" }] : []),
+    { id: "mods", label: t("myResources.types.mods"), icon: <ContentTypeIcon type="mod" iconClassName="w-4 h-4" />, activeColorClass: "text-[#FE5000]" },
+    { id: "textures", label: t("myResources.types.textures"), icon: <ContentTypeIcon type="resourcepack" iconClassName="w-4 h-4" />, activeColorClass: "text-blue-400" },
+    { id: "shaders", label: t("myResources.types.shaders"), icon: <ContentTypeIcon type="shader" iconClassName="w-4 h-4" />, activeColorClass: "text-purple-400" },
+    { id: "datapacks", label: t("myResources.types.datapacks"), icon: <ContentTypeIcon type="datapack" iconClassName="w-4 h-4" />, activeColorClass: "text-emerald-400" },
+    ...(provider !== "modrinth" ? [{ id: "worlds", label: t("myResources.types.worlds"), icon: <ContentTypeIcon type="world" iconClassName="w-4 h-4" />, activeColorClass: "text-cyan-400" }] : []),
   ];
 
   return (
@@ -120,7 +122,7 @@ export default function EditorSidebar({
         {/* VIEW Mode Switcher */}
         <div className="p-5 pb-4 shrink-0">
           <IconTabSelector 
-            label="VIEW" 
+            label={t("editor.sidebar.view")} 
             value={activeView} 
             onValueChange={(val) => setActiveView(val as "browse" | "overrides")} 
             options={viewOptions} 
@@ -136,7 +138,7 @@ export default function EditorSidebar({
             {/* Source Provider */}
             <div className="p-5 pb-4 shrink-0">
               <IconTabSelector
-                label="SOURCE PROVIDER"
+                label={t("editor.sidebar.sourceProvider")}
                 value={provider}
                 onValueChange={(val) => {
                   setProvider(val);
@@ -152,7 +154,7 @@ export default function EditorSidebar({
             {/* Content Type */}
             <div className="px-5 pb-4 shrink-0">
               <IconTabSelector
-                label="CONTENT TYPE"
+                label={t("editor.sidebar.contentType")}
                 value={contentType}
                 onValueChange={setContentType}
                 options={contentTypeOptions}
@@ -173,22 +175,22 @@ export default function EditorSidebar({
                   <SearchInput
                     value={searchQuery}
                     onChange={setSearchQuery}
-                    placeholder={`Search ${contentType}...`}
-                    label="SEARCH"
+                    placeholder={t("editor.sidebar.searchPlaceholder", { type: contentType })}
+                    label={t("editor.sidebar.search")}
                   />
 
                   {/* Add Custom Resource Button (shown when Provider is Custom) */}
                   {provider === "custom" && (
                     <div className="flex flex-col gap-2 mt-1">
                       <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest pl-1">
-                        CUSTOM RESOURCE
+                        {t("editor.sidebar.customResource")}
                       </h3>
                       <Button
                         onClick={() => setIsAddCustomDialogOpen(true)}
                         className="w-full bg-blue-500 hover:bg-blue-500 text-white rounded-xl h-10 px-4 text-xs font-semibold gap-2 border-0 outline outline-2 outline-transparent hover:outline-blue-500/50 hover:outline-offset-2 active:scale-[0.98] transition-all cursor-pointer shadow-lg shadow-blue-500/20"
                       >
                         <Plus className="w-4 h-4" />
-                        <span>Add Custom Content</span>
+                        <span>{t("editor.sidebar.addCustomContent")}</span>
                       </Button>
                     </div>
                   )}
@@ -199,13 +201,13 @@ export default function EditorSidebar({
                     {/* Categories List */}
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center justify-between pl-1 pr-1">
-                        <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Categories</h3>
+                        <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">{t("editor.sidebar.categories")}</h3>
                         {selectedCategories.length > 0 && (
                           <button 
                             onClick={() => setSelectedCategories([])}
                             className="text-[10px] text-[#FE5000] hover:underline font-medium"
                           >
-                            Clear
+                            {t("editor.sidebar.clear")}
                           </button>
                         )}
                       </div>
@@ -252,13 +254,13 @@ export default function EditorSidebar({
                     {/* Environment Filter */}
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center justify-between pl-1 pr-1">
-                        <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Environment</h3>
+                        <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">{t("editor.sidebar.environment")}</h3>
                         {selectedEnvironments.length > 0 && (
                           <button 
                             onClick={() => setSelectedEnvironments([])}
                             className="text-[10px] text-[#FE5000] hover:underline font-medium"
                           >
-                            Clear
+                            {t("editor.sidebar.clear")}
                           </button>
                         )}
                       </div>

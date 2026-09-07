@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { createPortal } from "react-dom";
 import { Search, Check, Plus, ChevronDown, Package } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
@@ -32,6 +33,7 @@ export function PackageDropdownSelector({
   align = "left",
   className = "",
 }: PackageDropdownSelectorProps) {
+  const { t } = useTranslation();
   const { packSettings, packagesList, switchPack } = usePack();
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -155,7 +157,7 @@ export function PackageDropdownSelector({
                 </button>
               </TooltipTrigger>
               <TooltipContent side="bottom" sideOffset={8} className="text-xs">
-                <p>Switch package</p>
+                <p>{t("packageDropdown.switchPackage")}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -178,14 +180,14 @@ export function PackageDropdownSelector({
                   top: `${menuPosition.top}px`,
                   left: `${menuPosition.left}px`,
                 }}
-                className="w-80 bg-popover border border-border text-popover-foreground rounded-2xl shadow-2xl p-2 z-[9999] overflow-hidden backdrop-blur-xl flex flex-col"
+                className="w-80 bg-popover border border-border dark:border-[#333333] text-popover-foreground rounded-2xl shadow-2xl p-2 z-[9999] overflow-hidden backdrop-blur-xl flex flex-col"
               >
                 {/* Search Bar */}
                 <div className="relative flex items-center px-1 py-1">
                   <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-3 pointer-events-none" />
                   <input
                     type="text"
-                    placeholder={mode === "add-to-pack" ? "Search compatible pack..." : "Search package..."}
+                    placeholder={mode === "add-to-pack" ? t("packageDropdown.searchCompatiblePlaceholder") : t("packageDropdown.searchPlaceholder")}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full bg-muted text-foreground text-xs rounded-xl pl-8 pr-3 py-2 border border-border focus:border-[#FE5000] focus:outline-none placeholder:text-muted-foreground transition-colors"
@@ -203,7 +205,7 @@ export function PackageDropdownSelector({
                   <div className="flex flex-col gap-0.5 p-0.5">
                     {filteredPackages.length === 0 ? (
                       <div className="text-xs text-muted-foreground px-3 py-3 text-center">
-                        {mode === "add-to-pack" ? "No compatible packages found" : "No packages found"}
+                        {mode === "add-to-pack" ? t("packageDropdown.noCompatibleFound") : t("packageDropdown.noPackagesFound")}
                       </div>
                     ) : (
                       filteredPackages.map((p) => {
@@ -248,7 +250,7 @@ export function PackageDropdownSelector({
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-[#FE5000] hover:bg-[#FE5000]/10 transition-colors text-left"
                     >
                       <Plus className="w-4 h-4 shrink-0 text-[#FE5000]" />
-                      <span>Create new MODPKG</span>
+                      <span>{t("packageDropdown.createNew")}</span>
                     </button>
                   </>
                 )}

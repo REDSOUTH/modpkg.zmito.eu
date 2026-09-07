@@ -1,9 +1,10 @@
-﻿import { Layers, Globe, Plus, Package } from "lucide-react";
+import { Layers, Globe, Plus, Package } from "lucide-react";
 import { SearchInput } from "@/components/common/search-input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { PackSettings } from "@/types";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 export interface LibrarySidebarProps {
   packages: PackSettings[];
@@ -30,6 +31,7 @@ export function LibrarySidebar({
   setSelectedMcVersion,
   onCreatePack,
 }: LibrarySidebarProps) {
+  const { t } = useTranslation();
   // Compute loader counts from existing packages
   const loaderCountsMap: Record<string, number> = {};
   packages.forEach((pkg) => {
@@ -70,7 +72,7 @@ export function LibrarySidebar({
         <div className="flex items-center gap-2">
           <Package className="w-4 h-4 text-[#FE5000]" />
           <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            MODPKG MANAGER
+            {t("library.manager")}
           </span>
         </div>
 
@@ -79,7 +81,7 @@ export function LibrarySidebar({
           className="w-full bg-[#FE5000] hover:bg-[#e04700] text-white text-xs font-semibold px-4 py-2.5 rounded-xl active:scale-95 transition-all duration-200 flex items-center justify-center gap-1.5 shadow-md shadow-[#FE5000]/15 cursor-pointer"
         >
           <Plus className="w-4 h-4 shrink-0" />
-          <span>Create new MODPKG</span>
+          <span>{t("library.createNew")}</span>
         </button>
       </div>
 
@@ -94,20 +96,20 @@ export function LibrarySidebar({
           <SearchInput
             value={searchQuery}
             onChange={setSearchQuery}
-            placeholder="Search MODPKGs..."
-            label="SEARCH"
+            placeholder={t("library.searchPlaceholder")}
+            label={t("library.search")}
           />
 
           {/* 2. STORAGE SOURCE BADGES - exact pattern from my-resources */}
           <div className="flex flex-col gap-2.5 w-full">
             <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest pl-1">
-              STORAGE SOURCE
+              {t("library.storageSource")}
             </h3>
             <div className="flex items-center gap-1.5 flex-wrap">
               {[
-                { id: "all", label: "All Storage" },
-                { id: "local", label: "Local Browser" },
-                { id: "cloud", label: "REDSOUTH Account" },
+                { id: "all", label: t("library.storage.all") },
+                { id: "local", label: t("library.storage.local") },
+                { id: "cloud", label: t("library.storage.cloud") },
               ].map((badge) => {
                 const isActive = selectedStorage === badge.id;
                 const iconColor = isActive ? "text-white" : "text-muted-foreground";
@@ -144,7 +146,9 @@ export function LibrarySidebar({
           {/* 3. LOADER BADGES - exact pattern from my-resources */}
           {availableLoaders.length > 0 && (
             <div className="flex flex-col gap-2.5">
-              <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest pl-1">LOADER</h3>
+              <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest pl-1">
+                {t("library.loader")}
+              </h3>
               <div className="flex items-center gap-1.5 flex-wrap">
                 <button
                   onClick={() => setSelectedLoader("all")}
@@ -156,7 +160,7 @@ export function LibrarySidebar({
                   )}
                 >
                   <Layers className={cn("w-3.5 h-3.5 shrink-0", selectedLoader === "all" ? "text-white" : "text-muted-foreground")} />
-                  <span>All ({packages.length})</span>
+                  <span>{t("library.all")} ({packages.length})</span>
                 </button>
                 {availableLoaders.map((ldr) => (
                   <button
@@ -178,7 +182,9 @@ export function LibrarySidebar({
           {/* 4. MINECRAFT VERSION BADGES - exact pattern from my-resources */}
           {availableMcVersions.length > 0 && (
             <div className="flex flex-col gap-2.5">
-              <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest pl-1">MINECRAFT VERSION</h3>
+              <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest pl-1">
+                {t("library.mcVersion")}
+              </h3>
               <div className="flex items-center gap-1.5 flex-wrap">
                 <button
                   onClick={() => setSelectedMcVersion("all")}
@@ -190,7 +196,7 @@ export function LibrarySidebar({
                   )}
                 >
                   <Layers className={cn("w-3.5 h-3.5 shrink-0", selectedMcVersion === "all" ? "text-white" : "text-muted-foreground")} />
-                  <span>All ({packages.length})</span>
+                  <span>{t("library.all")} ({packages.length})</span>
                 </button>
                 {availableMcVersions.map((ver) => (
                   <button

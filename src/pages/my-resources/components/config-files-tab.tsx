@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { CustomFileItem } from "@/types";
 import { getCustomFileItems, deleteCustomFileItem } from "@/lib/storage/config-files-storage";
 import { ConfigFilesTable } from "./config-files-table";
@@ -19,6 +20,7 @@ export function ConfigFilesTab({
   selectedStorage = "all",
   selectedType = "all",
 }: ConfigFilesTabProps) {
+  const { t } = useTranslation();
   const [items, setItems] = useState<CustomFileItem[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<CustomFileItem | null>(null);
@@ -82,9 +84,9 @@ export function ConfigFilesTab({
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-3xl font-bold text-foreground">Overrides & Custom Files</h2>
+            <h2 className="text-3xl font-bold text-foreground">{t("myResources.tabs.customFiles")}</h2>
             <p className="text-xs text-amber-400 font-semibold mt-1">
-              Showing {filteredItems.length} item{filteredItems.length === 1 ? "" : "s"} in your library
+              {t("myResources.showing", { count: filteredItems.length })}
             </p>
           </div>
         </div>
@@ -114,9 +116,9 @@ export function ConfigFilesTab({
                   <EmptyMedia variant="icon" className="bg-amber-400/10 text-amber-400">
                     <FileSliders className="w-8 h-8" />
                   </EmptyMedia>
-                  <EmptyTitle className="text-foreground text-xl font-bold">No custom files yet</EmptyTitle>
+                  <EmptyTitle className="text-foreground text-xl font-bold">{t("myResources.emptyFiles.title")}</EmptyTitle>
                   <EmptyDescription className="text-muted-foreground max-w-md mx-auto text-sm">
-                    Save reusable custom configuration files, scripts, and data files to quickly import them into any package.
+                    {t("myResources.emptyFiles.desc")}
                   </EmptyDescription>
                 </EmptyHeader>
                 <Button
@@ -124,7 +126,7 @@ export function ConfigFilesTab({
                   className="bg-amber-400 hover:bg-amber-300 text-black rounded-xl h-10 px-5 text-sm font-semibold transition-all gap-2 mt-4 active:scale-95"
                 >
                   <Plus className="w-4 h-4" />
-                  Add Custom File
+                  {t("myResources.emptyFiles.btn")}
                 </Button>
               </Empty>
             </motion.div>

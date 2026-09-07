@@ -7,8 +7,10 @@ import PackSettingsModal from "@/pages/editor/components/pack-settings-modal";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { Package, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 export default function LibraryPage() {
+  const { t } = useTranslation();
   const { packagesList, activePackId, switchPack } = usePack();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -91,9 +93,11 @@ export default function LibraryPage() {
           <div className="flex flex-col px-6 pt-5 pb-6">
             {/* Title & Subtitle */}
             <div className="mb-6">
-              <h2 className="text-3xl font-bold text-foreground">Librería de MODPKGs</h2>
+              <h2 className="text-3xl font-bold text-foreground">{t("library.title")}</h2>
               <p className="text-xs text-[#FE5000] font-semibold mt-1">
-                Showing {filteredPackages.length} package{filteredPackages.length === 1 ? "" : "s"} in your library
+                {filteredPackages.length === 1
+                  ? t("library.showing_one", { count: 1 })
+                  : t("library.showing_other", { count: filteredPackages.length })}
               </p>
             </div>
 
@@ -131,12 +135,12 @@ export default function LibraryPage() {
                         <Package className="w-8 h-8" />
                       </EmptyMedia>
                       <EmptyTitle className="text-foreground text-xl font-bold">
-                        {packagesList.length === 0 ? "No MODPKGs created yet" : "No matching MODPKGs found"}
+                        {packagesList.length === 0 ? t("library.empty.noPacksTitle") : t("library.empty.noMatchTitle")}
                       </EmptyTitle>
                       <EmptyDescription className="text-muted-foreground max-w-md mx-auto text-sm mt-1">
                         {packagesList.length === 0
-                          ? "Create your first MODPKG project to organize mods, textures, shaders, and configs in one universal package."
-                          : "Try adjusting your search query or filters to find what you're looking for."}
+                          ? t("library.empty.noPacksDesc")
+                          : t("library.empty.noMatchDesc")}
                       </EmptyDescription>
                     </EmptyHeader>
                     <div className="mt-4 flex justify-center">
@@ -145,7 +149,7 @@ export default function LibraryPage() {
                         className="bg-[#FE5000] hover:bg-[#e04700] text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-1.5 shadow-md shadow-[#FE5000]/20 cursor-pointer"
                       >
                         <Plus className="w-3.5 h-3.5" />
-                        <span>Create new MODPKG</span>
+                        <span>{t("library.createNew")}</span>
                       </button>
                     </div>
                   </Empty>

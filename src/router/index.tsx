@@ -6,6 +6,7 @@ import CustomContentPage from "../pages/custom-content/custom-content";
 import MyResourcesPage from "../pages/my-resources/my-resources";
 import LibraryPage from "../pages/library/library";
 import NotFoundPage from "../pages/not-found/not-found";
+import ComingSoonPage from "../pages/coming-soon/coming-soon";
 import { AppErrorBoundary } from "../components/common/app-error-boundary";
 
 const router = createBrowserRouter([
@@ -29,6 +30,14 @@ const router = createBrowserRouter([
       {
         path: "/library",
         element: <LibraryPage />,
+      },
+      {
+        path: "/discover",
+        element: <ComingSoonPage />,
+      },
+      {
+        path: "/docs",
+        element: <ComingSoonPage />,
       },
       {
         path: "/my-modpkgs",

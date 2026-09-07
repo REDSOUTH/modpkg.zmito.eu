@@ -66,6 +66,7 @@ export function savePackData(packId: string, data: PackExclusiveData): void {
 export function deletePackStorage(packId: string): void {
   try {
     localStorage.removeItem(`modpkg_pack_${packId}`);
+    localStorage.removeItem(`modpkg_hidden_custom_${packId}`);
   } catch (e) {
     console.error(`Failed to delete pack data for ${packId}`, e);
   }

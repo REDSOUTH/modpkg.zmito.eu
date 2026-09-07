@@ -39,6 +39,7 @@ import {
 import { ContentTypeIcon } from "@/components/common/content-type-icon";
 import { ProviderIcon } from "@/components/common/provider-icon";
 import { usePack } from "@/context/pack-context";
+import { useTranslation, Trans } from "react-i18next";
 import {
   downloadModpkgIndexFile,
   downloadModpkgProjectFile,
@@ -57,6 +58,7 @@ export interface ExportModpkgDialogProps {
 }
 
 export function ExportModpkgDialog({ isOpen, onClose }: ExportModpkgDialogProps) {
+  const { t } = useTranslation();
   const { packSettings, installedContent, customFiles } = usePack();
 
   // ZIP options
@@ -76,18 +78,18 @@ export function ExportModpkgDialog({ isOpen, onClose }: ExportModpkgDialogProps)
   const handleExportIndex = () => {
     try {
       downloadModpkgIndexFile(packSettings, installedContent, customFiles);
-      notification.default(`Exported ${safeId}.mpkg.json`);
+      notification.default(t("exportDialog.exportedIndex", { file: `${safeId}.mpkg` }));
     } catch (err: any) {
-      notification.warn("Failed to export version index: " + err.message);
+      notification.warn(t("exportDialog.exportIndexFailed", { error: err.message }));
     }
   };
 
   const handleExportProject = () => {
     try {
       downloadModpkgProjectFile(packSettings, installedContent, customFiles);
-      notification.default(`Exported ${safeId}.mpkg-proj.json`);
+      notification.default(t("exportDialog.exportedProject", { file: `${safeId}.mpkg-proj` }));
     } catch (err: any) {
-      notification.warn("Failed to export project: " + err.message);
+      notification.warn(t("exportDialog.exportProjectFailed", { error: err.message }));
     }
   };
 
@@ -97,7 +99,7 @@ export function ExportModpkgDialog({ isOpen, onClose }: ExportModpkgDialogProps)
     setFailedItems([]);
     setZipProgress({
       percentage: 0,
-      currentStep: "Initializing package...",
+      currentStep: t("exportDialog.initializing"),
       completedItems: 0,
       totalItems: totalContentCount + totalCustomFilesCount + 2,
     });
@@ -115,14 +117,14 @@ export function ExportModpkgDialog({ isOpen, onClose }: ExportModpkgDialogProps)
       if (result.failedItems.length > 0) {
         setFailedItems(result.failedItems);
         notification.warn(
-          `${result.failedItems.length} items could not be downloaded into the ZIP (see details in dialog).`
+          t("exportDialog.failedItemsNotice", { count: result.failedItems.length })
         );
       } else {
-        notification.default(`Package ${result.fileName} downloaded successfully!`);
+        notification.default(t("exportDialog.packageSuccess", { file: result.fileName }));
       }
     } catch (err: any) {
       console.error("ZIP packaging error:", err);
-      notification.warn("Failed to generate ZIP: " + (err.message || "Unknown error"));
+      notification.warn(t("exportDialog.generateZipFailed", { error: err.message || "Unknown error" }));
     } finally {
       setIsExportingZip(false);
     }
@@ -139,15 +141,20 @@ export function ExportModpkgDialog({ isOpen, onClose }: ExportModpkgDialogProps)
           <div className="flex items-center gap-3">
             <Package className="w-8 h-8 text-[#FE5000] shrink-0" />
             <div>
-              <DialogTitle className="text-xl font-bold text-foreground">Export MODPKG</DialogTitle>
+              <DialogTitle className="text-xl font-bold text-foreground">{t("exportDialog.title")}</DialogTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {packSettings.name || "Modpack"} · Version {packSettings.currentVersion || "v1.0.0"} · Minecraft {packSettings.mcVersion} ({packSettings.loader})
+                {t("exportDialog.subtitle", {
+                  name: packSettings.name || "Modpack",
+                  version: packSettings.currentVersion || "v1.0.0",
+                  mcVersion: packSettings.mcVersion,
+                  loader: packSettings.loader
+                })}
               </p>
             </div>
           </div>
           <DialogClose asChild disabled={isExportingZip}>
             <button
-              title="Close"
+              title={t("common.close")}
               className="w-9 h-9 rounded-xl flex items-center justify-center text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
@@ -165,17 +172,17 @@ export function ExportModpkgDialog({ isOpen, onClose }: ExportModpkgDialogProps)
                 <div className="flex items-center gap-2">
                   <Layers className="w-4 h-4 text-muted-foreground" />
                   <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Selected Package Contents
+                    {t("exportDialog.selectedContents")}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs px-2.5 py-0.5 rounded-full bg-muted dark:bg-[#2A2A2A] text-muted-foreground font-medium">
-                    {totalContentCount} items
+                    {t("exportDialog.itemsCount", { count: totalContentCount })}
                   </span>
                   {totalCustomFilesCount > 0 && (
                     <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 flex items-center gap-1 font-medium">
                       <FileSliders className="w-3 h-3" />
-                      {totalCustomFilesCount} overrides
+                      {t("exportDialog.overridesCount", { count: totalCustomFilesCount })}
                     </span>
                   )}
                 </div>
@@ -184,7 +191,7 @@ export function ExportModpkgDialog({ isOpen, onClose }: ExportModpkgDialogProps)
               {/* Items Grid with Tooltips (no hover border) */}
               {totalContentCount === 0 && totalCustomFilesCount === 0 ? (
                 <p className="text-xs text-muted-foreground italic py-2">
-                  No content or custom files selected in this package yet.
+                  {t("exportDialog.emptyContents")}
                 </p>
               ) : (
                 <TooltipProvider delayDuration={150}>
@@ -218,7 +225,7 @@ export function ExportModpkgDialog({ isOpen, onClose }: ExportModpkgDialogProps)
                             <span className="capitalize">{item.provider}</span>
                             <span>•</span>
                             <span className="text-[#FE5000]">
-                              {item.versionName || (item.versionId === "latest" ? "Latest Stable" : item.versionId === "latest-unstable" ? "Latest Unstable" : item.versionId)}
+                              {item.versionName || (item.versionId === "latest" ? t("editor.card.latest") : item.versionId === "latest-unstable" ? t("editor.card.latestUnstable") : item.versionId)}
                             </span>
                           </div>
                         </TooltipContent>
@@ -235,8 +242,8 @@ export function ExportModpkgDialog({ isOpen, onClose }: ExportModpkgDialogProps)
                         </TooltipTrigger>
                         <TooltipContent side="top" className="text-xs p-2.5 shadow-xl">
                           <p className="font-semibold text-amber-500">{file.name}</p>
-                          <p className="text-[11px] text-muted-foreground mt-0.5">Target: {file.targetPath}</p>
-                          <p className="text-[11px] text-muted-foreground capitalize">Type: {file.type}</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">{t("exportDialog.target", { path: file.targetPath })}</p>
+                          <p className="text-[11px] text-muted-foreground capitalize">{t("exportDialog.type", { type: file.type })}</p>
                         </TooltipContent>
                       </Tooltip>
                     ))}
@@ -253,10 +260,12 @@ export function ExportModpkgDialog({ isOpen, onClose }: ExportModpkgDialogProps)
                 <div className="flex flex-col text-left gap-1.5">
                   <div className="flex items-center gap-2">
                     <FileJson className="w-4 h-4 text-sky-500 shrink-0" />
-                    <h3 className="text-sm font-semibold text-foreground">Version Index Manifest</h3>
+                    <h3 className="text-sm font-semibold text-foreground">{t("exportDialog.versionIndexTitle")}</h3>
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Exports <code className="text-foreground bg-muted dark:bg-[#2A2A2A] px-1 py-0.5 rounded text-[11px]">{safeId}.mpkg.json</code> with the current release manifest, dependencies and overrides.
+                    <Trans i18nKey="exportDialog.versionIndexDesc" values={{ file: `${safeId}.mpkg` }}>
+                      Exports <code className="text-foreground bg-muted dark:bg-[#2A2A2A] px-1 py-0.5 rounded text-[11px]">{`${safeId}.mpkg`}</code> with the current release manifest, dependencies and overrides.
+                    </Trans>
                   </p>
                 </div>
                 <ActionButton
@@ -265,7 +274,7 @@ export function ExportModpkgDialog({ isOpen, onClose }: ExportModpkgDialogProps)
                   fullWidth
                   color="zinc"
                   icon={<Download className="w-3.5 h-3.5" />}
-                  label="Export .mpkg.json"
+                  label={t("exportDialog.exportIndexBtn")}
                 />
               </div>
 
@@ -274,10 +283,12 @@ export function ExportModpkgDialog({ isOpen, onClose }: ExportModpkgDialogProps)
                 <div className="flex flex-col text-left gap-1.5">
                   <div className="flex items-center gap-2">
                     <FileCode2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <h3 className="text-sm font-semibold text-foreground">Full Project File</h3>
+                    <h3 className="text-sm font-semibold text-foreground">{t("exportDialog.projectFileTitle")}</h3>
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Exports <code className="text-foreground bg-muted dark:bg-[#2A2A2A] px-1 py-0.5 rounded text-[11px]">{safeId}.mpkg-proj.json</code> containing full project data, releases history and settings.
+                    <Trans i18nKey="exportDialog.projectFileDesc" values={{ file: `${safeId}.mpkg-proj` }}>
+                      Exports <code className="text-foreground bg-muted dark:bg-[#2A2A2A] px-1 py-0.5 rounded text-[11px]">{`${safeId}.mpkg-proj`}</code> containing full project data, releases history and settings.
+                    </Trans>
                   </p>
                 </div>
                 <ActionButton
@@ -286,7 +297,7 @@ export function ExportModpkgDialog({ isOpen, onClose }: ExportModpkgDialogProps)
                   fullWidth
                   color="zinc"
                   icon={<Download className="w-3.5 h-3.5" />}
-                  label="Export .mpkg-proj.json"
+                  label={t("exportDialog.exportProjectBtn")}
                 />
               </div>
 
@@ -298,13 +309,13 @@ export function ExportModpkgDialog({ isOpen, onClose }: ExportModpkgDialogProps)
                 <div className="flex flex-col text-left gap-1.5">
                   <div className="flex items-center gap-2">
                     <Archive className="w-5 h-5 text-[#FE5000] shrink-0" />
-                    <h3 className="text-sm font-bold text-foreground">Complete Package ZIP (.mpkg.zip)</h3>
+                    <h3 className="text-sm font-bold text-foreground">{t("exportDialog.zipTitle")}</h3>
                     <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-[#FE5000] text-white">
-                      Full Bundle
+                      {t("exportDialog.fullBundle")}
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Builds a complete offline archive with all jars, resourcepacks, shaders and overrides placed into their respective directories (<code className="text-foreground text-[11px]">/mods/</code>, <code className="text-foreground text-[11px]">/resourcepacks/</code>, <code className="text-foreground text-[11px]">/config/</code>).
+                    {t("exportDialog.zipDesc")}
                   </p>
                 </div>
               </div>
@@ -314,7 +325,7 @@ export function ExportModpkgDialog({ isOpen, onClose }: ExportModpkgDialogProps)
                 {/* Select 1: Include Version Index */}
                 <div className="flex flex-col gap-1.5 text-left">
                   <label className="text-xs font-semibold text-muted-foreground">
-                    Include Version Index (.mpkg.json)
+                    {t("exportDialog.includeIndex")}
                   </label>
                   <Select
                     value={includeIndexInZip}
@@ -326,10 +337,10 @@ export function ExportModpkgDialog({ isOpen, onClose }: ExportModpkgDialogProps)
                     </SelectTrigger>
                     <SelectContent className="bg-popover dark:bg-[#1E1E1E] border-2 border-border text-popover-foreground rounded-xl">
                       <SelectItem value="yes" className="text-xs focus:bg-muted dark:focus:bg-[#262626] focus:text-[#FE5000]">
-                        Yes, include in ZIP (Recommended)
+                        {t("exportDialog.includeIndexYes")}
                       </SelectItem>
                       <SelectItem value="no" className="text-xs focus:bg-muted dark:focus:bg-[#262626] focus:text-[#FE5000]">
-                        No
+                        {t("exportDialog.no")}
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -338,7 +349,7 @@ export function ExportModpkgDialog({ isOpen, onClose }: ExportModpkgDialogProps)
                 {/* Select 2: Include Full Project File */}
                 <div className="flex flex-col gap-1.5 text-left">
                   <label className="text-xs font-semibold text-muted-foreground">
-                    Include Project File (.mpkg-proj.json)
+                    {t("exportDialog.includeProject")}
                   </label>
                   <Select
                     value={includeProjectInZip}
@@ -350,10 +361,10 @@ export function ExportModpkgDialog({ isOpen, onClose }: ExportModpkgDialogProps)
                     </SelectTrigger>
                     <SelectContent className="bg-popover dark:bg-[#1E1E1E] border-2 border-border text-popover-foreground rounded-xl">
                       <SelectItem value="yes" className="text-xs focus:bg-muted dark:focus:bg-[#262626] focus:text-[#FE5000]">
-                        Yes, include in ZIP
+                        {t("exportDialog.includeProjectYes")}
                       </SelectItem>
                       <SelectItem value="no" className="text-xs focus:bg-muted dark:focus:bg-[#262626] focus:text-[#FE5000]">
-                        No (Recommended)
+                        {t("exportDialog.includeProjectNo")}
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -381,7 +392,7 @@ export function ExportModpkgDialog({ isOpen, onClose }: ExportModpkgDialogProps)
                 <div className="flex flex-col gap-2 p-3 bg-amber-500/10 rounded-xl text-left">
                   <div className="flex items-center gap-2 text-amber-500 text-xs font-semibold">
                     <AlertTriangle className="w-4 h-4 shrink-0" />
-                    <span>{failedItems.length} items could not be bundled directly:</span>
+                    <span>{t("exportDialog.failedItemsTitle", { count: failedItems.length })}</span>
                   </div>
                   <div className="max-h-24 overflow-y-auto flex flex-col gap-1 pl-6 text-[11px] text-muted-foreground">
                     {failedItems.map((fi, idx) => (
@@ -398,7 +409,7 @@ export function ExportModpkgDialog({ isOpen, onClose }: ExportModpkgDialogProps)
               {exportCompleted && failedItems.length === 0 && (
                 <div className="flex items-center gap-2 p-3 bg-emerald-500/10 rounded-xl text-emerald-500 text-xs font-semibold">
                   <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  <span>Package generated and downloaded as {safeId}.mpkg.zip!</span>
+                  <span>{t("exportDialog.packageDownloaded", { file: `${safeId}.mpkg.zip` })}</span>
                 </div>
               )}
 
@@ -411,12 +422,12 @@ export function ExportModpkgDialog({ isOpen, onClose }: ExportModpkgDialogProps)
                 {isExportingZip ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Building and Compressing Package...</span>
+                    <span>{t("exportDialog.buildingZip")}</span>
                   </>
                 ) : (
                   <>
                     <Download className="w-5 h-5 flex-shrink-0" />
-                    <span>Build & Download</span>
+                    <span>{t("exportDialog.buildDownloadBtn")}</span>
                   </>
                 )}
               </button>

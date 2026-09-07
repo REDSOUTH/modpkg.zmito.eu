@@ -9,10 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { Plus, PlusCircle, FileSliders } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 type ActiveTab = "custom-content" | "custom-files";
 
 export default function MyResourcesPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<ActiveTab>("custom-content");
 
   const [items, setItems] = useState<CustomContentItem[]>([]);
@@ -127,9 +129,11 @@ export default function MyResourcesPage() {
                 className="flex flex-col px-6 pt-5 pb-6"
               >
                 <div className="mb-4">
-                  <h2 className="text-3xl font-bold text-foreground">Custom Content</h2>
+                  <h2 className="text-3xl font-bold text-foreground">{t("myResources.tabs.customContent")}</h2>
                   <p className="text-xs text-blue-400 font-semibold mt-1">
-                    Showing {filteredItems.length} item{filteredItems.length === 1 ? "" : "s"} in your library
+                    {filteredItems.length === 1
+                      ? t("myResources.showing_one", { count: 1 })
+                      : t("myResources.showing_other", { count: filteredItems.length })}
                   </p>
                 </div>
 
@@ -145,11 +149,11 @@ export default function MyResourcesPage() {
                           <EmptyMedia variant="icon" className="bg-blue-500/10 text-blue-400">
                             <PlusCircle className="w-8 h-8" />
                           </EmptyMedia>
-                          <EmptyTitle className="text-foreground text-xl font-bold">No custom content found</EmptyTitle>
+                          <EmptyTitle className="text-foreground text-xl font-bold">{t("myResources.emptyContent.title")}</EmptyTitle>
                           <EmptyDescription className="text-muted-foreground max-w-md mx-auto text-sm">
                             {items.length === 0
-                              ? "You haven't added any custom content yet. Click below to add your first resource."
-                              : "No items match your selected filters."}
+                              ? t("myResources.emptyContent.descEmpty")
+                              : t("myResources.emptyContent.descNoMatch")}
                           </EmptyDescription>
                         </EmptyHeader>
                         <Button
@@ -157,7 +161,7 @@ export default function MyResourcesPage() {
                           className="bg-blue-500 hover:bg-blue-400 text-white rounded-xl h-10 px-5 text-sm font-semibold gap-2 mt-4 active:scale-95 transition-all"
                         >
                           <Plus className="w-4 h-4" />
-                          Add Custom Content
+                          {t("myResources.emptyContent.btn")}
                         </Button>
                       </Empty>
                     </motion.div>

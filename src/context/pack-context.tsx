@@ -36,18 +36,22 @@ export const generateRandomPackId = (): string => {
   return `modpkg-${randomStr}`;
 };
 
-export const resolveSafeImportId = (rawId: string, existingList: PackSettings[]): string => {
-  let cleanId = (rawId || "imported-pack")
+export const resolveSafePackId = (rawId: string, existingList: PackSettings[], excludePackId?: string): string => {
+  let cleanId = (rawId || "modpkg")
     .toLowerCase()
     .trim()
     .replace(/\s+/g, "-")
     .replace(/[^a-z0-9._-]/g, "");
 
   if (!cleanId) {
-    cleanId = "imported-pack";
+    cleanId = "modpkg";
   }
 
-  const existingIds = new Set(existingList.map(p => p.id.toLowerCase()));
+  const existingIds = new Set(
+    existingList
+      .filter(p => !excludePackId || p.id.toLowerCase() !== excludePackId.toLowerCase())
+      .map(p => p.id.toLowerCase())
+  );
   
   if (!existingIds.has(cleanId)) {
     return cleanId;
@@ -63,6 +67,8 @@ export const resolveSafeImportId = (rawId: string, existingList: PackSettings[])
   }
   return `${basePrefix}-${counter}`;
 };
+
+export const resolveSafeImportId = resolveSafePackId;
 
 const DEFAULT_FALLBACK_PACK: PackSettings = {
   id: "modpkg-default",
@@ -216,7 +222,8 @@ export function PackProvider({ children }: { children: ReactNode }) {
 
   // Create new package
   const createPack = (packData: Omit<PackSettings, "id" | "versions" | "currentVersion"> & { id?: string; version?: string }): PackSettings => {
-    const newId = packData.id || generateRandomPackId();
+    const rawId = packData.id || generateRandomPackId();
+    const newId = resolveSafePackId(rawId, packagesList);
     const newVersion = packData.version || "v1.0.0";
     const newPack: PackSettings = {
       id: newId,
@@ -267,7 +274,7 @@ export function PackProvider({ children }: { children: ReactNode }) {
     return newPack;
   };
 
-  // Import package from JSON file (.mpkg-proj.json, .modpkg.json, .mdpkg.json, .mpkg.json, manifest.json, or legacy JSON)
+  // Import package from file (.mpkg, .mpkg-proj, or legacy .json)
   const importPack = (parsedJson: any): PackSettings => {
     // 0. Verify JSON structure to prevent errors
     if (!parsedJson || typeof parsedJson !== "object" || Array.isArray(parsedJson)) {
@@ -613,8 +620,8 @@ export function PackProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Save previous active pack's release data before switching away
-    if (activePackId) {
+    // Save previous active pack's release data before switching away (only if it still exists and wasn't deleted)
+    if (activePackId && packagesList.some(p => p.id === activePackId)) {
       const prevData = getPackData(activePackId);
       if (!prevData.releases) prevData.releases = {};
       const prevVer = packSettings.currentVersion || "v1.0.0";
@@ -667,7 +674,27 @@ export function PackProvider({ children }: { children: ReactNode }) {
     // Only switch or reset if the deleted pack was the currently active one
     if (activePackId === packId) {
       if (updatedList.length > 0) {
-        switchPack(updatedList[0].id);
+        const nextPack = updatedList[0];
+        setActivePackId(nextPack.id);
+        setPackSettings(nextPack);
+        const data = getPackData(nextPack.id);
+        const curVer = nextPack.currentVersion || "v1.0.0";
+        if (!data.releases) data.releases = {};
+        if (!data.releases[curVer]) {
+          data.releases[curVer] = {
+            releaseId: curVer,
+            minecraft: nextPack.mcVersion,
+            loader: { type: nextPack.loader, version: nextPack.loaderVersion || "latest" },
+            installedContent: data.installedContent || [],
+            customFiles: data.customFiles || [],
+            publishedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          savePackData(nextPack.id, data);
+        }
+        const activeRel = data.releases[curVer];
+        setInstalledContent(activeRel.installedContent || []);
+        setCustomFiles(activeRel.customFiles || []);
       } else {
         setActivePackId(null);
         setPackSettings(DEFAULT_FALLBACK_PACK);
@@ -686,7 +713,9 @@ export function PackProvider({ children }: { children: ReactNode }) {
     if (!targetPack) return;
 
     const prevId = targetPack.id;
-    const requestedNewId = (newSettings.id || prevId).trim();
+    const requestedRawId = (newSettings.id || prevId).trim();
+    // Resolve safe ID excluding the current pack being edited
+    const requestedNewId = resolveSafePackId(requestedRawId, packagesList, prevId);
     const isChangingId = Boolean(requestedNewId && requestedNewId !== prevId);
 
     const prevVersion = targetPack.currentVersion;

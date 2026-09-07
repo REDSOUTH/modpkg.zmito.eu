@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { DeleteConfirmDialog } from "@/components/common/delete-confirm-dialog";
 import { ActionButton } from "@/components/common/action-button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useTranslation } from "react-i18next";
 
 interface ModpkgCardProps {
   pack: PackSettings;
@@ -17,6 +18,7 @@ interface ModpkgCardProps {
 }
 
 export function ModpkgCard({ pack, isActive, onOpenSettings }: ModpkgCardProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { switchPack, deletePack } = usePack();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -100,7 +102,7 @@ export function ModpkgCard({ pack, isActive, onOpenSettings }: ModpkgCardProps) 
 
         {/* Description */}
         <p className="text-xs text-muted-foreground line-clamp-2 mt-3 leading-relaxed min-h-[32px]">
-          {pack.description || "No description provided."}
+          {pack.description || t("library.card.noDescription")}
         </p>
 
         {/* Metadata Badges & Counters without separator above */}
@@ -126,7 +128,12 @@ export function ModpkgCard({ pack, isActive, onOpenSettings }: ModpkgCardProps) 
             {/* 1. Versiones primero con icono */}
             <div className="flex items-center gap-1">
               <Tag className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-              <span>{totalVersions} {totalVersions === 1 ? "versión" : "versiones"}</span>
+              <span>
+                {totalVersions}{" "}
+                {totalVersions === 1
+                  ? t("library.card.version_one")
+                  : t("library.card.version_other")}
+              </span>
             </div>
             
             <span className="text-muted-foreground/60 font-semibold">·</span>
@@ -134,7 +141,12 @@ export function ModpkgCard({ pack, isActive, onOpenSettings }: ModpkgCardProps) 
             {/* 2. Contenidos agregados con el icono de Layers */}
             <div className="flex items-center gap-1">
               <Layers className="w-3.5 h-3.5 text-[#FE5000] shrink-0" />
-              <span>{itemsCount} {itemsCount === 1 ? "contenido" : "contenidos"}</span>
+              <span>
+                {itemsCount}{" "}
+                {itemsCount === 1
+                  ? t("library.card.content_one")
+                  : t("library.card.content_other")}
+              </span>
             </div>
 
             {/* 3. Archivos personalizados si existen */}
@@ -143,7 +155,12 @@ export function ModpkgCard({ pack, isActive, onOpenSettings }: ModpkgCardProps) 
                 <span className="text-muted-foreground/60 font-semibold">·</span>
                 <div className="flex items-center gap-1">
                   <FileText className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span>{filesCount} {filesCount === 1 ? "archivo" : "archivos"}</span>
+                  <span>
+                    {filesCount}{" "}
+                    {filesCount === 1
+                      ? t("library.card.file_one")
+                      : t("library.card.file_other")}
+                  </span>
                 </div>
               </>
             )}
@@ -156,8 +173,8 @@ export function ModpkgCard({ pack, isActive, onOpenSettings }: ModpkgCardProps) 
           <ActionButton
             color="zinc"
             icon={<Settings className="w-3.5 h-3.5" />}
-            label="Settings"
-            tooltip="Configure package details, loaders and versions"
+            label={t("library.card.settings")}
+            tooltip={t("library.card.settingsTooltip")}
             onClick={() => onOpenSettings(pack)}
           />
 
@@ -165,7 +182,7 @@ export function ModpkgCard({ pack, isActive, onOpenSettings }: ModpkgCardProps) 
           <ActionButton
             color="orange"
             icon={<Trash2 className="w-3.5 h-3.5" />}
-            tooltip="Eliminar MODPKG"
+            tooltip={t("library.card.delete")}
             onClick={() => setIsDeleteDialogOpen(true)}
           />
 
@@ -175,7 +192,7 @@ export function ModpkgCard({ pack, isActive, onOpenSettings }: ModpkgCardProps) 
             onClick={handleOpenInEditor}
             className="h-9 ml-auto px-4 rounded-xl bg-[#FE5000] hover:bg-[#e04700] text-white font-medium text-xs shadow-sm shadow-[#FE5000]/20 flex items-center gap-1.5 cursor-pointer"
           >
-            <span>{isActive ? "Continue in Editor" : "Open in Editor"}</span>
+            <span>{isActive ? t("library.card.continueInEditor") : t("library.card.openInEditor")}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Button>
         </div>

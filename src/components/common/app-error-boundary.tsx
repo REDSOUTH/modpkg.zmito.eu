@@ -3,6 +3,7 @@ import { useRouteError, isRouteErrorResponse } from "react-router-dom";
 import { AlertTriangle, RotateCw, Home, Copy, Check, ChevronDown, ChevronUp, Bug } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import i18n from "@/i18n";
 
 interface AppErrorViewProps {
   error?: any;
@@ -62,7 +63,7 @@ export function AppErrorView({ error: customError, onReset }: AppErrorViewProps)
 
     navigator.clipboard.writeText(report);
     setCopied(true);
-    toast.success("Error report copied to clipboard");
+    toast.success(i18n.t("toast.errorReportCopied"));
     setTimeout(() => setCopied(false), 2500);
   };
 

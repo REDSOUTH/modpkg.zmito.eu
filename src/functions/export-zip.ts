@@ -291,15 +291,15 @@ export async function exportModpkgZip(
 
   // 3. Optional Inclusions
   if (options.includeVersionIndex) {
-    updateProgress("Generating .mpkg.json index...");
+    updateProgress("Generating .mpkg index...");
     const indexData = generateModpkgExport(packSettings, installedContent, customFiles);
-    zip.file(`${safeId}.mpkg.json`, JSON.stringify(indexData, null, 2));
+    zip.file(`${safeId}.mpkg`, JSON.stringify(indexData, null, 2));
   }
 
   if (options.includeProjectFile) {
-    updateProgress("Generating .mpkg-proj.json project file...");
+    updateProgress("Generating .mpkg-proj project file...");
     const projectData = generateModpkgProjectExport(packSettings, installedContent, customFiles);
-    zip.file(`${safeId}.mpkg-proj.json`, JSON.stringify(projectData, null, 2));
+    zip.file(`${safeId}.mpkg-proj`, JSON.stringify(projectData, null, 2));
   }
 
   // 4. Generate final ZIP

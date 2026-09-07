@@ -2,8 +2,10 @@ import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Home, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 export default function NotFoundPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,10 +22,10 @@ export default function NotFoundPage() {
 
       {/* Title & Description */}
       <h2 className="text-2xl font-bold text-foreground mb-3">
-        Page Not Found
+        {t("notFound.title")}
       </h2>
       <p className="text-muted-foreground max-w-md text-sm mb-8 leading-relaxed text-center mx-auto">
-        The page you are looking for doesn't exist, has been removed, or is temporarily unavailable.
+        {t("notFound.desc")}
       </p>
 
       {/* Action Buttons */}
@@ -34,7 +36,7 @@ export default function NotFoundPage() {
           className="gap-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl h-9 px-4 text-sm font-medium transition-all"
         >
           <ArrowLeft className="w-4 h-4" />
-          Go Back
+          {t("notFound.goBack")}
         </Button>
 
         <Button
@@ -48,7 +50,7 @@ export default function NotFoundPage() {
         >
           <Link to="/">
             <Home className="w-4 h-4 text-white" />
-            Return Home
+            {t("notFound.returnHome")}
           </Link>
         </Button>
       </div>

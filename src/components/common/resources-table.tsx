@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CustomContentItem, CustomFileItem, InstalledItem } from "@/types";
 import { ContentTypeBadge, FileTypeBadge, ContentTypeIcon } from "@/components/common/content-type-icon";
 import { StorageBadge } from "@/components/common/storage-badge";
@@ -26,6 +27,7 @@ export function ResourcesTable({
   onDelete,
   onEdit,
 }: ResourcesTableProps) {
+  const { t } = useTranslation();
   const { packSettings, addContent, removeContent, addCustomFile, removeCustomFile } = usePack();
   const [itemToDelete, setItemToDelete] = useState<{ id: string; name: string } | null>(null);
   const [, setForceUpdate] = useState<number>(0);
@@ -67,24 +69,24 @@ export function ResourcesTable({
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-border bg-muted/50 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-              <th className="py-4 px-6 min-w-[240px]">Name</th>
+              <th className="py-4 px-6 min-w-[240px]">{t("myResources.table.name")}</th>
               {isContentMode ? (
                 <>
-                  <th className="py-4 px-4 min-w-[130px]">Content Type</th>
-                  <th className="py-4 px-4 min-w-[150px]">Loaders</th>
-                  <th className="py-4 px-4 min-w-[150px]">Versions</th>
-                  <th className="py-4 px-4 min-w-[170px]">Storage</th>
-                  <th className="py-4 px-4 min-w-[200px]">Direct Download</th>
+                  <th className="py-4 px-4 min-w-[130px]">{t("myResources.table.contentType")}</th>
+                  <th className="py-4 px-4 min-w-[150px]">{t("myResources.table.loaders")}</th>
+                  <th className="py-4 px-4 min-w-[150px]">{t("myResources.table.versions")}</th>
+                  <th className="py-4 px-4 min-w-[170px]">{t("myResources.table.storage")}</th>
+                  <th className="py-4 px-4 min-w-[200px]">{t("myResources.table.directDownload")}</th>
                 </>
               ) : (
                 <>
-                  <th className="py-4 px-4 min-w-[120px]">File Type</th>
-                  <th className="py-4 px-4 min-w-[110px]">Content</th>
-                  <th className="py-4 px-4 min-w-[170px]">Storage</th>
-                  <th className="py-4 px-4 min-w-[200px]">Target Path</th>
+                  <th className="py-4 px-4 min-w-[120px]">{t("myResources.table.fileType")}</th>
+                  <th className="py-4 px-4 min-w-[110px]">{t("myResources.table.content")}</th>
+                  <th className="py-4 px-4 min-w-[170px]">{t("myResources.table.storage")}</th>
+                  <th className="py-4 px-4 min-w-[200px]">{t("myResources.table.targetPath")}</th>
                 </>
               )}
-              <th className="py-4 px-6 text-right min-w-[180px]">Actions</th>
+              <th className="py-4 px-6 text-right min-w-[180px]">{t("myResources.table.actions")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border text-xs">
@@ -112,7 +114,7 @@ export function ResourcesTable({
                         </span>
                         {contentItem && (
                           <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                            <span>By <strong className="text-foreground font-semibold">{contentItem.author || "Unknown"}</strong></span>
+                            <span>{t("myResources.table.byAuthor", { author: contentItem.author || t("myResources.table.unknownAuthor") })}</span>
                             {contentItem.targetPath && (
                               <span className="font-mono text-[11px] text-muted-foreground/80">
                                 ({contentItem.targetPath})
@@ -133,11 +135,11 @@ export function ResourcesTable({
                       </td>
                       {/* Loaders */}
                       <td className="py-4 px-4">
-                        {renderBadgeOverflow(contentItem.loader, "All Loaders")}
+                        {renderBadgeOverflow(contentItem.loader, t("myResources.table.allLoaders"))}
                       </td>
                       {/* Versions */}
                       <td className="py-4 px-4">
-                        {renderBadgeOverflow(contentItem.mcVersion, "All Versions")}
+                        {renderBadgeOverflow(contentItem.mcVersion, t("myResources.table.allVersions"))}
                       </td>
                       {/* Storage */}
                       <td className="py-4 px-4">
@@ -159,12 +161,12 @@ export function ResourcesTable({
                         {fileItem.sourceUrl ? (
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-400/10 text-amber-400">
                             <Globe className="w-3 h-3" />
-                            URL
+                            {t("myResources.table.contentUrl")}
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-muted dark:bg-[#1E1E1E] text-muted-foreground">
                             <Code2 className="w-3 h-3" />
-                            Inline
+                            {t("myResources.table.contentInline")}
                           </span>
                         )}
                       </td>
@@ -211,7 +213,7 @@ export function ResourcesTable({
                           >
                             <Plus className={`w-3.5 h-3.5 transition-colors ${isOpen ? "text-[#FE5000]" : "text-muted-foreground group-hover/addbtn:text-[#FE5000]"}`} />
                             <span className={`transition-colors font-semibold text-xs ${isOpen ? "text-[#FE5000]" : "text-foreground group-hover/addbtn:text-[#FE5000]"}`}>
-                              Add to Package
+                              {t("myResources.table.addToPackage")}
                             </span>
                             <ChevronDown className={`w-3 h-3 transition-all duration-200 ml-0.5 ${isOpen ? "rotate-180 text-[#FE5000]" : "text-muted-foreground group-hover/addbtn:text-[#FE5000]"}`} />
                           </button>
@@ -271,7 +273,7 @@ export function ResourcesTable({
                         size="sm"
                         color="blue"
                         icon={<Pencil className="w-3.5 h-3.5" />}
-                        tooltip="Edit Resource"
+                        tooltip={t("myResources.table.editResource")}
                         onClick={() => onEdit(item)}
                       />
 
@@ -279,7 +281,7 @@ export function ResourcesTable({
                         size="sm"
                         color="red"
                         icon={<Trash2 className="w-3.5 h-3.5" />}
-                        tooltip="Delete Resource"
+                        tooltip={t("myResources.table.deleteResource")}
                         onClick={() => setItemToDelete({ id: item.id, name: item.name })}
                       />
                     </div>
@@ -301,7 +303,7 @@ export function ResourcesTable({
               onDelete(itemToDelete.id);
             }
           }}
-          title={isContentMode ? "Delete Custom Content" : "Delete Custom File"}
+          title={isContentMode ? t("myResources.table.deleteContentTitle") : t("myResources.table.deleteFileTitle")}
           itemName={itemToDelete.name}
         />
       )}

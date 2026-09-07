@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useDebounce } from "@/hooks/use-debounce";
 import { searchMods } from "@/lib/api/mods";
 import { usePack } from "@/context/pack-context";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { getCustomContentItems, getPackageCustomContentItems, getHiddenCustomItemIds } from "@/lib/storage/custom-content-storage";
 import { AddCustomContentDialog } from "@/components/views/add-custom-content-dialog";
@@ -115,6 +116,7 @@ export default function ModGrid({
   onOpenSettings,
   onCategoryClick
 }: ModGridProps) {
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [mods, setMods] = useState<ModItemData[]>([]);
   const [limit, setLimit] = useState<string>("20");
@@ -299,15 +301,15 @@ export default function ModGrid({
   }, [debouncedQuery, provider, contentType, selectedCategories, selectedEnvironments, sortBy, limit, page, mcVersion, loader, customStorageVersion]);
 
   const contentTypeLabels: Record<string, string> = {
-    mods: "Mods",
-    textures: "Resource Packs",
-    datapacks: "Datapacks",
-    shaders: "Shaders",
-    worlds: "Worlds",
-    overrides: "Overrides & Custom Files"
+    mods: t("myResources.types.mods"),
+    textures: t("myResources.types.textures"),
+    datapacks: t("myResources.types.datapacks"),
+    shaders: t("myResources.types.shaders"),
+    worlds: t("myResources.types.worlds"),
+    overrides: t("editor.sidebar.overridesTab")
   };
 
-  const currentLabel = contentTypeLabels[contentType] || "Mods";
+  const currentLabel = contentTypeLabels[contentType] || t("myResources.types.mods");
 
   const isMax50 = provider === "all" || provider === "curseforge";
 
@@ -324,7 +326,7 @@ export default function ModGrid({
       {/* Header - Uniform across all providers */}
       <div className="flex items-center justify-between mb-4 mt-0 z-10 bg-background flex-wrap gap-3">
         <div>
-          <h2 className="text-3xl font-bold text-foreground">Browse {currentLabel}</h2>
+          <h2 className="text-3xl font-bold text-foreground">{t("editor.grid.browseTitle", { type: currentLabel })}</h2>
         </div>
         
         {/* Controls - Uniform Amount & Sort by */}
@@ -332,7 +334,7 @@ export default function ModGrid({
           <div className="flex items-center gap-3">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
               <Hash className="w-3.5 h-3.5 text-muted-foreground" />
-              Amount
+              {t("editor.grid.amount")}
             </span>
             <Select value={limit} onValueChange={setLimit}>
               <SelectTrigger className="w-[80px] bg-muted/70 border border-border text-foreground focus:ring-0 focus:border-[#FE5000] h-10 rounded-xl px-3 text-sm font-medium">
@@ -356,17 +358,17 @@ export default function ModGrid({
           <div className="flex items-center gap-3">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
               <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground" />
-              Sort by
+              {t("editor.grid.sortBy")}
             </span>
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-[180px] bg-muted/70 border border-border text-foreground focus:ring-0 focus:border-[#FE5000] h-10 rounded-xl px-3 text-sm font-medium">
                 <SelectValue placeholder="Sort option" />
               </SelectTrigger>
               <SelectContent className="bg-popover border border-border text-popover-foreground rounded-xl shadow-xl">
-                <SelectItem value="relevance" className="focus:bg-muted focus:text-[#FE5000] text-sm">Relevance</SelectItem>
-                <SelectItem value="downloads" className="focus:bg-muted focus:text-[#FE5000] text-sm">Most Downloads</SelectItem>
-                <SelectItem value="updated" className="focus:bg-muted focus:text-[#FE5000] text-sm">Recently Updated</SelectItem>
-                <SelectItem value="newest" className="focus:bg-muted focus:text-[#FE5000] text-sm">Newest</SelectItem>
+                <SelectItem value="relevance" className="focus:bg-muted focus:text-[#FE5000] text-sm">{t("editor.grid.relevance")}</SelectItem>
+                <SelectItem value="downloads" className="focus:bg-muted focus:text-[#FE5000] text-sm">{t("editor.grid.downloads")}</SelectItem>
+                <SelectItem value="updated" className="focus:bg-muted focus:text-[#FE5000] text-sm">{t("editor.grid.updated")}</SelectItem>
+                <SelectItem value="newest" className="focus:bg-muted focus:text-[#FE5000] text-sm">{t("editor.grid.newest")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -430,12 +432,12 @@ export default function ModGrid({
                   )}
                 </EmptyMedia>
                 <EmptyTitle className="text-foreground text-xl font-bold">
-                  {provider === "custom" ? "No custom resources found" : "No results found"}
+                  {provider === "custom" ? t("editor.grid.noCustomTitle") : t("editor.grid.noResultsTitle")}
                 </EmptyTitle>
                 <EmptyDescription className="text-muted-foreground max-w-md mx-auto text-sm text-center">
                   {provider === "custom"
-                    ? `You haven't added any custom ${currentLabel.toLowerCase()} yet. Use the '+ Add Custom Resource' button in the sidebar or click below.`
-                    : `We couldn't find any ${currentLabel.toLowerCase()} matching your current filters.`}
+                    ? t("editor.grid.noCustomDesc", { type: currentLabel.toLowerCase() })
+                    : t("editor.grid.noResultsDesc", { type: currentLabel.toLowerCase() })}
                 </EmptyDescription>
               </EmptyHeader>
               <EmptyContent className="max-w-none flex flex-row items-center justify-center gap-3 mt-4">
@@ -446,7 +448,7 @@ export default function ModGrid({
                       className="bg-blue-500 hover:bg-blue-400 text-white rounded-xl h-10 px-5 text-sm font-semibold gap-2 border-0 outline outline-2 outline-transparent hover:outline-blue-500/50 hover:outline-offset-2 active:scale-95 transition-all shadow-lg shadow-blue-500/20 cursor-pointer"
                     >
                       <Plus className="w-4 h-4" />
-                      Add Custom Content
+                      {t("editor.grid.addCustomContent")}
                     </Button>
                     <Button 
                       variant="ghost" 
@@ -454,7 +456,7 @@ export default function ModGrid({
                       onClick={onOpenSettings}
                     >
                       <Settings2 className="w-4 h-4 mr-2" />
-                      Package Settings
+                      {t("editor.grid.packageSettings")}
                     </Button>
                   </>
                 ) : (
@@ -465,7 +467,7 @@ export default function ModGrid({
                       onClick={onOpenSettings}
                     >
                       <Settings2 className="w-4 h-4 mr-2" />
-                      Package Settings
+                      {t("editor.grid.packageSettings")}
                     </Button>
                     <Button 
                       variant="ghost" 
@@ -473,7 +475,7 @@ export default function ModGrid({
                       onClick={onClearFilters}
                     >
                       <X className="w-4 h-4 mr-2" />
-                      Clear Filters
+                      {t("editor.grid.clearFilters")}
                     </Button>
                   </>
                 )}

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Check, X, FilePlus, Copy, Trash2, Settings, Package } from "lucide-react";
 import { useState, useEffect, useRef, ChangeEvent, KeyboardEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { usePack } from "@/context/pack-context";
 import { getPackData } from "@/lib/storage/package-storage";
 import { PackSettingsModalProps, FieldLabelProps } from "@/types";
@@ -29,6 +30,7 @@ export default function PackSettingsModal({
   isCreateMode: propIsCreateMode = false,
   pack,
 }: PackSettingsModalProps) {
+  const { t } = useTranslation();
   const { 
     packSettings, 
     packagesList, 
@@ -228,10 +230,10 @@ export default function PackSettingsModal({
               )}
               <div className="flex flex-col text-left justify-center">
                 <DialogTitle className="text-foreground text-lg font-bold leading-tight">
-                  {isCreateMode ? "Create New MODPKG" : "Pack Settings"}
+                  {isCreateMode ? t("packSettings.createTitle") : t("packSettings.settingsTitle")}
                 </DialogTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {isCreateMode ? "Configure basic settings for your new modpack" : "Main configuration and version management for your modpack"}
+                  {isCreateMode ? t("packSettings.createSubtitle") : t("packSettings.settingsSubtitle")}
                 </p>
               </div>
             </div>
@@ -240,7 +242,7 @@ export default function PackSettingsModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  title="Close"
+                  title={t("common.close")}
                   className="w-9 h-9 rounded-xl flex items-center justify-center text-foreground hover:bg-muted transition-colors cursor-pointer"
                 >
                   <X className="w-5 h-5" />
@@ -253,7 +255,7 @@ export default function PackSettingsModal({
             {/* Name & ID */}
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
-                <FieldLabel>Modpack Name</FieldLabel>
+                <FieldLabel>{t("packSettings.nameLabel")}</FieldLabel>
                 <Input 
                   ref={nameInputRef}
                   value={name}
@@ -264,13 +266,13 @@ export default function PackSettingsModal({
                       handleSave();
                     }
                   }}
-                  placeholder="e.g. MODPKG"
+                  placeholder={t("packSettings.namePlaceholder")}
                   className="bg-muted/70 border-2 border-border text-foreground h-11 rounded-xl focus-visible:border-[#FE5000]"
                 />
               </div>
 
               <div className="flex flex-col gap-2">
-                <FieldLabel>Pack ID</FieldLabel>
+                <FieldLabel>{t("packSettings.idLabel")}</FieldLabel>
                 <Input 
                   value={id}
                   onChange={handleIdChange}
@@ -280,7 +282,7 @@ export default function PackSettingsModal({
                       handleSave();
                     }
                   }}
-                  placeholder="e.g. modpkg-x9a2k8"
+                  placeholder={t("packSettings.idPlaceholder")}
                   className="bg-muted/70 border-2 border-border text-foreground font-mono text-xs h-11 rounded-xl focus-visible:border-[#FE5000]"
                 />
               </div>
@@ -288,11 +290,11 @@ export default function PackSettingsModal({
 
             {/* Version */}
             <div className="flex flex-col gap-2">
-              <FieldLabel>Pack Version (Editing)</FieldLabel>
+              <FieldLabel>{t("packSettings.versionLabel")}</FieldLabel>
               {isCreatingVersion ? (
                 <div className="flex flex-col gap-3 p-4 bg-muted/60 border border-border rounded-xl">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-foreground uppercase tracking-wider">Create New Version</span>
+                    <span className="text-xs font-bold text-foreground uppercase tracking-wider">{t("packSettings.createNewVersion")}</span>
                     <button 
                       onClick={() => setIsCreatingVersion(false)}
                       className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
@@ -302,7 +304,7 @@ export default function PackSettingsModal({
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-medium text-muted-foreground">Version Tag / Name</label>
+                    <label className="text-[11px] font-medium text-muted-foreground">{t("packSettings.versionTagLabel")}</label>
                     <Input 
                       autoFocus
                       value={newVersionName}
@@ -319,29 +321,29 @@ export default function PackSettingsModal({
                           handleConfirmNewVersion();
                         }
                       }}
-                      placeholder="e.g. v1.0.0"
+                      placeholder={t("packSettings.versionPlaceholder")}
                       className="bg-muted/70 border-2 border-border text-foreground h-10 rounded-xl focus-visible:border-[#FE5000]"
                     />
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-medium text-muted-foreground">Initial Content</label>
+                    <label className="text-[11px] font-medium text-muted-foreground">{t("packSettings.initialContentLabel")}</label>
                     <Select value={copySourceVersion} onValueChange={setCopySourceVersion}>
                       <SelectTrigger className="bg-muted/70 border-2 border-border text-foreground h-10 rounded-xl">
-                        <SelectValue placeholder="Select content source" />
+                        <SelectValue placeholder={t("packSettings.selectSource")} />
                       </SelectTrigger>
                       <SelectContent className="bg-popover border-2 border-border text-popover-foreground rounded-xl">
                         <SelectItem value="empty" className="focus:bg-muted focus:text-[#FE5000]">
                           <div className="flex items-center gap-2">
                             <FilePlus className="w-3.5 h-3.5 text-muted-foreground" />
-                            <span>Empty (Fresh Start)</span>
+                            <span>{t("packSettings.emptyFreshStart")}</span>
                           </div>
                         </SelectItem>
                         {livePack.versions.map((ver) => (
                           <SelectItem key={ver} value={ver} className="focus:bg-muted focus:text-[#FE5000]">
                             <div className="flex items-center gap-2">
                               <Copy className="w-3.5 h-3.5 text-muted-foreground" />
-                              <span>Copy from {ver}</span>
+                              <span>{t("packSettings.copyFrom", { version: ver })}</span>
                             </div>
                           </SelectItem>
                         ))}
@@ -355,7 +357,7 @@ export default function PackSettingsModal({
                     className="w-full bg-[#FE5000] hover:bg-[#E04700] text-white rounded-xl h-10 font-semibold gap-2 mt-1 border-0"
                   >
                     <Check className="w-4 h-4 text-white" />
-                    Create {newVersionName.trim() ? newVersionName.trim() : "Version"}
+                    {t("packSettings.createVersionBtn", { version: newVersionName.trim() || t("packSettings.versionFallback") })}
                   </Button>
                 </div>
               ) : (
@@ -365,7 +367,7 @@ export default function PackSettingsModal({
                       ref={versionTriggerRef}
                       className="bg-muted/70 border-2 border-border text-foreground focus:ring-0 focus:border-[#FE5000] h-11 rounded-xl flex-1"
                     >
-                      <SelectValue placeholder="Select version" />
+                      <SelectValue placeholder={t("packSettings.selectVersion")} />
                     </SelectTrigger>
                     <SelectContent className="bg-popover border-2 border-border text-popover-foreground rounded-xl">
                       {livePack.versions.map((ver) => (
@@ -379,7 +381,7 @@ export default function PackSettingsModal({
                     type="button"
                     size="lg"
                     color="orange"
-                    tooltip="Create new version"
+                    tooltip={t("packSettings.createNewVersionTooltip")}
                     onClick={() => setIsCreatingVersion(true)}
                     icon={<Plus className="w-5 h-5" />}
                   />
@@ -388,7 +390,7 @@ export default function PackSettingsModal({
                       type="button"
                       size="lg"
                       color="red"
-                      tooltip={`Delete version ${currentVersion}`}
+                      tooltip={t("packSettings.deleteVersionTooltip", { version: currentVersion })}
                       onClick={() => handlePromptDelete(currentVersion)}
                       icon={<Trash2 className="w-5 h-5" />}
                     />
@@ -400,13 +402,13 @@ export default function PackSettingsModal({
             <div className="grid grid-cols-2 gap-4">
               {/* Minecraft Version */}
               <div className="flex flex-col gap-2">
-                <FieldLabel>Minecraft</FieldLabel>
+                <FieldLabel>{t("packSettings.minecraftLabel")}</FieldLabel>
                 <Select value={mcVersion} onValueChange={setMcVersion}>
                   <SelectTrigger 
                     ref={mcVersionTriggerRef}
                     className="bg-muted/70 border-2 border-border text-foreground focus:ring-0 focus:border-[#FE5000] h-11 rounded-xl"
                   >
-                    <SelectValue placeholder="Select version" />
+                    <SelectValue placeholder={t("packSettings.selectMcPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-2 border-border text-popover-foreground rounded-xl max-h-60 overflow-y-auto custom-scrollbar">
                     {mcVersionsList.map((v) => (
@@ -424,20 +426,20 @@ export default function PackSettingsModal({
                     className="border-border data-[state=checked]:bg-[#FE5000] data-[state=checked]:border-[#FE5000]"
                   />
                   <label htmlFor="show-all-mc" className="text-[11px] text-muted-foreground cursor-pointer select-none">
-                    Show all Minecraft versions
+                    {t("packSettings.showAllMc")}
                   </label>
                 </div>
               </div>
 
               {/* Loader */}
               <div className="flex flex-col gap-2">
-                <FieldLabel>Loader</FieldLabel>
+                <FieldLabel>{t("packSettings.loaderLabel")}</FieldLabel>
                 <Select value={loader} onValueChange={setLoader}>
                   <SelectTrigger 
                     ref={loaderTriggerRef}
                     className="bg-muted/70 border-2 border-border text-foreground focus:ring-0 focus:border-[#FE5000] h-11 rounded-xl"
                   >
-                    <SelectValue placeholder="Select loader" />
+                    <SelectValue placeholder={t("packSettings.selectLoaderPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-2 border-border text-popover-foreground rounded-xl max-h-60 overflow-y-auto custom-scrollbar">
                     {loadersList.map((l) => (
@@ -455,7 +457,7 @@ export default function PackSettingsModal({
                     className="border-border data-[state=checked]:bg-[#FE5000] data-[state=checked]:border-[#FE5000]"
                   />
                   <label htmlFor="show-all-loaders" className="text-[11px] text-muted-foreground cursor-pointer select-none">
-                    Show all loaders
+                    {t("packSettings.showAllLoaders")}
                   </label>
                 </div>
               </div>
@@ -469,8 +471,8 @@ export default function PackSettingsModal({
                 size="lg"
                 color="red"
                 icon={<Trash2 className="w-4 h-4" />}
-                label="Delete package"
-                tooltip="Delete package"
+                label={t("packSettings.deletePackageBtn")}
+                tooltip={t("packSettings.deletePackageBtn")}
                 onClick={() => setIsConfirmDeletePackOpen(true)}
               />
             ) : (
@@ -482,7 +484,7 @@ export default function PackSettingsModal({
               disabled={!name.trim()}
               className="bg-[#FE5000] text-white hover:bg-[#E04700] rounded-xl px-6 h-11 font-semibold outline outline-2 outline-transparent hover:outline-[#FE5000]/50 hover:outline-offset-2 active:scale-95 transition-all disabled:opacity-40 cursor-pointer"
             >
-              {isCreateMode ? "Create MODPKG" : "Save Changes"}
+              {isCreateMode ? t("packSettings.createModpkgBtn") : t("packSettings.saveChangesBtn")}
             </Button>
           </DialogFooter>
 
@@ -494,8 +496,8 @@ export default function PackSettingsModal({
         isOpen={isConfirmDeleteOpen}
         onClose={() => setIsConfirmDeleteOpen(false)}
         onConfirm={handleConfirmDelete}
-        title="Delete Version"
-        itemName={`Version ${versionToDelete}`}
+        title={t("packSettings.deleteVersionModalTitle")}
+        itemName={t("packSettings.deleteVersionItem", { version: versionToDelete })}
       />
 
       {/* Confirmation Dialog for Deleting MODPKG */}
@@ -507,9 +509,9 @@ export default function PackSettingsModal({
           deletePack(livePack.id);
           onClose();
         }}
-        title="Delete Package"
+        title={t("packSettings.deletePackageModalTitle")}
         itemName={livePack.name}
-        description={`Are you sure you want to delete ${livePack.name} (${livePack.id})? All custom files and installed content associated with this package will be removed. This action cannot be undone.`}
+        description={t("packSettings.deletePackageModalDesc", { name: livePack.name, id: livePack.id })}
       />
     </>
   );

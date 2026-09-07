@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
@@ -16,10 +17,12 @@ export function DeleteConfirmDialog({
   isOpen,
   onClose,
   onConfirm,
-  title = "Delete Custom Content",
+  title,
   itemName,
   description,
 }: DeleteConfirmDialogProps) {
+  const { t } = useTranslation();
+  const resolvedTitle = title || t("myResources.table.deleteContentTitle");
   // Grayscale the background of the website when dialog is active
   useEffect(() => {
     const rootEl = document.getElementById("root");
@@ -54,14 +57,14 @@ export function DeleteConfirmDialog({
         <DialogHeader className="gap-2 p-0">
           <DialogTitle className="text-foreground text-base font-bold flex items-center gap-2">
             <Trash2 className="w-5 h-5 text-[#FE5000] shrink-0" />
-            <span>{title}</span>
+            <span>{resolvedTitle}</span>
           </DialogTitle>
         </DialogHeader>
         
         <p className="text-sm text-muted-foreground">
           {description || (
             <>
-              Are you sure you want to delete custom resource <strong className="text-foreground">{itemName}</strong>? This action cannot be undone.
+              {t("myResources.table.deleteConfirm", { name: itemName || "" })}
             </>
           )}
         </p>
@@ -72,7 +75,7 @@ export function DeleteConfirmDialog({
               variant="ghost" 
               className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl px-4 h-10"
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
           </DialogClose>
           <Button 
@@ -83,7 +86,7 @@ export function DeleteConfirmDialog({
             }}
             className="bg-[#FE5000] hover:bg-[#E04700] text-white rounded-xl px-4 h-10 font-semibold border-0 outline outline-2 outline-transparent hover:outline-[#FE5000]/50 hover:outline-offset-2 active:scale-95 transition-all cursor-pointer"
           >
-            Delete
+            {t("common.delete")}
           </Button>
         </DialogFooter>
       </DialogContent>

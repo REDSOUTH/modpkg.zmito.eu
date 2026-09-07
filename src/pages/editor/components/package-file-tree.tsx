@@ -23,6 +23,7 @@ import { usePack } from "@/context/pack-context";
 import { CustomFileItem } from "@/types";
 import { detectFileType } from "@/lib/storage/config-files-storage";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 export interface PackageFileTreeProps {
   selectedFileId: string | null;
@@ -65,6 +66,7 @@ export function PackageFileTree({
   onSelectFile,
   onOpenAddDialog,
 }: PackageFileTreeProps) {
+  const { t } = useTranslation();
   const { customFiles, addCustomFile, removeCustomFile } = usePack();
 
   // Track collapsed folders (default all folders expanded)
@@ -324,7 +326,7 @@ export function PackageFileTree({
                     path: node.path,
                   });
                 }}
-                title={isFolder ? "Delete folder" : "Delete file"}
+                title={isFolder ? t("editor.fileTree.deleteFolder") : t("editor.fileTree.deleteFile")}
                 className="p-1 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-md transition-colors shrink-0"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -349,7 +351,7 @@ export function PackageFileTree({
       <div className="flex flex-col gap-2.5 bg-muted dark:bg-[#1E1E1E] p-3.5 rounded-2xl border border-border">
         <div className="flex items-center justify-between pl-1 pr-1">
           <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
-            Custom Files
+            {t("editor.fileTree.customFiles")}
           </span>
         </div>
 
@@ -360,7 +362,7 @@ export function PackageFileTree({
             className="w-full bg-amber-400 hover:bg-amber-300 text-black rounded-xl h-10 px-4 text-xs font-semibold gap-2 border-0 active:scale-95 transition-all duration-200 cursor-pointer shadow-none"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Custom File</span>
+            <span>{t("editor.fileTree.addCustomFile")}</span>
           </Button>
 
           <Button
@@ -369,7 +371,7 @@ export function PackageFileTree({
             className="w-full h-9 text-xs font-semibold text-muted-foreground hover:text-amber-500 hover:bg-muted rounded-xl px-3 gap-2 border border-border transition-all cursor-pointer"
           >
             <Download className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-            <span>Import from My Resources</span>
+            <span>{t("editor.fileTree.importFromResources")}</span>
           </Button>
         </div>
       </div>
@@ -378,14 +380,14 @@ export function PackageFileTree({
       <SearchInput
         value={searchQuery}
         onChange={setSearchQuery}
-        placeholder="Search files or folders..."
-        label="SEARCH"
+        placeholder={t("editor.fileTree.searchPlaceholder")}
+        label={t("editor.fileTree.search")}
       />
 
       {/* Directory Explorer Header */}
       <div className="flex items-center justify-between pl-1 pr-1 pt-1">
         <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
-          Directory Explorer
+          {t("editor.fileTree.directoryExplorer")}
         </span>
         <span className="text-[10px] text-muted-foreground font-mono">/</span>
       </div>
@@ -395,14 +397,14 @@ export function PackageFileTree({
         {isSearching && filteredTree.length === 0 ? (
           <div className="text-center py-8 text-xs text-muted-foreground flex flex-col items-center gap-2">
             <Search className="w-5 h-5 text-muted-foreground/40" />
-            <span>No files found</span>
-            <span className="text-[11px] text-muted-foreground/60">No files or folders match "{searchQuery}"</span>
+            <span>{t("editor.fileTree.noFilesFound")}</span>
+            <span className="text-[11px] text-muted-foreground/60">{t("editor.fileTree.noFilesMatch", { query: searchQuery })}</span>
           </div>
         ) : tree.length === 0 ? (
           <div className="text-center py-8 text-xs text-muted-foreground flex flex-col items-center gap-2">
             <Folder className="w-6 h-6 text-muted-foreground/40" />
-            <span>Directory is empty</span>
-            <span className="text-[11px] text-muted-foreground/60">Add a file or import from My Resources to build your structure.</span>
+            <span>{t("editor.fileTree.directoryEmpty")}</span>
+            <span className="text-[11px] text-muted-foreground/60">{t("editor.fileTree.directoryEmptyDesc")}</span>
           </div>
         ) : (
           renderTreeNodes(filteredTree)
@@ -422,9 +424,9 @@ export function PackageFileTree({
           isOpen={!!itemToDelete}
           onClose={() => setItemToDelete(null)}
           onConfirm={handleConfirmDelete}
-          title={itemToDelete.type === "folder" ? "Delete Folder" : "Delete Custom File"}
+          title={itemToDelete.type === "folder" ? t("editor.fileTree.deleteFolderTitle") : t("editor.fileTree.deleteFileTitle")}
           itemName={itemToDelete.name}
-          description={itemToDelete.type === "folder" ? `Are you sure you want to delete folder "${itemToDelete.name}" and all files inside it? This action cannot be undone.` : undefined}
+          description={itemToDelete.type === "folder" ? t("editor.fileTree.deleteFolderDesc", { name: itemToDelete.name }) : undefined}
         />
       )}
     </div>

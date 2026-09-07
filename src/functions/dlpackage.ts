@@ -1,5 +1,6 @@
 import JSZip from 'jszip';
 import notification from './notification';
+import i18n from '@/i18n';
 
 export interface DlPackageMod {
   id: string;
@@ -56,7 +57,7 @@ export default async function dlpackage(
   } finally {
     setDownloadedMods(-1);
     if (notFoundMods.length > 0) {
-      notification.warn(`No compatible version found for the mods: ${notFoundMods.join(', ')}.`, true);
+      notification.warn(i18n.t("toast.noCompatibleVersionMods", { mods: notFoundMods.join(', ') }), true);
     }
   }
 }

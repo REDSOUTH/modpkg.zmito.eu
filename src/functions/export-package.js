@@ -173,7 +173,7 @@ export function downloadModpkgIndexFile(packSettings, installedContent, customFi
   a.href = url;
 
   const baseName = getSafePackageId(packSettings);
-  a.download = `${baseName}.mpkg.json`;
+  a.download = `${baseName}.mpkg`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -191,7 +191,7 @@ export function downloadModpkgProjectFile(packSettings, installedContent, custom
   a.href = url;
 
   const baseName = getSafePackageId(packSettings);
-  a.download = `${baseName}.mpkg-proj.json`;
+  a.download = `${baseName}.mpkg-proj`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

@@ -4,8 +4,10 @@ import ImportMrpackDialog from "./import-mrpack-dialog";
 import JSZip from "jszip";
 import convertMrpack, { MrpackModEntry } from "../../../functions/convert-mrpack";
 import notification from "../../../functions/notification";
+import { useTranslation } from "react-i18next";
 
 export default function ImportMrpackInput() {
+  const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const openDialogState = useState<boolean>(false);
   const [, setOpenDialog] = openDialogState;
@@ -24,7 +26,7 @@ export default function ImportMrpackInput() {
 
   const processMrpack = async (selectedFile: File) => {
     if (!selectedFile.name.endsWith(".mrpack")) {
-      notification.default("The selected file is not a .mrpack file");
+      notification.default(t("toast.notMrpackFile"));
       return;
     }
 

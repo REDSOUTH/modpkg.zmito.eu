@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 import { Box, Paintbrush, Glasses, Braces, Map, FileBraces, FileText, Code2, FileJson, Image, File } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CardContentType } from "@/pages/editor/components/mod-card";
@@ -72,15 +73,9 @@ export interface ContentTypeBadgeProps extends React.HTMLAttributes<HTMLDivEleme
 }
 
 export function ContentTypeBadge({ type, showLabel = true, className, ...props }: ContentTypeBadgeProps) {
+  const { t } = useTranslation();
   const normalized = normalizeContentType(type);
-  const labels: Record<CardContentType, string> = {
-    mod: "Mod",
-    resourcepack: "Resourcepack",
-    shader: "Shader",
-    datapack: "Datapack",
-    world: "World",
-    override: "Override"
-  };
+  const label = t(`myResources.types.${normalized}`, { defaultValue: normalized });
 
   return (
     <div 
@@ -91,7 +86,7 @@ export function ContentTypeBadge({ type, showLabel = true, className, ...props }
       {...props}
     >
       <ContentTypeIcon type={normalized} />
-      {showLabel && <span className="whitespace-nowrap">{labels[normalized] || normalized}</span>}
+      {showLabel && <span className="whitespace-nowrap">{label}</span>}
     </div>
   );
 }
@@ -136,14 +131,9 @@ export interface FileTypeBadgeProps extends React.HTMLAttributes<HTMLDivElement>
 }
 
 export function FileTypeBadge({ type, showLabel = true, className, ...props }: FileTypeBadgeProps) {
-  const t = (type || "other").toLowerCase();
-  const labels: Record<string, string> = {
-    config: "Config",
-    script: "Script",
-    data: "Data",
-    image: "Image",
-    other: "Other",
-  };
+  const { t } = useTranslation();
+  const rawType = (type || "other").toLowerCase();
+  const label = t(`myResources.types.${rawType}`, { defaultValue: rawType });
 
   return (
     <div 
@@ -153,8 +143,8 @@ export function FileTypeBadge({ type, showLabel = true, className, ...props }: F
       )} 
       {...props}
     >
-      <FileTypeIcon type={t} />
-      {showLabel && <span className="whitespace-nowrap">{labels[t] || t}</span>}
+      <FileTypeIcon type={rawType} />
+      {showLabel && <span className="whitespace-nowrap">{label}</span>}
     </div>
   );
 }

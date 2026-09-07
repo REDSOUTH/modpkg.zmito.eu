@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 import { HardDrive } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +11,7 @@ export interface StorageBadgeProps extends React.HTMLAttributes<HTMLDivElement> 
 }
 
 export function StorageBadge({ storageType, showLabel = true, className, ...props }: StorageBadgeProps) {
+  const { t } = useTranslation();
   const isCloud = storageType === "account_cloud" || storageType === "cloud";
 
   return (
@@ -18,7 +20,7 @@ export function StorageBadge({ storageType, showLabel = true, className, ...prop
         "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-muted text-foreground dark:bg-[#1E1E1E] dark:text-white/90 border-0 whitespace-nowrap transition-colors",
         className
       )}
-      title={isCloud ? "Synced with REDSOUTH Account" : "Saved in Local Browser Storage"}
+      title={isCloud ? t("resourceOptions.syncAcrossDevices") : t("myResources.storage.local")}
       {...props}
     >
       {isCloud ? (
@@ -27,7 +29,9 @@ export function StorageBadge({ storageType, showLabel = true, className, ...prop
         <HardDrive className="w-3.5 h-3.5 shrink-0 text-blue-400" />
       )}
       {showLabel && (
-        <span className="whitespace-nowrap">{isCloud ? "REDSOUTH Account" : "Local Browser"}</span>
+        <span className="whitespace-nowrap">
+          {isCloud ? t("myResources.storage.cloud") : t("myResources.storage.local")}
+        </span>
       )}
     </div>
   );

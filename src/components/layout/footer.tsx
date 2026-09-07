@@ -10,8 +10,16 @@ import { useTheme } from "@/components/theme-provider";
 import { useTranslation } from "react-i18next";
 import "flag-icons/css/flag-icons.min.css";
 
+const LANGUAGES = [
+  { code: "en", label: "English", flag: "fi fi-us" },
+  { code: "es", label: "Español", flag: "fi fi-es" },
+  { code: "pt", label: "Português", flag: "fi fi-br" },
+  { code: "fr", label: "Français", flag: "fi fi-fr" },
+  { code: "de", label: "Deutsch", flag: "fi fi-de" },
+];
+
 export default function Footer() {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
   const { theme, setTheme } = useTheme();
 
   const changeLanguage = (lng: string) => {
@@ -36,7 +44,7 @@ export default function Footer() {
           </a>
           
           <div className="text-center md:text-left">
-            © {new Date().getFullYear()} REDSOUTH Studio. All rights reserved.
+            © {new Date().getFullYear()} REDSOUTH Studio. {t("footer.rights")}
           </div>
           
           <div className="flex flex-wrap justify-center md:justify-start gap-4 text-xs text-muted-foreground/80 mt-3">
@@ -46,7 +54,7 @@ export default function Footer() {
               rel="noopener noreferrer"
               className="hover:text-foreground transition-colors"
             >
-              Terms of Service
+              {t("footer.terms")}
             </a>
             <a
               href="https://redsouth.zmito.eu/legal/privacy"
@@ -54,7 +62,7 @@ export default function Footer() {
               rel="noopener noreferrer"
               className="hover:text-foreground transition-colors"
             >
-              Privacy Policy
+              {t("footer.privacy")}
             </a>
             <a
               href="https://redsouth.zmito.eu/legal/cookies"
@@ -62,7 +70,7 @@ export default function Footer() {
               rel="noopener noreferrer"
               className="hover:text-foreground transition-colors"
             >
-              Cookie Policy
+              {t("footer.cookies")}
             </a>
             <a
               href="https://redsouth.zmito.eu/legal/trademarks"
@@ -70,7 +78,7 @@ export default function Footer() {
               rel="noopener noreferrer"
               className="hover:text-foreground transition-colors"
             >
-              Legal Notice &amp; Trademarks
+              {t("footer.trademarks")}
             </a>
           </div>
         </div>
@@ -91,19 +99,19 @@ export default function Footer() {
                 onClick={() => setTheme("light")}
                 className={`cursor-pointer ${theme === 'light' ? 'bg-accent/50' : ''}`}
               >
-                <Sun className="h-4 w-4 mr-2" /> Light
+                <Sun className="h-4 w-4 mr-2" /> {t("footer.theme.light")}
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => setTheme("dark")}
                 className={`cursor-pointer ${theme === 'dark' ? 'bg-accent/50' : ''}`}
               >
-                <Moon className="h-4 w-4 mr-2" /> Dark
+                <Moon className="h-4 w-4 mr-2" /> {t("footer.theme.dark")}
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => setTheme("system")}
                 className={`cursor-pointer ${theme === 'system' ? 'bg-accent/50' : ''}`}
               >
-                <Laptop className="h-4 w-4 mr-2" /> System
+                <Laptop className="h-4 w-4 mr-2" /> {t("footer.theme.system")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -113,22 +121,19 @@ export default function Footer() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="h-8 gap-2 px-3 cursor-pointer text-muted-foreground hover:text-foreground">
                 <Globe className="h-4 w-4" />
-                <span>{currentLang.startsWith('es') ? 'Español' : 'English'}</span>
+                <span>{LANGUAGES.find((l) => currentLang.startsWith(l.code))?.label || 'English'}</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[120px]">
-              <DropdownMenuItem 
-                onClick={() => changeLanguage('en')}
-                className={`cursor-pointer ${currentLang.startsWith('en') ? 'bg-accent/50' : ''}`}
-              >
-                <span className="fi fi-us text-base rounded-[2px] overflow-hidden mr-2"></span> English
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => changeLanguage('es')}
-                className={`cursor-pointer ${currentLang.startsWith('es') ? 'bg-accent/50' : ''}`}
-              >
-                <span className="fi fi-es text-base rounded-[2px] overflow-hidden mr-2"></span> Español
-              </DropdownMenuItem>
+            <DropdownMenuContent align="end" className="w-[140px]">
+              {LANGUAGES.map((lang) => (
+                <DropdownMenuItem 
+                  key={lang.code}
+                  onClick={() => changeLanguage(lang.code)}
+                  className={`cursor-pointer ${currentLang.startsWith(lang.code) ? 'bg-accent/50 font-medium' : ''}`}
+                >
+                  <span className={`${lang.flag} text-base rounded-[2px] overflow-hidden mr-2`}></span> {lang.label}
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

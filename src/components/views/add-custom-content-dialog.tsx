@@ -11,6 +11,7 @@ import { PackageDropdownSelector } from "@/components/common/package-dropdown-se
 import { DeleteConfirmDialog } from "@/components/common/delete-confirm-dialog";
 import { PlusCircle, Pencil, Check, Sparkles, Package, Globe, AlertTriangle, Trash2, X } from "lucide-react";
 import { useState, useEffect, ChangeEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { 
   saveCustomContentItem, 
   updateCustomContentItem, 
@@ -65,6 +66,7 @@ export function AddCustomContentDialog({
   defaultSaveAsCommon = true,
   context = "standalone",
 }: AddCustomContentDialogProps) {
+  const { t } = useTranslation();
   const { packSettings, getMinecraftVersions, getLoaders, addContent, removeContent } = usePack();
 
   const [name, setName] = useState<string>("");
@@ -220,13 +222,13 @@ export function AddCustomContentDialog({
       if (!editItem) {
         if (url.toLowerCase().endsWith(".jar")) {
           handleTypeChange("mod");
-          setDetectedTypeNote("Auto-detected as Mod");
+          setDetectedTypeNote(t("addCustomContent.detectedMod"));
         } else if (url.toLowerCase().includes("shader") || url.toLowerCase().includes("complementary")) {
           handleTypeChange("shader");
-          setDetectedTypeNote("Auto-detected as Shader");
+          setDetectedTypeNote(t("addCustomContent.detectedShader"));
         } else if (url.toLowerCase().includes("texture") || url.toLowerCase().includes("resourcepack") || url.toLowerCase().endsWith(".zip")) {
           handleTypeChange("resourcepack");
-          setDetectedTypeNote("Auto-detected as Resourcepack");
+          setDetectedTypeNote(t("addCustomContent.detectedResourcepack"));
         } else {
           setDetectedTypeNote(null);
         }
@@ -362,10 +364,10 @@ export function AddCustomContentDialog({
             )}
             <div className="flex flex-col text-left justify-center">
               <DialogTitle className="text-foreground text-lg font-bold leading-tight">
-                {editItem ? "Edit Custom Content" : "Add Custom Content"}
+                {editItem ? t("addCustomContent.editTitle") : t("addCustomContent.createTitle")}
               </DialogTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {editItem ? "Modify custom content properties and compatibility settings" : "Register a custom provider download URL or local file override"}
+                {editItem ? t("addCustomContent.editSubtitle") : t("addCustomContent.createSubtitle")}
               </p>
             </div>
           </div>
@@ -373,7 +375,7 @@ export function AddCustomContentDialog({
             <button
               type="button"
               onClick={onClose}
-              title="Close"
+              title={t("common.close")}
               className="w-9 h-9 rounded-xl flex items-center justify-center text-foreground hover:bg-muted transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
@@ -391,7 +393,7 @@ export function AddCustomContentDialog({
               {/* Download URL */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Download URL / Direct Link
+                  {t("addCustomContent.downloadUrl")}
                 </label>
                 <Input 
                   autoFocus={!editItem}
@@ -410,7 +412,9 @@ export function AddCustomContentDialog({
 
               {/* Resource Name */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Resource Name</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  {t("addCustomContent.name")}
+                </label>
                 <Input 
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -421,40 +425,45 @@ export function AddCustomContentDialog({
 
               {/* Content Type */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Content Type</label>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  {t("addCustomContent.contentType")}
+                </label>
                 <Select value={contentType} onValueChange={handleTypeChange}>
                   <SelectTrigger className="bg-muted/70 border-2 border-border text-foreground focus:ring-0 focus:border-blue-500 h-11 rounded-xl">
-                    <SelectValue placeholder="Select type" />
+                    <div className="flex items-center gap-2">
+                      <ContentTypeIcon type={contentType} />
+                      <span>{t(`myResources.types.${contentType}`, { defaultValue: contentType })}</span>
+                    </div>
                   </SelectTrigger>
                   <SelectContent className="bg-popover border-2 border-border text-popover-foreground rounded-xl">
                     <SelectItem value="mod" className="focus:bg-muted focus:text-blue-400">
                       <div className="flex items-center gap-2">
                         <ContentTypeIcon type="mod" />
-                        <span>Mod</span>
+                        <span>{t("myResources.types.mod")}</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="resourcepack" className="focus:bg-muted focus:text-blue-400">
                       <div className="flex items-center gap-2">
                         <ContentTypeIcon type="resourcepack" />
-                        <span>Resourcepack</span>
+                        <span>{t("myResources.types.resourcepack")}</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="shader" className="focus:bg-muted focus:text-blue-400">
                       <div className="flex items-center gap-2">
                         <ContentTypeIcon type="shader" />
-                        <span>Shader</span>
+                        <span>{t("myResources.types.shader")}</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="datapack" className="focus:bg-muted focus:text-blue-400">
                       <div className="flex items-center gap-2">
                         <ContentTypeIcon type="datapack" />
-                        <span>Datapack</span>
+                        <span>{t("myResources.types.datapack")}</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="world" className="focus:bg-muted focus:text-blue-400">
                       <div className="flex items-center gap-2">
                         <ContentTypeIcon type="world" />
-                        <span>World</span>
+                        <span>{t("myResources.types.world")}</span>
                       </div>
                     </SelectItem>
                   </SelectContent>
@@ -464,7 +473,7 @@ export function AddCustomContentDialog({
               {/* Author */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Author (Optional)
+                  {t("addCustomContent.author")}
                 </label>
                 <Input 
                   value={author}
@@ -493,14 +502,24 @@ export function AddCustomContentDialog({
                 <div className="flex items-center gap-2.5 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs font-medium">
                   <AlertTriangle className="w-4 h-4 shrink-0 text-red-400" />
                   <span>
-                    Cannot Save: Selected loader ({selectedLoaders.join(", ")}) or version ({selectedMcVersions.join(", ")}) is incompatible with current package ({currentPkgLoader} {currentPkgMcVersion}), and 'Save to My Resources' is unchecked. Check 'Save to My Resources' or adjust compatibility to save.
+                    {t("addCustomContent.incompatibleCannotSave", {
+                      loaders: selectedLoaders.join(", "),
+                      versions: selectedMcVersions.join(", "),
+                      currentLoader: currentPkgLoader,
+                      currentVersion: currentPkgMcVersion
+                    })}
                   </span>
                 </div>
               ) : (!isCompatibleWithCurrentPkg && context === "editor") ? (
                 <div className="flex items-center gap-2.5 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400 text-xs font-medium">
                   <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
                   <span>
-                    Warning: Selected loader ({selectedLoaders.join(", ")}) or version ({selectedMcVersions.join(", ")}) does not match current package ({currentPkgLoader} {currentPkgMcVersion}). This custom resource will not appear for selection in this package's editor.
+                    {t("addCustomContent.incompatibleWarning", {
+                      loaders: selectedLoaders.join(", "),
+                      versions: selectedMcVersions.join(", "),
+                      currentLoader: currentPkgLoader,
+                      currentVersion: currentPkgMcVersion
+                    })}
                   </span>
                 </div>
               ) : null}
@@ -514,14 +533,14 @@ export function AddCustomContentDialog({
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Supported Loader(s)
+                    {t("addCustomContent.supportedLoaders")}
                   </label>
                   <button
                     type="button"
                     onClick={() => setShowAllLoaders(!showAllLoaders)}
                     className="text-[11px] text-blue-400 hover:underline font-semibold"
                   >
-                    {showAllLoaders ? "Standard loaders" : "+ Show all loaders"}
+                    {showAllLoaders ? t("addCustomContent.standardLoaders") : t("addCustomContent.showAllLoaders")}
                   </button>
                 </div>
 
@@ -536,7 +555,7 @@ export function AddCustomContentDialog({
                           : "bg-muted text-muted-foreground border-border hover:text-foreground"
                       }`}
                     >
-                      All Loaders
+                      {t("addCustomContent.allLoaders")}
                     </button>
                     {loadersList.map((ldr: { id: string; name: string }) => {
                       const isSelected = selectedLoaders.includes(ldr.name);
@@ -563,14 +582,14 @@ export function AddCustomContentDialog({
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Supported MC Version(s)
+                    {t("addCustomContent.supportedMc")}
                   </label>
                   <button
                     type="button"
                     onClick={() => setShowAllMcVersions(!showAllMcVersions)}
                     className="text-[11px] text-blue-400 hover:underline font-semibold"
                   >
-                    {showAllMcVersions ? "Standard versions" : "+ Show all versions"}
+                    {showAllMcVersions ? t("addCustomContent.standardVersions") : t("addCustomContent.showAllVersions")}
                   </button>
                 </div>
 
@@ -585,7 +604,7 @@ export function AddCustomContentDialog({
                           : "bg-muted text-muted-foreground border-border hover:text-foreground"
                       }`}
                     >
-                      All Versions
+                      {t("addCustomContent.allVersions")}
                     </button>
                     {mcVersionsList.map((ver: string) => {
                       const isSelected = selectedMcVersions.includes(ver);
@@ -623,7 +642,7 @@ export function AddCustomContentDialog({
               className="h-11 rounded-xl bg-muted dark:bg-[#1E1E1E] text-muted-foreground hover:text-red-400 hover:bg-red-500/10 ring-1 ring-inset ring-border/40 dark:ring-0 hover:ring-2 hover:ring-red-500/60 px-4 font-semibold text-xs transition-all shrink-0 gap-2 flex items-center cursor-pointer"
             >
               <Trash2 className="w-4 h-4" />
-              <span>Delete</span>
+              <span>{t("common.delete")}</span>
             </Button>
           ) : (
             <div />
@@ -634,7 +653,7 @@ export function AddCustomContentDialog({
             disabled={!name.trim() || !downloadUrl.trim() || isOrphanedSave}
             className="bg-blue-500 text-white hover:bg-blue-600 rounded-xl px-6 h-11 font-semibold outline outline-2 outline-transparent hover:outline-blue-500/50 hover:outline-offset-2 active:scale-95 transition-all disabled:opacity-40"
           >
-            {editItem ? "Update Custom Content" : "Add Custom Content"}
+            {editItem ? t("addCustomContent.updateBtn") : t("addCustomContent.createBtn")}
           </Button>
         </DialogFooter>
 
@@ -645,7 +664,7 @@ export function AddCustomContentDialog({
         isOpen={isConfirmDeleteOpen}
         onClose={() => setIsConfirmDeleteOpen(false)}
         onConfirm={handleConfirmDelete}
-        title="Delete Custom Content"
+        title={t("addCustomContent.deleteTitle")}
         itemName={name}
       />
     </Dialog>

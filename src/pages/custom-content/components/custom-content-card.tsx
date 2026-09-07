@@ -4,6 +4,7 @@ import { StorageBadge } from "@/components/common/storage-badge";
 import { ProviderIcon } from "@/components/common/provider-icon";
 import { Plus, Copy, Check, Trash2, ExternalLink } from "lucide-react";
 import { useState, MouseEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { usePack } from "@/context/pack-context";
 import { motion } from "framer-motion";
 
@@ -13,6 +14,7 @@ export interface CustomContentCardProps {
 }
 
 export function CustomContentCard({ item, onDelete }: CustomContentCardProps) {
+  const { t } = useTranslation();
   const { addContent, installedContent } = usePack();
   const [copied, setCopied] = useState<boolean>(false);
 
@@ -93,7 +95,7 @@ export function CustomContentCard({ item, onDelete }: CustomContentCardProps) {
           <button
             onClick={() => onDelete(item.id)}
             className="p-2 rounded-xl text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
-            title="Delete Content"
+            title={t("common.delete")}
           >
             <Trash2 className="w-4 h-4" />
           </button>

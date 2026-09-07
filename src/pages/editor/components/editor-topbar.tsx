@@ -1,5 +1,6 @@
 import { Package, ChevronRight, Copy, Check, Settings } from "lucide-react";
 import { useState, MouseEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Breadcrumb,
@@ -15,6 +16,7 @@ import { ActionButton } from "@/components/common/action-button";
 import { EditorTopbarProps } from "@/types";
 
 export default function EditorTopbar({ onOpenSettings }: EditorTopbarProps) {
+  const { t } = useTranslation();
   const { packSettings, setIsCreatePackModalOpen, loaders } = usePack();
   const [copied, setCopied] = useState<boolean>(false);
 
@@ -124,8 +126,8 @@ export default function EditorTopbar({ onOpenSettings }: EditorTopbarProps) {
         <ActionButton
           color="zinc"
           icon={<Settings className="w-3.5 h-3.5" />}
-          label="Settings"
-          tooltip="Configure package details, loaders and versions"
+          label={t("editor.topbar.settings")}
+          tooltip={t("editor.topbar.settingsTooltip")}
           tooltipSide="bottom"
           tooltipSideOffset={8}
           onClick={() => onOpenSettings()}

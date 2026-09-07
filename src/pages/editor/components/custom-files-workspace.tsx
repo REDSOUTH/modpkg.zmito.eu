@@ -35,14 +35,9 @@ import {
 import { useTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 type ContentMode = "edit" | "upload" | "url";
-
-const MODE_TABS: { id: ContentMode; label: string; icon: React.ReactNode }[] = [
-  { id: "edit", label: "Edit", icon: <Code2 className="w-3.5 h-3.5" /> },
-  { id: "upload", label: "Upload", icon: <Upload className="w-3.5 h-3.5" /> },
-  { id: "url", label: "URL", icon: <Globe className="w-3.5 h-3.5" /> },
-];
 
 const getUrlMediaType = (url: string, fileType?: CustomFileType): "image" | "video" | "audio" | "other" => {
   if (fileType === "multimedia") return "image";
@@ -64,9 +59,16 @@ export function CustomFilesWorkspace({
   onSelectFile,
   onOpenAddDialog,
 }: CustomFilesWorkspaceProps) {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const monacoTheme = theme === "light" ? "light" : "vs-dark";
   const { customFiles, updateCustomFile, removeCustomFile } = usePack();
+
+  const MODE_TABS: { id: ContentMode; label: string; icon: React.ReactNode }[] = [
+    { id: "edit", label: t("editor.customFiles.modes.edit"), icon: <Code2 className="w-3.5 h-3.5" /> },
+    { id: "upload", label: t("editor.customFiles.modes.upload"), icon: <Upload className="w-3.5 h-3.5" /> },
+    { id: "url", label: t("editor.customFiles.modes.url"), icon: <Globe className="w-3.5 h-3.5" /> },
+  ];
 
   const file = customFiles.find((f) => f.id === selectedFileId) || null;
 
@@ -219,12 +221,12 @@ export function CustomFilesWorkspace({
               <FileSliders className="w-7 h-7" />
             </EmptyMedia>
             <EmptyTitle className="text-foreground text-xl font-bold">
-              {customFiles.length === 0 ? "No Custom Files in this Package" : "No Custom File Selected"}
+              {customFiles.length === 0 ? t("editor.customFiles.emptyPackageTitle") : t("editor.customFiles.noSelectedTitle")}
             </EmptyTitle>
             <EmptyDescription className="text-muted-foreground text-xs">
               {customFiles.length === 0
-                ? "Add configuration files, scripts, data, or multimedia overrides directly into your modpack package."
-                : "Select a custom file from the sidebar to inspect and edit its content, or add a new one."}
+                ? t("editor.customFiles.emptyPackageDesc")
+                : t("editor.customFiles.noSelectedDesc")}
             </EmptyDescription>
           </EmptyHeader>
           <Button
@@ -232,7 +234,7 @@ export function CustomFilesWorkspace({
             className="bg-amber-400 text-black hover:bg-amber-300 rounded-xl px-5 h-11 font-semibold outline outline-2 outline-transparent hover:outline-amber-400/50 hover:outline-offset-2 active:scale-95 transition-all mt-4"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Add Custom File
+            {t("editor.customFiles.addCustomFile")}
           </Button>
         </Empty>
       </div>
@@ -254,7 +256,7 @@ export function CustomFilesWorkspace({
               type="text"
               value={draftName}
               onChange={(e) => setDraftName(e.target.value)}
-              placeholder="File name"
+              placeholder={t("editor.customFiles.fileNamePlaceholder")}
               className="bg-transparent text-foreground font-bold text-sm leading-tight focus:bg-muted px-1.5 py-0.5 rounded-md border border-transparent focus:border-amber-400/50 focus:outline-none transition-all truncate"
             />
             <input
@@ -268,7 +270,7 @@ export function CustomFilesWorkspace({
                   setDraftType(detected);
                 }
               }}
-              placeholder="/config/options.txt"
+              placeholder={t("editor.customFiles.targetPathPlaceholder")}
               className="bg-transparent text-muted-foreground font-mono text-[11px] leading-tight focus:bg-muted px-1.5 py-0.5 rounded-md border border-transparent focus:border-amber-400/50 focus:outline-none transition-all w-80 truncate"
             />
           </div>
@@ -281,7 +283,7 @@ export function CustomFilesWorkspace({
             <div className="flex items-center gap-1.5 bg-muted/60 p-1 rounded-xl">
               <span className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-400 text-black shadow-sm">
                 <Globe className="w-3.5 h-3.5" />
-                URL
+                {t("editor.customFiles.modes.url")}
               </span>
             </div>
           ) : (
@@ -319,7 +321,7 @@ export function CustomFilesWorkspace({
               className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl text-xs h-9 px-3 gap-1.5 cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              Reset
+              {t("editor.customFiles.reset")}
             </Button>
           )}
 
@@ -337,12 +339,12 @@ export function CustomFilesWorkspace({
             {isSavedRecently ? (
               <>
                 <Check className="w-3.5 h-3.5" />
-                Saved
+                {t("editor.customFiles.saved")}
               </>
             ) : (
               <>
                 <Save className="w-3.5 h-3.5" />
-                Save Changes
+                {t("editor.customFiles.saveChanges")}
               </>
             )}
           </Button>
@@ -360,7 +362,7 @@ export function CustomFilesWorkspace({
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-xs shadow-xl">
-                Edit Full Details
+                {t("editor.customFiles.editFullDetails")}
               </TooltipContent>
             </Tooltip>
 
@@ -376,7 +378,7 @@ export function CustomFilesWorkspace({
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-xs shadow-xl">
-                Delete Custom File
+                {t("editor.customFiles.deleteCustomFile")}
               </TooltipContent>
             </Tooltip>
 
@@ -392,7 +394,7 @@ export function CustomFilesWorkspace({
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-xs shadow-xl">
-                Close File
+                {t("editor.customFiles.closeFile")}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -456,9 +458,9 @@ export function CustomFilesWorkspace({
               <Upload className={cn("w-8 h-8", isDragging && "animate-bounce")} />
               <div className="flex flex-col gap-1">
                 <span className="text-sm font-semibold text-foreground">
-                  {isDragging ? "Drop file to upload" : "Click or drag & drop to replace file content"}
+                  {isDragging ? t("editor.customFiles.dropFileUpload") : t("editor.customFiles.clickOrDrag")}
                 </span>
-                <span className="text-xs text-muted-foreground">JSON, YAML, TOML, TXT, Config, Scripts, etc.</span>
+                <span className="text-xs text-muted-foreground">{t("editor.customFiles.uploadFormats")}</span>
               </div>
             </button>
 
@@ -498,7 +500,7 @@ export function CustomFilesWorkspace({
           <div className="flex-1 p-6 flex flex-col gap-6 max-w-4xl overflow-y-auto custom-scrollbar">
             <div className="flex flex-col gap-2">
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Direct File URL
+                {t("editor.customFiles.directFileUrl")}
               </label>
               <Input
                 value={draftSourceUrl}
@@ -507,7 +509,7 @@ export function CustomFilesWorkspace({
                 className="bg-muted/50 border-border text-foreground h-11 rounded-xl font-mono text-sm focus-visible:border-amber-400"
               />
               <p className="text-xs text-muted-foreground">
-                Direct downloadable asset URL. Images, audio, and videos will render with preview players below.
+                {t("editor.customFiles.directFileUrlDesc")}
               </p>
             </div>
 
@@ -520,14 +522,14 @@ export function CustomFilesWorkspace({
                   className="text-xs text-amber-400 hover:underline flex items-center gap-1.5 w-fit font-semibold"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
-                  Open source URL in new tab
+                  {t("editor.customFiles.openUrl")}
                 </a>
 
                 {/* Media Preview */}
                 {mediaType === "image" && (
                   <div className="flex flex-col gap-2 p-5 bg-card border border-border rounded-2xl">
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Image Preview
+                      {t("editor.customFiles.imagePreview")}
                     </span>
                     <div className="flex items-center justify-center p-4 bg-muted/40 rounded-xl overflow-hidden border border-border min-h-[260px]">
                       <img
@@ -545,7 +547,7 @@ export function CustomFilesWorkspace({
                 {mediaType === "video" && (
                   <div className="flex flex-col gap-2 p-5 bg-card border border-border rounded-2xl">
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Video Preview
+                      {t("editor.customFiles.videoPreview")}
                     </span>
                     <div className="flex items-center justify-center p-4 bg-muted/40 rounded-xl overflow-hidden border border-border">
                       <video src={draftSourceUrl} controls className="max-h-96 w-full rounded-lg shadow-xl" />
@@ -556,7 +558,7 @@ export function CustomFilesWorkspace({
                 {mediaType === "audio" && (
                   <div className="flex flex-col gap-2 p-5 bg-card border border-border rounded-2xl">
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      Audio Player
+                      {t("editor.customFiles.audioPlayer")}
                     </span>
                     <div className="p-4 bg-muted/40 rounded-xl border border-border">
                       <audio src={draftSourceUrl} controls className="w-full" />
@@ -593,7 +595,7 @@ export function CustomFilesWorkspace({
         isOpen={isConfirmDeleteOpen}
         onClose={() => setIsConfirmDeleteOpen(false)}
         onConfirm={handleDelete}
-        title="Delete Custom File"
+        title={t("editor.customFiles.deleteModalTitle")}
         itemName={file.name}
       />
     </div>

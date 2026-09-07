@@ -1,4 +1,5 @@
 import { Package, Download, Trash2, Pin, PinOff, Box, Paintbrush, Glasses, FileBraces, FileText, Layers, Braces, Map, PlusCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { ContentTypeFilterBadges, FilterBadgeItem } from "@/components/common/content-type-filter-badges";
 import { ContentTypeIcon } from "@/components/common/content-type-icon";
 import { ProviderIcon } from "@/components/common/provider-icon";
@@ -14,6 +15,7 @@ export type ContentType = "mod" | "resourcepack" | "shader" | "datapack" | "worl
 export type ProviderType = "modrinth" | "curseforge" | "custom" | "local_override" | "all";
 
 export default function SelectedDock() {
+  const { t } = useTranslation();
   const { packSettings, installedContent, customFiles, removeContent } = usePack();
   const [isHovered, setIsHovered] = useState<boolean>(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState<boolean>(false);
@@ -120,8 +122,8 @@ export default function SelectedDock() {
               transition={{ duration: 0.2 }}
               className="flex flex-col whitespace-nowrap overflow-hidden pr-12"
             >
-              <span className="font-bold text-foreground text-sm tracking-wide">MODPKG Overview</span>
-              <span className="text-[10px] text-muted-foreground">{installedContent.length} total items</span>
+              <span className="font-bold text-foreground text-sm tracking-wide">{t("editor.dock.overviewTitle")}</span>
+              <span className="text-[10px] text-muted-foreground">{t("editor.dock.totalItems", { count: installedContent.length })}</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -134,7 +136,7 @@ export default function SelectedDock() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={togglePin}
-              title={isPinned ? "Unpin dock" : "Pin dock open"}
+              title={isPinned ? t("editor.dock.unpin") : t("editor.dock.pinOpen")}
               className={`h-8 w-8 rounded-xl border flex items-center justify-center transition-all absolute right-6 ${
                 isPinned 
                   ? 'border-[#FE5000] text-[#FE5000] bg-[#FE5000]/10' 
@@ -157,19 +159,19 @@ export default function SelectedDock() {
               onValueChange={setFilterType}
               activeColorClass="bg-[#FE5000] text-white"
               items={[
-                { id: "all", type: "all", label: "All", count: installedContent.length },
-                ...(modsCount > 0 ? [{ id: "mod", type: "mod", label: "Mods", count: modsCount }] : []),
-                ...(resourcePacksCount > 0 ? [{ id: "resourcepack", type: "resourcepack", label: "Textures", count: resourcePacksCount }] : []),
-                ...(datapacksCount > 0 ? [{ id: "datapack", type: "datapack", label: "Datapacks", count: datapacksCount }] : []),
-                ...(shadersCount > 0 ? [{ id: "shader", type: "shader", label: "Shaders", count: shadersCount }] : []),
-                ...(worldsCount > 0 ? [{ id: "world", type: "world", label: "Worlds", count: worldsCount }] : []),
-                ...(overridesCount > 0 ? [{ id: "override", type: "override", label: "Overrides", count: overridesCount }] : []),
+                { id: "all", type: "all", label: t("editor.dock.all"), count: installedContent.length },
+                ...(modsCount > 0 ? [{ id: "mod", type: "mod", label: t("editor.dock.mods"), count: modsCount }] : []),
+                ...(resourcePacksCount > 0 ? [{ id: "resourcepack", type: "resourcepack", label: t("editor.dock.textures"), count: resourcePacksCount }] : []),
+                ...(datapacksCount > 0 ? [{ id: "datapack", type: "datapack", label: t("editor.dock.datapacks"), count: datapacksCount }] : []),
+                ...(shadersCount > 0 ? [{ id: "shader", type: "shader", label: t("editor.dock.shaders"), count: shadersCount }] : []),
+                ...(worldsCount > 0 ? [{ id: "world", type: "world", label: t("editor.dock.worlds"), count: worldsCount }] : []),
+                ...(overridesCount > 0 ? [{ id: "override", type: "override", label: t("editor.dock.overrides"), count: overridesCount }] : []),
               ]}
             />
 
             {/* Provider Breakdown Row */}
             <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1.5 border-t border-border h-6 shrink-0">
-              <span className="font-semibold uppercase tracking-wider text-[10px]">Sources</span>
+              <span className="font-semibold uppercase tracking-wider text-[10px]">{t("editor.dock.sources")}</span>
               <div className="flex items-center gap-3">
                 {modrinthCount > 0 && (
                   <span className="flex items-center gap-1.5 text-[#45D66F]" title="Modrinth">
@@ -272,7 +274,7 @@ export default function SelectedDock() {
 
                       {/* Sub-line: [version/size] · [Provider Logo] (only if not override) · [Type Icon with color] */}
                       <div className="flex items-center gap-1.5 text-[10px] leading-none text-muted-foreground mt-1 min-w-0 w-full overflow-hidden h-4">
-                        <span className="truncate min-w-0 shrink leading-none">{isOverride ? "Local Override" : (item.versionName || item.versionId)}</span>
+                        <span className="truncate min-w-0 shrink leading-none">{isOverride ? t("editor.dock.localOverride") : (item.versionName || item.versionId)}</span>
                         
                         {!isOverride && (
                           <>
@@ -293,7 +295,7 @@ export default function SelectedDock() {
                   {isExpanded && (
                     <button 
                       onClick={() => removeItem(item.id)}
-                      title="Remove item"
+                      title={t("editor.dock.removeItem")}
                       className="flex opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 rounded-xl border border-border bg-muted text-muted-foreground hover:border-[#FE5000] hover:text-[#FE5000] hover:bg-transparent items-center justify-center shrink-0 ml-1"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -319,13 +321,13 @@ export default function SelectedDock() {
               </svg>
               <p className="text-muted-foreground text-xs font-medium">
                 {installedContent.length === 0 
-                  ? "No items in this package yet" 
-                  : "No items match this category"}
+                  ? t("editor.dock.emptyTitle") 
+                  : t("editor.dock.noMatchTitle")}
               </p>
               <p className="text-muted-foreground/60 text-[11px] mt-1 max-w-[200px] leading-relaxed">
                 {installedContent.length === 0 
-                  ? "Browse content and click 'Add to Package' to start building." 
-                  : "Try selecting 'All' or a different filter tag above."}
+                  ? t("editor.dock.emptyDesc") 
+                  : t("editor.dock.noMatchDesc")}
               </p>
             </div>
           )}
@@ -339,7 +341,7 @@ export default function SelectedDock() {
       <div className={`bg-background shrink-0 border-t border-border w-full sticky bottom-0 z-50 transition-all ${isExpanded ? "pl-4 pr-6 py-4" : "p-4 flex justify-center"}`}>
         <button 
           onClick={handleExportModpack}
-          title="Export MODPKG"
+          title={t("editor.dock.exportModpkg")}
           className={`h-12 flex items-center justify-center bg-[#FE5000] hover:bg-[#E04700] text-white font-semibold rounded-xl transition-all outline outline-2 outline-transparent hover:outline-[#FE5000] hover:outline-offset-[3px] active:scale-95 duration-200 overflow-hidden cursor-pointer ${isExpanded ? "w-full gap-2" : "w-12 shrink-0"}`}
         >
           <Download className="w-5 h-5 flex-shrink-0" />
@@ -351,7 +353,7 @@ export default function SelectedDock() {
                 exit={{ opacity: 0, width: 0, marginLeft: 0 }}
                 className="whitespace-nowrap font-bold"
               >
-                Export MODPKG
+                {t("editor.dock.exportModpkg")}
               </motion.span>
             )}
           </AnimatePresence>

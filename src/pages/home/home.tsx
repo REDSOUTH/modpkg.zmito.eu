@@ -50,7 +50,7 @@ export default function HomePage() {
                 d="M94.5358 0L189.072 46.7937V153.206L94.5358 200L0 153.206V46.7937L94.5358 0ZM17.1883 65.9994V142.508L85.9416 176.539V100.031L17.1883 65.9994ZM103.13 100.031V176.539L171.883 142.508V65.9994L146.101 78.7614V112.914L128.912 121.523V87.2697L103.13 100.031ZM161.078 52.1425L138.683 63.2268C138.193 62.8213 137.649 62.4645 137.055 62.1672L72.7811 29.974L94.5358 19.2057L161.078 52.1425ZM53.4502 39.5424L119.598 72.6741L94.5358 85.0795L27.9945 52.1425L53.4502 39.5424Z"
               />
             </svg>
-            <p className="text-2xl font-bold text-foreground tracking-wide mb-2 text-center w-full group-hover:text-[#FE5000] transition-colors">Package Editor</p>
+            <p className="text-2xl font-bold text-foreground tracking-wide mb-2 text-center w-full group-hover:text-[#FE5000] transition-colors duration-300">Package Editor</p>
             <p className="text-xs text-muted-foreground max-w-[270px] leading-relaxed text-center mx-auto">
               {hasActiveProject 
                 ? "Build and configure your modpack with mods, textures, shaders & overrides."
@@ -78,10 +78,10 @@ export default function HomePage() {
         <div className="h-full w-1/3 flex flex-col max-[1139px]:h-[220px] max-[1139px]:w-full">
           <button 
             className="h-option group relative p-6 flex flex-col items-center justify-center text-center overflow-hidden h-full" 
-            onClick={() => navigate("/editor")}
+            onClick={() => navigate("/library")}
           >
             <Library className="w-16 h-16 mb-3.5 text-foreground group-hover:scale-105 group-hover:text-[#FE5000] transition-all duration-300" />
-            <p className="text-2xl font-bold text-foreground tracking-wide mb-2 text-center w-full group-hover:text-[#FE5000] transition-colors">My MODPKGs</p>
+            <p className="text-2xl font-bold text-foreground tracking-wide mb-2 text-center w-full group-hover:text-[#FE5000] transition-colors duration-300">My MODPKGs</p>
             <p className="text-xs text-muted-foreground max-w-[270px] leading-relaxed text-center mx-auto">
               Access your locally stored projects,<br /> manage versions and export.
             </p>

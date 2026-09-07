@@ -359,7 +359,7 @@ export function CustomFilesWorkspace({
                   <Pencil className="w-4 h-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="border-0 text-xs shadow-xl">
+              <TooltipContent side="bottom" className="text-xs shadow-xl">
                 Edit Full Details
               </TooltipContent>
             </Tooltip>
@@ -375,7 +375,7 @@ export function CustomFilesWorkspace({
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="border-0 text-xs shadow-xl">
+              <TooltipContent side="bottom" className="text-xs shadow-xl">
                 Delete Custom File
               </TooltipContent>
             </Tooltip>
@@ -391,7 +391,7 @@ export function CustomFilesWorkspace({
                   <X className="w-4 h-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="border-0 text-xs shadow-xl">
+              <TooltipContent side="bottom" className="text-xs shadow-xl">
                 Close File
               </TooltipContent>
             </Tooltip>

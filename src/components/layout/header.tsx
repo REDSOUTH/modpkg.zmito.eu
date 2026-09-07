@@ -26,7 +26,7 @@ export default function Header() {
     { name: "Home", path: "/" },
     { name: "Editor", path: "/editor" },
     { name: "My Resources", path: "/my-resources" },
-    { name: "My MODPKGs", path: "/dashboard" },
+    { name: "My MODPKGs", path: "/library" },
     { name: "Discover", path: "/discover" },
     { name: "Docs", path: "/docs" },
   ];
@@ -94,7 +94,7 @@ export default function Header() {
                   <span className="text-base font-normal">Sign In</span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="bottom" sideOffset={8} className="font-medium text-xs shadow-xl border-0">
+              <TooltipContent side="bottom" sideOffset={8} className="font-medium text-xs shadow-xl">
                 <p>Coming soon</p>
               </TooltipContent>
             </Tooltip>

@@ -43,7 +43,7 @@ export function ProviderSelector({
                   <Globe className="w-4 h-4 text-foreground dark:text-white" />
                 </TabsTrigger>
               </TooltipTrigger>
-              <TooltipContent side="bottom" sideOffset={10} className="border-0 font-medium shadow-xl">
+              <TooltipContent side="bottom" sideOffset={10} className="font-medium shadow-xl">
                 <p>All Sources</p>
               </TooltipContent>
             </Tooltip>
@@ -62,7 +62,7 @@ export function ProviderSelector({
                   <img src="/social/modrinth.svg" alt="Modrinth" className="w-4 h-4 object-contain select-none pointer-events-none" draggable={false} />
                 </TabsTrigger>
               </TooltipTrigger>
-              <TooltipContent side="bottom" sideOffset={10} className="border-0 text-[#45D66F] font-medium shadow-xl">
+              <TooltipContent side="bottom" sideOffset={10} className="text-[#45D66F] font-medium shadow-xl">
                 <p>Modrinth</p>
               </TooltipContent>
             </Tooltip>
@@ -81,7 +81,7 @@ export function ProviderSelector({
                   <img src="/social/curseforge.svg" alt="CurseForge" className="w-4 h-4 object-contain select-none pointer-events-none" draggable={false} />
                 </TabsTrigger>
               </TooltipTrigger>
-              <TooltipContent side="bottom" sideOffset={10} className="border-0 text-[#F16436] font-medium shadow-xl">
+              <TooltipContent side="bottom" sideOffset={10} className="text-[#F16436] font-medium shadow-xl">
                 <p>CurseForge</p>
               </TooltipContent>
             </Tooltip>
@@ -100,7 +100,7 @@ export function ProviderSelector({
                   <PlusCircle className="w-4 h-4 text-blue-400" />
                 </TabsTrigger>
               </TooltipTrigger>
-              <TooltipContent side="bottom" sideOffset={10} className="border-0 text-blue-400 font-medium shadow-xl">
+              <TooltipContent side="bottom" sideOffset={10} className="text-blue-400 font-medium shadow-xl">
                 <p>Custom Source</p>
               </TooltipContent>
             </Tooltip>

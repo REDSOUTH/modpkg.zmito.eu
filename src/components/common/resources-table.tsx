@@ -6,6 +6,7 @@ import { Pencil, Trash2, Plus, Globe, Code2, ChevronDown } from "lucide-react";
 import { motion } from "framer-motion";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PackageDropdownSelector } from "@/components/common/package-dropdown-selector";
+import { ActionButton } from "@/components/common/action-button";
 import { DeleteConfirmDialog } from "@/components/common/delete-confirm-dialog";
 import { PathCopyBox } from "@/components/common/path-copy-box";
 import { getPackData, savePackData } from "@/lib/storage/package-storage";
@@ -266,37 +267,21 @@ export function ResourcesTable({
                       />
 
                       {/* Tooltip Wrapped Edit & Delete Buttons */}
-                      <TooltipProvider delayDuration={150}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button
-                              type="button"
-                              onClick={() => onEdit(item)}
-                              className="h-8 w-8 rounded-xl border border-border bg-muted dark:bg-[#1E1E1E] text-muted-foreground hover:border-blue-500 hover:text-blue-500 hover:bg-transparent flex items-center justify-center shrink-0 transition-all cursor-pointer"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="border-0 shadow-xl text-xs py-1 px-2">
-                            Edit Resource
-                          </TooltipContent>
-                        </Tooltip>
+                      <ActionButton
+                        size="sm"
+                        color="blue"
+                        icon={<Pencil className="w-3.5 h-3.5" />}
+                        tooltip="Edit Resource"
+                        onClick={() => onEdit(item)}
+                      />
 
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button
-                              type="button"
-                              onClick={() => setItemToDelete({ id: item.id, name: item.name })}
-                              className="h-8 w-8 rounded-xl border border-border bg-muted dark:bg-[#1E1E1E] text-muted-foreground hover:border-red-500 hover:text-red-500 hover:bg-transparent flex items-center justify-center shrink-0 transition-all cursor-pointer"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="border-0 shadow-xl text-xs py-1 px-2">
-                            Delete Resource
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <ActionButton
+                        size="sm"
+                        color="red"
+                        icon={<Trash2 className="w-3.5 h-3.5" />}
+                        tooltip="Delete Resource"
+                        onClick={() => setItemToDelete({ id: item.id, name: item.name })}
+                      />
                     </div>
                   </td>
                 </motion.tr>

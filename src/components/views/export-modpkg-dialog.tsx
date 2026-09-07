@@ -7,6 +7,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { ActionButton } from "@/components/common/action-button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -209,7 +210,7 @@ export function ExportModpkgDialog({ isOpen, onClose }: ExportModpkgDialogProps)
                             </div>
                           </div>
                         </TooltipTrigger>
-                        <TooltipContent side="top" className="border-0 text-xs p-2.5 shadow-xl max-w-xs">
+                        <TooltipContent side="top" className="text-xs p-2.5 shadow-xl max-w-xs">
                           <p className="font-semibold text-white">{item.name}</p>
                           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-1">
                             <span className="capitalize">{item.contentType}</span>
@@ -232,7 +233,7 @@ export function ExportModpkgDialog({ isOpen, onClose }: ExportModpkgDialogProps)
                             <FileSliders className="w-4 h-4 text-amber-500" />
                           </div>
                         </TooltipTrigger>
-                        <TooltipContent side="top" className="border-0 text-xs p-2.5 shadow-xl">
+                        <TooltipContent side="top" className="text-xs p-2.5 shadow-xl">
                           <p className="font-semibold text-amber-500">{file.name}</p>
                           <p className="text-[11px] text-muted-foreground mt-0.5">Target: {file.targetPath}</p>
                           <p className="text-[11px] text-muted-foreground capitalize">Type: {file.type}</p>
@@ -258,15 +259,14 @@ export function ExportModpkgDialog({ isOpen, onClose }: ExportModpkgDialogProps)
                     Exports <code className="text-foreground bg-muted dark:bg-[#2A2A2A] px-1 py-0.5 rounded text-[11px]">{safeId}.mpkg.json</code> with the current release manifest, dependencies and overrides.
                   </p>
                 </div>
-                <Button
+                <ActionButton
                   onClick={handleExportIndex}
                   disabled={isExportingZip}
-                  variant="secondary"
-                  className="w-full bg-muted dark:bg-[#262626] hover:bg-muted/80 dark:hover:bg-[#303030] border-0 dark:border-0 text-foreground text-xs h-9 rounded-lg font-medium transition-all flex items-center justify-center gap-2 cursor-pointer shadow-none"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  Export .mpkg.json
-                </Button>
+                  fullWidth
+                  color="zinc"
+                  icon={<Download className="w-3.5 h-3.5" />}
+                  label="Export .mpkg.json"
+                />
               </div>
 
               {/* Project File JSON Card */}
@@ -280,15 +280,14 @@ export function ExportModpkgDialog({ isOpen, onClose }: ExportModpkgDialogProps)
                     Exports <code className="text-foreground bg-muted dark:bg-[#2A2A2A] px-1 py-0.5 rounded text-[11px]">{safeId}.mpkg-proj.json</code> containing full project data, releases history and settings.
                   </p>
                 </div>
-                <Button
+                <ActionButton
                   onClick={handleExportProject}
                   disabled={isExportingZip}
-                  variant="secondary"
-                  className="w-full bg-muted dark:bg-[#262626] hover:bg-muted/80 dark:hover:bg-[#303030] border-0 dark:border-0 text-foreground text-xs h-9 rounded-lg font-medium transition-all flex items-center justify-center gap-2 cursor-pointer shadow-none"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  Export .mpkg-proj.json
-                </Button>
+                  fullWidth
+                  color="zinc"
+                  icon={<Download className="w-3.5 h-3.5" />}
+                  label="Export .mpkg-proj.json"
+                />
               </div>
 
             </div>

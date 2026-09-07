@@ -350,7 +350,7 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div 
-                    className="flex items-center gap-1.5 cursor-pointer min-w-0 max-w-full"
+                    className="flex items-center gap-1.5 cursor-pointer min-w-0 max-w-full w-fit"
                     onClick={handleOpenProject}
                     onMouseEnter={() => setIsTitleHovered(true)}
                     onMouseLeave={() => setIsTitleHovered(false)}
@@ -363,7 +363,7 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
                     )}
                   </div>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="border-0 shadow-xl text-xs rounded-lg p-2 max-w-xs z-50">
+                <TooltipContent side="top" className="shadow-xl text-xs rounded-lg p-2 max-w-xs z-50">
                   <p className="font-semibold">{mod.name}</p>
                   <p className="text-[10px] text-muted-foreground">{mod.author}</p>
                 </TooltipContent>
@@ -414,7 +414,7 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
                     )}
                   </button>
                 </TooltipTrigger>
-                <TooltipContent className="border-0 text-xs">
+                <TooltipContent className="text-xs">
                   <p>{isAdded ? "Remove from Package" : "Add to Package"}</p>
                 </TooltipContent>
               </Tooltip>
@@ -449,7 +449,7 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent className="border-0 text-xs">
+                <TooltipContent className="text-xs">
                   <p>Edit Custom Content</p>
                 </TooltipContent>
               </Tooltip>
@@ -483,7 +483,7 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
                     )}
                   </button>
                 </TooltipTrigger>
-                <TooltipContent className="border-0 text-xs">
+                <TooltipContent className="text-xs">
                   <p>{isAdded ? "Remove from Package" : `Add to Package (${selectedVersionName})`}</p>
                 </TooltipContent>
               </Tooltip>
@@ -492,19 +492,27 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
             <div className={`w-px h-4 transition-colors ${isAdded ? "bg-white/20" : "bg-border dark:bg-white/20"}`} />
 
             <DropdownMenu onOpenChange={handleOpenChange}>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className={`w-8 h-8 p-0 border-none bg-transparent focus:ring-0 shadow-none flex items-center justify-center rounded-none transition-colors outline-none cursor-pointer ${
-                    isAdded 
-                      ? "hover:bg-white/20 text-white" 
-                      : "hover:bg-foreground/10 dark:hover:bg-white/20 text-foreground dark:text-white"
-                  }`}
-                  title={`Versions & Download (${selectedVersionName})`}
-                >
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-              </DropdownMenuTrigger>
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className={`w-8 h-8 p-0 border-none bg-transparent focus:ring-0 shadow-none flex items-center justify-center rounded-none transition-colors outline-none cursor-pointer ${
+                          isAdded 
+                            ? "hover:bg-white/20 text-white" 
+                            : "hover:bg-foreground/10 dark:hover:bg-white/20 text-foreground dark:text-white"
+                        }`}
+                      >
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent className="text-xs">
+                    <p>Versions & Download ({selectedVersionName})</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
 
               <DropdownMenuContent 
                 align="end" 
@@ -512,47 +520,24 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
                 className="bg-popover text-popover-foreground border border-border rounded-xl shadow-xl z-50 w-72 p-1.5"
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* 1. Direct Download Button for Selected Version */}
-                <DropdownMenuItem
-                  className="flex items-center gap-2.5 p-2.5 rounded-xl cursor-pointer bg-[#FE5000] text-white hover:bg-[#e04700] focus:bg-[#e04700] focus:text-white transition-colors shadow-sm shadow-[#FE5000]/20 font-medium text-xs group/dl"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDirectDownload();
-                  }}
-                  disabled={isDownloading}
-                >
-                  {isDownloading ? (
-                    <Loader2 className="w-4 h-4 text-white animate-spin shrink-0" />
-                  ) : (
-                    <Download className="w-4 h-4 text-white shrink-0" />
-                  )}
-                  <div className="flex flex-col min-w-0 flex-1">
-                    <span className="font-semibold text-white leading-tight">Descargar archivo directo</span>
-                    <span className="text-[10px] text-white/80 truncate">
-                      {selectedVersionName} ({mcVersion} · {loader})
-                    </span>
-                  </div>
-                </DropdownMenuItem>
-
-                {/* Separator — mx-0 cancels the default -mx-1 so it aligns with button/label padding */}
-                <DropdownMenuSeparator className="mx-0 my-2 h-[1.5px] bg-border dark:bg-[#333333]" />
-
-                <DropdownMenuLabel className="text-[10px] uppercase font-semibold tracking-wider text-muted-foreground px-2 py-1">
+                {/* 1. Label de versiones */}
+                <DropdownMenuLabel className="text-[10px] uppercase font-semibold tracking-wider text-muted-foreground px-2.5 pt-1.5 pb-1">
                   Versiones ({mcVersion} · {loader})
                 </DropdownMenuLabel>
 
-                <ScrollArea className="max-h-56 pr-1">
-                  <div className="space-y-0.5 pr-1">
+                {/* 2. Lista nativa de selección de versión con truncate estricto */}
+                <ScrollArea className="max-h-60 w-full [&>[data-radix-scroll-area-viewport]>div]:!block pr-1">
+                  <div className="space-y-0.5 w-full max-w-full">
                     {/* Latest */}
                     <DropdownMenuItem
-                      className="flex items-center justify-between px-2 py-1.5 rounded-md text-xs cursor-pointer focus:bg-muted"
+                      className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs cursor-pointer focus:bg-muted font-medium w-full min-w-0"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleSelectVersion("latest");
                       }}
                     >
-                      <span className={`truncate min-w-0 flex-1 ${selectedVersionId === "latest" ? "font-semibold text-[#FE5000]" : "text-foreground"}`}>
-                        Latest (Recomendada)
+                      <span className={`truncate min-w-0 flex-1 block ${selectedVersionId === "latest" ? "font-semibold text-[#FE5000]" : "text-foreground"}`}>
+                        Latest
                       </span>
                       {selectedVersionId === "latest" && (
                         <Check className="w-3.5 h-3.5 text-[#FE5000] shrink-0 ml-2" />
@@ -561,13 +546,13 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
 
                     {/* Latest Unstable */}
                     <DropdownMenuItem
-                      className="flex items-center justify-between px-2 py-1.5 rounded-md text-xs cursor-pointer focus:bg-muted"
+                      className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs cursor-pointer focus:bg-muted font-medium w-full min-w-0"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleSelectVersion("latest-unstable");
                       }}
                     >
-                      <span className={`truncate min-w-0 flex-1 ${selectedVersionId === "latest-unstable" ? "font-semibold text-[#FE5000]" : "text-foreground"}`}>
+                      <span className={`truncate min-w-0 flex-1 block ${selectedVersionId === "latest-unstable" ? "font-semibold text-[#FE5000]" : "text-foreground"}`}>
                         Latest Unstable
                       </span>
                       {selectedVersionId === "latest-unstable" && (
@@ -590,27 +575,36 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
                         return (
                           <DropdownMenuItem
                             key={v.id}
-                            className="flex items-center justify-between px-2 py-1.5 rounded-md text-xs cursor-pointer focus:bg-muted"
+                            className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs cursor-pointer focus:bg-muted w-full min-w-0"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleSelectVersion(v.id, v.name);
                             }}
                           >
-                            {/* Name — truncates, fills available space */}
-                            <span className={`truncate min-w-0 flex-1 ${isSelected ? "font-semibold text-[#FE5000]" : "text-foreground"}`}>
-                              {v.name}
-                            </span>
+                            {/* Name — truncates with Tooltip on hover with 500ms delay */}
+                            <TooltipProvider delayDuration={500}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className={`truncate min-w-0 flex-1 block ${isSelected ? "font-semibold text-[#FE5000]" : "text-foreground"}`}>
+                                    {v.name}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="z-[9999] text-xs max-w-xs break-all shadow-md">
+                                  {v.name}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
 
                             {/* Badges + check on the right */}
-                            <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                            <div className="flex items-center gap-1 shrink-0 ml-2">
                               {!v.stable && (
-                                <span className="text-[10px] text-muted-foreground">(Unstable)</span>
+                                <span className="text-[10px] text-muted-foreground font-normal shrink-0">(Unstable)</span>
                               )}
                               {v.recommended && (
-                                <span className="text-[10px] font-bold text-blue-500">★</span>
+                                <span className="text-[10px] font-bold text-blue-500 shrink-0">★</span>
                               )}
                               {isSelected && (
-                                <Check className="w-3.5 h-3.5 text-[#FE5000]" />
+                                <Check className="w-3.5 h-3.5 text-[#FE5000] shrink-0" />
                               )}
                             </div>
                           </DropdownMenuItem>
@@ -619,6 +613,31 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
                     )}
                   </div>
                 </ScrollArea>
+
+                {/* 3. Separador con el mismo ancho que el botón y más separación */}
+                <DropdownMenuSeparator className="mx-0 my-2 h-px bg-border dark:bg-[#333333]" />
+
+                {/* 4. Botón de descarga de la versión seleccionada */}
+                <DropdownMenuItem
+                  className="flex items-center gap-2.5 p-2.5 rounded-xl cursor-pointer bg-[#FE5000] text-white hover:bg-[#e04700] focus:bg-[#e04700] focus:text-white transition-colors shadow-sm shadow-[#FE5000]/20 font-medium text-xs group/dl"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDirectDownload();
+                  }}
+                  disabled={isDownloading}
+                >
+                  {isDownloading ? (
+                    <Loader2 className="w-4 h-4 text-white animate-spin shrink-0" />
+                  ) : (
+                    <Download className="w-4 h-4 text-white shrink-0" />
+                  )}
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <span className="font-semibold text-white leading-tight">Descargar archivo directo</span>
+                    <span className="text-[10px] text-white/80 truncate">
+                      {selectedVersionName} ({mcVersion} · {loader})
+                    </span>
+                  </div>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -670,7 +689,7 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
                       </Badge>
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="border-0 shadow-xl p-2 z-50">
+                  <TooltipContent side="top" className="shadow-xl p-2 z-50">
                     <div className="flex flex-wrap gap-1.5 max-w-[200px]">
                       {mod.categories.slice(2).map((cat) => (
                         <Badge 

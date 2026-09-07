@@ -42,7 +42,7 @@ export function ViewSwitcher({
                   <Compass className="w-4 h-4 text-[#FE5000]" />
                 </TabsTrigger>
               </TooltipTrigger>
-              <TooltipContent side="bottom" sideOffset={10} className="border-0 font-medium shadow-xl">
+              <TooltipContent side="bottom" sideOffset={10} className="font-medium shadow-xl">
                 <p>Browse & Add Content</p>
               </TooltipContent>
             </Tooltip>
@@ -60,7 +60,7 @@ export function ViewSwitcher({
                   <FileUp className="w-4 h-4 text-amber-400" />
                 </TabsTrigger>
               </TooltipTrigger>
-              <TooltipContent side="bottom" sideOffset={10} className="border-0 font-medium shadow-xl">
+              <TooltipContent side="bottom" sideOffset={10} className="font-medium shadow-xl">
                 <p>Overrides & Custom Files</p>
               </TooltipContent>
             </Tooltip>

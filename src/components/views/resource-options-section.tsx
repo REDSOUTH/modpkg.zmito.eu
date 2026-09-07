@@ -135,7 +135,7 @@ export function ResourceOptionsSection({
                 </div>
               </TooltipTrigger>
               {!isLoggedIn && (
-                <TooltipContent side="top" sideOffset={8} className="border-0 font-medium text-xs shadow-xl max-w-xs">
+                <TooltipContent side="top" sideOffset={8} className="font-medium text-xs shadow-xl max-w-xs">
                   <p>Sign in to your REDSOUTH Account to sync resources across devices.</p>
                 </TooltipContent>
               )}

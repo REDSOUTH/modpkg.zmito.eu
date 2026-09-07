@@ -47,7 +47,7 @@ export function ContentTypeSelector({
                   <ContentTypeIcon type="mod" iconClassName="w-4 h-4" />
                 </TabsTrigger>
               </TooltipTrigger>
-              <TooltipContent side="bottom" sideOffset={10} className="border-0 font-medium shadow-xl">
+              <TooltipContent side="bottom" sideOffset={10} className="font-medium shadow-xl">
                 <p>Mods</p>
               </TooltipContent>
             </Tooltip>
@@ -66,7 +66,7 @@ export function ContentTypeSelector({
                   <ContentTypeIcon type="resourcepack" iconClassName="w-4 h-4" />
                 </TabsTrigger>
               </TooltipTrigger>
-              <TooltipContent side="bottom" sideOffset={10} className="border-0 font-medium shadow-xl">
+              <TooltipContent side="bottom" sideOffset={10} className="font-medium shadow-xl">
                 <p>Resourcepacks</p>
               </TooltipContent>
             </Tooltip>
@@ -85,7 +85,7 @@ export function ContentTypeSelector({
                   <ContentTypeIcon type="shader" iconClassName="w-4 h-4" />
                 </TabsTrigger>
               </TooltipTrigger>
-              <TooltipContent side="bottom" sideOffset={10} className="border-0 font-medium shadow-xl">
+              <TooltipContent side="bottom" sideOffset={10} className="font-medium shadow-xl">
                 <p>Shaders</p>
               </TooltipContent>
             </Tooltip>
@@ -104,7 +104,7 @@ export function ContentTypeSelector({
                   <ContentTypeIcon type="datapack" iconClassName="w-4 h-4" />
                 </TabsTrigger>
               </TooltipTrigger>
-              <TooltipContent side="bottom" sideOffset={10} className="border-0 font-medium shadow-xl">
+              <TooltipContent side="bottom" sideOffset={10} className="font-medium shadow-xl">
                 <p>Datapacks</p>
               </TooltipContent>
             </Tooltip>
@@ -124,7 +124,7 @@ export function ContentTypeSelector({
                     <ContentTypeIcon type="world" iconClassName="w-4 h-4" />
                   </TabsTrigger>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={10} className="border-0 font-medium shadow-xl">
+                <TooltipContent side="bottom" sideOffset={10} className="font-medium shadow-xl">
                   <p>Worlds</p>
                 </TooltipContent>
               </Tooltip>

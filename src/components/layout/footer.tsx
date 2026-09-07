@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,17 +26,52 @@ export default function Footer() {
         
         {/* Left side: Logo, Copyright & Links */}
         <div className="flex flex-col items-center md:items-start gap-3">
-          <img src="/redsouth/banner.svg" alt="REDSOUTH Studio" className="h-12 w-auto select-none" draggable="false" />
+          <a
+            href="https://redsouth.zmito.eu/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block transition-opacity hover:opacity-80"
+          >
+            <img src="/redsouth/banner.svg" alt="REDSOUTH Studio" className="h-12 w-auto select-none" draggable="false" />
+          </a>
           
           <div className="text-center md:text-left">
             © {new Date().getFullYear()} REDSOUTH Studio. All rights reserved.
           </div>
           
           <div className="flex flex-wrap justify-center md:justify-start gap-4 text-xs text-muted-foreground/80 mt-3">
-            <Link to="/legal/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
-            <Link to="/legal/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
-            <Link to="/legal/cookies" className="hover:text-foreground transition-colors">Cookie Policy</Link>
-            <Link to="/legal/trademarks" className="hover:text-foreground transition-colors">Legal Notice &amp; Trademarks</Link>
+            <a
+              href="https://redsouth.zmito.eu/legal/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground transition-colors"
+            >
+              Terms of Service
+            </a>
+            <a
+              href="https://redsouth.zmito.eu/legal/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground transition-colors"
+            >
+              Privacy Policy
+            </a>
+            <a
+              href="https://redsouth.zmito.eu/legal/cookies"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground transition-colors"
+            >
+              Cookie Policy
+            </a>
+            <a
+              href="https://redsouth.zmito.eu/legal/trademarks"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground transition-colors"
+            >
+              Legal Notice &amp; Trademarks
+            </a>
           </div>
         </div>
         

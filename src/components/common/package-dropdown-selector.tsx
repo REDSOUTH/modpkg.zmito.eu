@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { Search, Check, Plus, ChevronDown, Package } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePack } from "@/context/pack-context";
 import { PackSettings } from "@/types";
@@ -141,15 +142,23 @@ export function PackageDropdownSelector({
         ) : trigger ? (
           trigger
         ) : (
-          <button
-            type="button"
-            className={`p-1 rounded-lg transition-colors flex items-center justify-center ${
-              isOpen ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-            title="Switch package"
-          >
-            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? "rotate-180 text-[#FE5000]" : ""}`} />
-          </button>
+          <TooltipProvider delayDuration={200}>
+            <Tooltip open={isOpen ? false : undefined}>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className={`p-1 rounded-lg transition-colors flex items-center justify-center cursor-pointer ${
+                    isOpen ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isOpen ? "rotate-180 text-[#FE5000]" : ""}`} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={8} className="text-xs">
+                <p>Switch package</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
       </div>
 

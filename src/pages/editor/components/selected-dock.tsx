@@ -19,6 +19,7 @@ export default function SelectedDock() {
   const [isExportDialogOpen, setIsExportDialogOpen] = useState<boolean>(false);
 
   const handleExportModpack = () => {
+    setIsHovered(false);
     setIsExportDialogOpen(true);
   };
   
@@ -262,7 +263,7 @@ export default function SelectedDock() {
                               {item.name}
                             </span>
                           </TooltipTrigger>
-                          <TooltipContent side="top" className="border-0 shadow-xl text-xs rounded-lg p-2 max-w-xs">
+                          <TooltipContent side="top" className="shadow-xl text-xs rounded-lg p-2 max-w-xs">
                             <p className="font-semibold">{item.name}</p>
                             <p className="text-[10px] text-muted-foreground">{isOverride ? item.path : (item.versionName || item.versionId)}</p>
                           </TooltipContent>
@@ -359,7 +360,10 @@ export default function SelectedDock() {
 
       <ExportModpkgDialog
         isOpen={isExportDialogOpen}
-        onClose={() => setIsExportDialogOpen(false)}
+        onClose={() => {
+          setIsExportDialogOpen(false);
+          setIsHovered(false);
+        }}
       />
 
     </motion.aside>

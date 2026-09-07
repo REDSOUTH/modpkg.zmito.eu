@@ -210,9 +210,9 @@ export interface PackContextType {
   importPack: (parsedJson: any) => PackSettings;
   switchPack: (packId: string) => void;
   deletePack: (packId: string) => void;
-  updatePackSettings: (newSettings: Partial<PackSettings>) => void;
-  createNewVersion: (versionName: string, copyFromVersion?: string) => void;
-  deleteVersion: (versionToDelete: string) => void;
+  updatePackSettings: (newSettings: Partial<PackSettings>, targetPackId?: string) => void;
+  createNewVersion: (versionName: string, copyFromVersion?: string, targetPackId?: string) => void;
+  deleteVersion: (versionToDelete: string, targetPackId?: string) => void;
   getMinecraftVersions: (showAll?: boolean) => string[];
   getLoaders: (showAll?: boolean) => Loader[];
   loaders: Loader[];
@@ -237,6 +237,7 @@ export interface PackSettingsModalProps {
   onClose: () => void;
   focusField?: FocusField;
   isCreateMode?: boolean;
+  pack?: PackSettings | null;
 }
 
 export interface EditorTopbarProps {

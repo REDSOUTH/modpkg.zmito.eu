@@ -71,7 +71,7 @@ export default function ImportPackageInput() {
         onDrop={handleDrop}
       >
         <FileCode className="w-16 h-16 mb-3.5 text-foreground group-hover:scale-105 group-hover:text-[#FE5000] transition-all duration-300" />
-        <p className="text-2xl font-bold text-foreground tracking-wide mb-2 text-center w-full group-hover:text-[#FE5000] transition-colors">Import Project</p>
+        <p className="text-2xl font-bold text-foreground tracking-wide mb-2 text-center w-full group-hover:text-[#FE5000] transition-colors duration-300">Import Project</p>
         <p className="text-xs text-muted-foreground max-w-[270px] leading-relaxed text-center mx-auto">
           Load an existing <span className="font-mono text-foreground/80">.mdpkg.json</span><br /> or project index file.
         </p>

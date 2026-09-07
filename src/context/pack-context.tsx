@@ -664,229 +664,256 @@ export function PackProvider({ children }: { children: ReactNode }) {
     savePackagesIndex(updatedList);
     deletePackStorage(packId);
 
-    if (updatedList.length > 0) {
-      switchPack(updatedList[0].id);
-    } else {
-      setActivePackId(null);
-      setPackSettings(DEFAULT_FALLBACK_PACK);
-      setInstalledContent([]);
-      setCustomFiles([]);
-      setIsCreatePackModalOpen(true);
+    // Only switch or reset if the deleted pack was the currently active one
+    if (activePackId === packId) {
+      if (updatedList.length > 0) {
+        switchPack(updatedList[0].id);
+      } else {
+        setActivePackId(null);
+        setPackSettings(DEFAULT_FALLBACK_PACK);
+        setInstalledContent([]);
+        setCustomFiles([]);
+        setIsCreatePackModalOpen(true);
+      }
     }
   };
 
-  const updatePackSettings = (newSettings: Partial<PackSettings>) => {
-    setPackSettings(prev => {
-      const prevId = prev.id;
-      const targetId = (newSettings.id || prev.id).trim();
-      const isChangingId = Boolean(targetId && targetId !== prevId);
+  const updatePackSettings = (newSettings: Partial<PackSettings>, targetPackId?: string) => {
+    const targetId = targetPackId || activePackId || packSettings.id;
+    const isTargetActive = targetId === activePackId;
 
-      const prevVersion = prev.currentVersion;
-      const newVersion = newSettings.currentVersion ?? prevVersion;
-      const isSwitchingVersion = newVersion !== prevVersion;
+    const targetPack = packagesList.find(p => p.id === targetId) || (isTargetActive ? packSettings : null);
+    if (!targetPack) return;
 
-      // Determine which packId to load current data from
-      const sourcePackId = activePackId || prevId;
-      const packData = getPackData(sourcePackId);
-      if (!packData.releases) packData.releases = {};
+    const prevId = targetPack.id;
+    const requestedNewId = (newSettings.id || prevId).trim();
+    const isChangingId = Boolean(requestedNewId && requestedNewId !== prevId);
 
-      // 1. Save current active version state
+    const prevVersion = targetPack.currentVersion;
+    const newVersion = newSettings.currentVersion ?? prevVersion;
+    const isSwitchingVersion = newVersion !== prevVersion;
+
+    const packData = getPackData(prevId);
+    if (!packData.releases) packData.releases = {};
+
+    // 1. Save current active version state if it's the active pack
+    if (isTargetActive) {
       packData.releases[prevVersion] = {
         ...(packData.releases[prevVersion] || {
           releaseId: prevVersion,
-          minecraft: prev.mcVersion,
-          loader: { type: prev.loader, version: prev.loaderVersion || "latest" },
+          minecraft: targetPack.mcVersion,
+          loader: { type: targetPack.loader, version: targetPack.loaderVersion || "latest" },
         }),
         installedContent: installedContent,
         customFiles: customFiles,
         updatedAt: new Date().toISOString(),
       };
+    }
 
-      // 2. If switching to new version, load its contents
-      if (isSwitchingVersion) {
-        const targetRelease = packData.releases[newVersion] || {
-          releaseId: newVersion,
-          minecraft: newSettings.mcVersion || prev.mcVersion,
-          loader: {
-            type: newSettings.loader || prev.loader,
-            version: prev.loaderVersion || "latest",
-          },
-          installedContent: [],
-          customFiles: [],
-          publishedAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-        packData.releases[newVersion] = targetRelease;
-        packData.installedContent = targetRelease.installedContent || [];
-        packData.customFiles = targetRelease.customFiles || [];
+    // 2. If switching to new version, load its contents (only into memory if active)
+    if (isSwitchingVersion) {
+      const targetRelease = packData.releases[newVersion] || {
+        releaseId: newVersion,
+        minecraft: newSettings.mcVersion || targetPack.mcVersion,
+        loader: {
+          type: newSettings.loader || targetPack.loader,
+          version: targetPack.loaderVersion || "latest",
+        },
+        installedContent: [],
+        customFiles: [],
+        publishedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      packData.releases[newVersion] = targetRelease;
+      packData.installedContent = targetRelease.installedContent || [];
+      packData.customFiles = targetRelease.customFiles || [];
 
+      if (isTargetActive) {
         setInstalledContent(targetRelease.installedContent || []);
         setCustomFiles(targetRelease.customFiles || []);
-      } else {
-        // Updating settings on the same version
+      }
+    } else {
+      if (packData.releases[prevVersion]) {
         if (newSettings.mcVersion) packData.releases[prevVersion].minecraft = newSettings.mcVersion;
         if (newSettings.loader) {
           packData.releases[prevVersion].loader = {
             type: newSettings.loader,
-            version: prev.loaderVersion || "latest",
+            version: targetPack.loaderVersion || "latest",
           };
         }
       }
+    }
 
-      // 3. If ID is changing, migrate storage to the new ID
-      if (isChangingId) {
-        packData.id = targetId;
-        savePackData(targetId, packData);
-        deletePackStorage(prevId);
+    // 3. If ID is changing, migrate storage to the new ID
+    const finalId = isChangingId ? requestedNewId : prevId;
+    if (isChangingId) {
+      packData.id = finalId;
+      savePackData(finalId, packData);
+      deletePackStorage(prevId);
 
-        // Also migrate hidden custom items if present
-        try {
-          const oldHiddenKey = `modpkg_hidden_custom_${prevId}`;
-          const newHiddenKey = `modpkg_hidden_custom_${targetId}`;
-          const hiddenData = localStorage.getItem(oldHiddenKey);
-          if (hiddenData) {
-            localStorage.setItem(newHiddenKey, hiddenData);
-            localStorage.removeItem(oldHiddenKey);
-          }
-        } catch {
-          // Ignore localStorage errors
+      // Also migrate hidden custom items if present
+      try {
+        const oldHiddenKey = `modpkg_hidden_custom_${prevId}`;
+        const newHiddenKey = `modpkg_hidden_custom_${finalId}`;
+        const hiddenData = localStorage.getItem(oldHiddenKey);
+        if (hiddenData) {
+          localStorage.setItem(newHiddenKey, hiddenData);
+          localStorage.removeItem(oldHiddenKey);
         }
-
-        setActivePackId(targetId);
-      } else {
-        savePackData(sourcePackId, packData);
+      } catch {
+        // Ignore localStorage errors
       }
 
-      // Guarantee slug is always identical to id
-      const finalId = isChangingId ? targetId : prevId;
-      const updated: PackSettings = { 
-        ...prev, 
-        ...newSettings, 
-        id: finalId, 
-        slug: finalId 
-      };
+      if (isTargetActive) {
+        setActivePackId(finalId);
+      }
+    } else {
+      savePackData(prevId, packData);
+    }
 
-      const updatedList = packagesList.map(p => p.id === prevId ? updated : p);
-      setPackagesList(updatedList);
-      savePackagesIndex(updatedList);
-      return updated;
-    });
+    // Guarantee slug is always identical to id
+    const updated: PackSettings = { 
+      ...targetPack, 
+      ...newSettings, 
+      id: finalId, 
+      slug: finalId 
+    };
+
+    const updatedList = packagesList.map(p => p.id === prevId ? updated : p);
+    setPackagesList(updatedList);
+    savePackagesIndex(updatedList);
+
+    if (isTargetActive) {
+      setPackSettings(updated);
+    }
+    return updated;
   };
 
-  const createNewVersion = (versionName: string, copyFromVersion = "empty") => {
+  const createNewVersion = (versionName: string, copyFromVersion = "empty", targetPackId?: string) => {
     const trimmed = versionName.trim();
     if (!trimmed) return;
+
+    const targetId = targetPackId || activePackId || packSettings.id;
+    const isTargetActive = targetId === activePackId;
+    const targetPack = packagesList.find(p => p.id === targetId) || (isTargetActive ? packSettings : null);
+    if (!targetPack) return;
 
     let newContent: InstalledItem[] = [];
     let newFiles: CustomFileItem[] = [];
 
-    if (activePackId) {
-      const packData = getPackData(activePackId);
-      if (!packData.releases) packData.releases = {};
+    const packData = getPackData(targetId);
+    if (!packData.releases) packData.releases = {};
 
-      // 1. Save current active version first
-      const currentVer = packSettings.currentVersion;
+    // 1. Save current active version first if active
+    const currentVer = targetPack.currentVersion;
+    if (isTargetActive) {
       packData.releases[currentVer] = {
         ...(packData.releases[currentVer] || {
           releaseId: currentVer,
-          minecraft: packSettings.mcVersion,
-          loader: { type: packSettings.loader, version: packSettings.loaderVersion || "latest" },
+          minecraft: targetPack.mcVersion,
+          loader: { type: targetPack.loader, version: targetPack.loaderVersion || "latest" },
         }),
         installedContent: installedContent,
         customFiles: customFiles,
         updatedAt: new Date().toISOString(),
       };
-
-      // 2. Resolve content for new version based on copyFromVersion
-      if (copyFromVersion && copyFromVersion !== "empty") {
-        if (copyFromVersion === currentVer) {
-          newContent = JSON.parse(JSON.stringify(installedContent || []));
-          newFiles = JSON.parse(JSON.stringify(customFiles || []));
-        } else if (packData.releases[copyFromVersion]) {
-          newContent = JSON.parse(JSON.stringify(packData.releases[copyFromVersion].installedContent || []));
-          newFiles = JSON.parse(JSON.stringify(packData.releases[copyFromVersion].customFiles || []));
-        }
-      }
-
-      // 3. Create and save release for new version
-      packData.releases[trimmed] = {
-        releaseId: trimmed,
-        minecraft: packSettings.mcVersion,
-        loader: {
-          type: packSettings.loader,
-          version: packSettings.loaderVersion || "latest",
-        },
-        installedContent: newContent,
-        customFiles: newFiles,
-        publishedAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      packData.installedContent = newContent;
-      packData.customFiles = newFiles;
-
-      savePackData(activePackId, packData);
     }
 
-    // 4. Update memory states
-    setInstalledContent(newContent);
-    setCustomFiles(newFiles);
+    // 2. Resolve content for new version based on copyFromVersion
+    if (copyFromVersion && copyFromVersion !== "empty") {
+      if (isTargetActive && copyFromVersion === currentVer) {
+        newContent = JSON.parse(JSON.stringify(installedContent || []));
+        newFiles = JSON.parse(JSON.stringify(customFiles || []));
+      } else if (packData.releases[copyFromVersion]) {
+        newContent = JSON.parse(JSON.stringify(packData.releases[copyFromVersion].installedContent || []));
+        newFiles = JSON.parse(JSON.stringify(packData.releases[copyFromVersion].customFiles || []));
+      }
+    }
 
-    setPackSettings(prev => {
-      const exists = prev.versions.includes(trimmed);
-      const updatedVersions = exists ? prev.versions : [...prev.versions, trimmed];
+    // 3. Create and save release for new version
+    packData.releases[trimmed] = {
+      releaseId: trimmed,
+      minecraft: targetPack.mcVersion,
+      loader: {
+        type: targetPack.loader,
+        version: targetPack.loaderVersion || "latest",
+      },
+      installedContent: newContent,
+      customFiles: newFiles,
+      publishedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    packData.installedContent = newContent;
+    packData.customFiles = newFiles;
 
-      const updated = {
-        ...prev,
-        versions: updatedVersions,
-        currentVersion: trimmed,
-      };
+    savePackData(targetId, packData);
 
-      const updatedList = packagesList.map(p => p.id === prev.id ? updated : p);
-      setPackagesList(updatedList);
-      savePackagesIndex(updatedList);
+    // 4. Update memory states if active
+    if (isTargetActive) {
+      setInstalledContent(newContent);
+      setCustomFiles(newFiles);
+    }
 
-      return updated;
-    });
+    const exists = targetPack.versions.includes(trimmed);
+    const updatedVersions = exists ? targetPack.versions : [...targetPack.versions, trimmed];
+
+    const updated: PackSettings = {
+      ...targetPack,
+      versions: updatedVersions,
+      currentVersion: trimmed,
+    };
+
+    const updatedList = packagesList.map(p => p.id === targetPack.id ? updated : p);
+    setPackagesList(updatedList);
+    savePackagesIndex(updatedList);
+
+    if (isTargetActive) {
+      setPackSettings(updated);
+    }
   };
 
-  const deleteVersion = (versionToDelete: string) => {
-    setPackSettings(prev => {
-      if (prev.versions.length <= 1) return prev;
-      const filteredVersions = prev.versions.filter(v => v !== versionToDelete);
-      const nextCurrentVersion = prev.currentVersion === versionToDelete 
-        ? filteredVersions[0] 
-        : prev.currentVersion;
+  const deleteVersion = (versionToDelete: string, targetPackId?: string) => {
+    const targetId = targetPackId || activePackId || packSettings.id;
+    const isTargetActive = targetId === activePackId;
+    const targetPack = packagesList.find(p => p.id === targetId) || (isTargetActive ? packSettings : null);
+    if (!targetPack || targetPack.versions.length <= 1) return;
 
-      if (activePackId) {
-        const packData = getPackData(activePackId);
-        if (packData.releases && packData.releases[versionToDelete]) {
-          delete packData.releases[versionToDelete];
-        }
+    const filteredVersions = targetPack.versions.filter(v => v !== versionToDelete);
+    const nextCurrentVersion = targetPack.currentVersion === versionToDelete 
+      ? filteredVersions[0] 
+      : targetPack.currentVersion;
 
-        if (prev.currentVersion === versionToDelete) {
-          const nextRelease = packData.releases?.[nextCurrentVersion];
-          const nextContent = nextRelease?.installedContent || [];
-          const nextFiles = nextRelease?.customFiles || [];
-          packData.installedContent = nextContent;
-          packData.customFiles = nextFiles;
-          setInstalledContent(nextContent);
-          setCustomFiles(nextFiles);
-        }
-        savePackData(activePackId, packData);
+    const packData = getPackData(targetId);
+    if (packData.releases && packData.releases[versionToDelete]) {
+      delete packData.releases[versionToDelete];
+    }
+
+    if (targetPack.currentVersion === versionToDelete) {
+      const nextRelease = packData.releases?.[nextCurrentVersion];
+      const nextContent = nextRelease?.installedContent || [];
+      const nextFiles = nextRelease?.customFiles || [];
+      packData.installedContent = nextContent;
+      packData.customFiles = nextFiles;
+      if (isTargetActive) {
+        setInstalledContent(nextContent);
+        setCustomFiles(nextFiles);
       }
+    }
+    savePackData(targetId, packData);
 
-      const updated = {
-        ...prev,
-        versions: filteredVersions,
-        currentVersion: nextCurrentVersion,
-      };
+    const updated: PackSettings = {
+      ...targetPack,
+      versions: filteredVersions,
+      currentVersion: nextCurrentVersion,
+    };
 
-      const updatedList = packagesList.map(p => p.id === prev.id ? updated : p);
-      setPackagesList(updatedList);
-      savePackagesIndex(updatedList);
+    const updatedList = packagesList.map(p => p.id === targetPack.id ? updated : p);
+    setPackagesList(updatedList);
+    savePackagesIndex(updatedList);
 
-      return updated;
-    });
+    if (isTargetActive) {
+      setPackSettings(updated);
+    }
   };
 
   const addContent = (item: InstalledItem) => {

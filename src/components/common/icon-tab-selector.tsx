@@ -57,7 +57,7 @@ export function IconTabSelector({
                   <TooltipContent
                     side="bottom"
                     sideOffset={10}
-                    className="font-medium shadow-xl border-0"
+                    className="font-medium shadow-xl"
                   >
                     <p className={option.activeColorClass || "text-white"}>{option.label}</p>
                   </TooltipContent>

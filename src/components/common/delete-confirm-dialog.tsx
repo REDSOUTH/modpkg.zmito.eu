@@ -41,6 +41,13 @@ export function DeleteConfirmDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
         hideClose 
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            onConfirm();
+            onClose();
+          }
+        }}
         overlayClassName="backdrop-grayscale backdrop-blur-sm bg-black/60 dark:bg-black/70 transition-all duration-300"
         className="sm:max-w-lg bg-card border-2 border-border p-6 gap-4 overflow-hidden shadow-2xl rounded-2xl text-foreground"
       >
@@ -69,6 +76,7 @@ export function DeleteConfirmDialog({
             </Button>
           </DialogClose>
           <Button 
+            autoFocus
             onClick={() => {
               onConfirm();
               onClose();

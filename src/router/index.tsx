@@ -4,6 +4,7 @@ import HomePage from "../pages/home/home";
 import EditorPage from "../pages/editor/editor";
 import CustomContentPage from "../pages/custom-content/custom-content";
 import MyResourcesPage from "../pages/my-resources/my-resources";
+import LibraryPage from "../pages/library/library";
 import NotFoundPage from "../pages/not-found/not-found";
 import { AppErrorBoundary } from "../components/common/app-error-boundary";
 
@@ -26,8 +27,16 @@ const router = createBrowserRouter([
         element: <MyResourcesPage />,
       },
       {
+        path: "/library",
+        element: <LibraryPage />,
+      },
+      {
+        path: "/my-modpkgs",
+        element: <Navigate to="/library" replace />,
+      },
+      {
         path: "/dashboard",
-        element: <Navigate to="/editor" replace />,
+        element: <Navigate to="/library" replace />,
       },
       {
         path: "/custom-content",

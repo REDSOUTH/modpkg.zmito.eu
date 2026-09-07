@@ -1,4 +1,5 @@
 import { DeleteConfirmDialog } from "@/components/common/delete-confirm-dialog";
+import { ActionButton } from "@/components/common/action-button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,7 +22,13 @@ const sanitizeSlug = (str: string): string => {
     .replace(/[^a-z0-9.-]/g, "");
 };
 
-export default function PackSettingsModal({ isOpen, onClose, focusField, isCreateMode: propIsCreateMode = false }: PackSettingsModalProps) {
+export default function PackSettingsModal({ 
+  isOpen, 
+  onClose, 
+  focusField, 
+  isCreateMode: propIsCreateMode = false,
+  pack,
+}: PackSettingsModalProps) {
   const { 
     packSettings, 
     packagesList, 
@@ -41,6 +48,10 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
 
   const isFirstPack = packagesList.length === 0;
   const isCreateMode = propIsCreateMode || isFirstPack;
+
+  const livePack = !isCreateMode && pack 
+    ? (packagesList.find(p => p.id === pack.id) || pack)
+    : packSettings;
 
   const [name, setName] = useState<string>("MODPKG");
   const [id, setId] = useState<string>("");
@@ -63,7 +74,7 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
   const mcVersionsList = getMinecraftVersions(showAllMcVersions);
   const loadersList = getLoaders(showAllLoaders);
 
-  // Sync modal form with packSettings or reset defaults for Create Mode
+  // Sync modal form with livePack or reset defaults for Create Mode
   useEffect(() => {
     if (isOpen) {
       if (isCreateMode) {
@@ -77,12 +88,12 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
         setCurrentVersion("v1.0.0");
         setIsCreatingVersion(false);
       } else {
-        setName(packSettings.name);
-        setId(packSettings.id);
+        setName(livePack.name);
+        setId(livePack.id);
         setIsIdCustomized(false);
-        setMcVersion(packSettings.mcVersion);
-        setLoader(packSettings.loader);
-        setCurrentVersion(packSettings.currentVersion);
+        setMcVersion(livePack.mcVersion);
+        setLoader(livePack.loader);
+        setCurrentVersion(livePack.currentVersion);
         setIsCreatingVersion(false);
         setNewVersionName("");
         setCopySourceVersion("empty");
@@ -104,11 +115,11 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
         }
       }, 150);
     }
-  }, [isOpen, focusField, isCreateMode]);
+  }, [isOpen, focusField, isCreateMode, livePack.id]);
 
   const handleSave = () => {
     if (!name.trim()) return;
-    const cleanId = id.trim() || packSettings.id;
+    const cleanId = id.trim() || livePack.id;
     if (isCreateMode) {
       createPack({
         id: cleanId,
@@ -121,21 +132,21 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
       });
     } else {
       updatePackSettings({
-        name: name.trim() || packSettings.name,
+        name: name.trim() || livePack.name,
         id: cleanId,
         slug: cleanId,
         mcVersion,
         loader,
         currentVersion
-      });
+      }, livePack.id);
     }
     onClose();
   };
 
   const handleVersionChange = (newVer: string) => {
     setCurrentVersion(newVer);
-    if (!isCreateMode && packSettings.id) {
-      const packData = getPackData(packSettings.id);
+    if (!isCreateMode && livePack.id) {
+      const packData = getPackData(livePack.id);
       if (packData?.releases?.[newVer]) {
         const rel = packData.releases[newVer];
         if (rel.minecraft) setMcVersion(rel.minecraft);
@@ -146,7 +157,7 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
 
   const handleConfirmNewVersion = () => {
     if (newVersionName.trim()) {
-      createNewVersion(newVersionName, copySourceVersion);
+      createNewVersion(newVersionName, copySourceVersion, isCreateMode ? undefined : livePack.id);
       setCurrentVersion(newVersionName.trim());
     }
     setIsCreatingVersion(false);
@@ -161,7 +172,17 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
 
   const handleConfirmDelete = () => {
     if (versionToDelete) {
-      deleteVersion(versionToDelete);
+      const deleteIdx = livePack.versions.indexOf(versionToDelete);
+      const remainingVersions = livePack.versions.filter(v => v !== versionToDelete);
+      const targetVersion = deleteIdx > 0 
+        ? livePack.versions[deleteIdx - 1] 
+        : remainingVersions[0];
+
+      deleteVersion(versionToDelete, isCreateMode ? undefined : livePack.id);
+
+      if (targetVersion) {
+        handleVersionChange(targetVersion);
+      }
     }
     setIsConfirmDeleteOpen(false);
     setVersionToDelete(null);
@@ -316,7 +337,7 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
                             <span>Empty (Fresh Start)</span>
                           </div>
                         </SelectItem>
-                        {packSettings.versions.map((ver) => (
+                        {livePack.versions.map((ver) => (
                           <SelectItem key={ver} value={ver} className="focus:bg-muted focus:text-[#FE5000]">
                             <div className="flex items-center gap-2">
                               <Copy className="w-3.5 h-3.5 text-muted-foreground" />
@@ -347,34 +368,30 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
                       <SelectValue placeholder="Select version" />
                     </SelectTrigger>
                     <SelectContent className="bg-popover border-2 border-border text-popover-foreground rounded-xl">
-                      {packSettings.versions.map((ver) => (
+                      {livePack.versions.map((ver) => (
                         <SelectItem key={ver} value={ver} className="focus:bg-muted focus:text-[#FE5000]">
                           {ver}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button 
+                  <ActionButton 
                     type="button"
-                    variant="ghost" 
-                    size="icon" 
-                    title="Create new version"
+                    size="lg"
+                    color="orange"
+                    tooltip="Create new version"
                     onClick={() => setIsCreatingVersion(true)}
-                    className="h-11 w-11 rounded-xl bg-muted dark:bg-[#1E1E1E] text-muted-foreground hover:text-[#FE5000] hover:bg-muted/80 dark:hover:bg-[#252525] ring-1 ring-inset ring-border/40 dark:ring-0 hover:ring-2 hover:ring-[#FE5000] transition-all shrink-0 cursor-pointer"
-                  >
-                    <Plus className="w-5 h-5" />
-                  </Button>
-                  {packSettings.versions.length > 1 && (
-                    <Button 
+                    icon={<Plus className="w-5 h-5" />}
+                  />
+                  {livePack.versions.length > 1 && (
+                    <ActionButton 
                       type="button"
-                      variant="ghost" 
-                      size="icon" 
-                      title={`Delete version ${currentVersion}`}
+                      size="lg"
+                      color="red"
+                      tooltip={`Delete version ${currentVersion}`}
                       onClick={() => handlePromptDelete(currentVersion)}
-                      className="h-11 w-11 rounded-xl bg-muted dark:bg-[#1E1E1E] text-muted-foreground hover:text-red-400 hover:bg-red-500/10 ring-1 ring-inset ring-border/40 dark:ring-0 hover:ring-2 hover:ring-red-500/60 transition-all shrink-0 cursor-pointer"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </Button>
+                      icon={<Trash2 className="w-5 h-5" />}
+                    />
                   )}
                 </div>
               )}
@@ -447,15 +464,15 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
 
           <DialogFooter className="p-4 px-6 border-t border-border bg-card flex sm:justify-between items-center gap-3">
             {!isFirstPack && !isCreateMode ? (
-              <Button
+              <ActionButton
                 type="button"
-                variant="ghost"
+                size="lg"
+                color="red"
+                icon={<Trash2 className="w-4 h-4" />}
+                label="Delete package"
+                tooltip="Delete package"
                 onClick={() => setIsConfirmDeletePackOpen(true)}
-                className="h-11 rounded-xl bg-muted dark:bg-[#1E1E1E] text-muted-foreground hover:text-red-400 hover:bg-red-500/10 ring-1 ring-inset ring-border/40 dark:ring-0 hover:ring-2 hover:ring-red-500/60 px-4 font-semibold text-xs transition-all shrink-0 gap-2 flex items-center cursor-pointer"
-              >
-                <Trash2 className="w-4 h-4" />
-                <span>Delete package</span>
-              </Button>
+              />
             ) : (
               <div />
             )}
@@ -487,12 +504,12 @@ export default function PackSettingsModal({ isOpen, onClose, focusField, isCreat
         onClose={() => setIsConfirmDeletePackOpen(false)}
         onConfirm={() => {
           setIsConfirmDeletePackOpen(false);
-          deletePack(packSettings.id);
+          deletePack(livePack.id);
           onClose();
         }}
         title="Delete Package"
-        itemName={packSettings.name}
-        description={`Are you sure you want to delete ${packSettings.name} (${packSettings.id})? All custom files and installed content associated with this package will be removed. This action cannot be undone.`}
+        itemName={livePack.name}
+        description={`Are you sure you want to delete ${livePack.name} (${livePack.id})? All custom files and installed content associated with this package will be removed. This action cannot be undone.`}
       />
     </>
   );

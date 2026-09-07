@@ -1,4 +1,4 @@
-import { Package, ChevronRight, Copy, Check, Plus, Settings } from "lucide-react";
+import { Package, ChevronRight, Copy, Check, Settings } from "lucide-react";
 import { useState, MouseEvent } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -11,6 +11,7 @@ import {
 
 import { usePack } from "@/context/pack-context";
 import { PackageDropdownSelector } from "@/components/common/package-dropdown-selector";
+import { ActionButton } from "@/components/common/action-button";
 import { EditorTopbarProps } from "@/types";
 
 export default function EditorTopbar({ onOpenSettings }: EditorTopbarProps) {
@@ -57,12 +58,11 @@ export default function EditorTopbar({ onOpenSettings }: EditorTopbarProps) {
                       {packSettings.name}
                     </BreadcrumbPage>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom" sideOffset={8} className="border-0 shadow-xl p-2.5 flex items-center gap-2 rounded-xl">
+                  <TooltipContent side="bottom" sideOffset={8} className="shadow-xl p-2.5 flex items-center gap-2 rounded-xl">
                     <span className="text-xs font-mono text-muted-foreground">ID: {packSettings.id}</span>
                     <button 
                       onClick={handleCopyId}
-                      className="p-1 hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground transition-colors"
-                      title="Copy Pack ID"
+                      className="p-1 hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                     >
                       {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
@@ -119,23 +119,17 @@ export default function EditorTopbar({ onOpenSettings }: EditorTopbarProps) {
         </BreadcrumbList>
       </Breadcrumb>
 
-      {/* Right actions (Pack Settings & New Package buttons) */}
-      <div className="flex items-center gap-2.5">
-        <button 
+      {/* Right actions: Settings button matching card */}
+      <div className="flex items-center">
+        <ActionButton
+          color="zinc"
+          icon={<Settings className="w-3.5 h-3.5" />}
+          label="Settings"
+          tooltip="Configure package details, loaders and versions"
+          tooltipSide="bottom"
+          tooltipSideOffset={8}
           onClick={() => onOpenSettings()}
-          className="bg-muted dark:bg-[#1E1E1E] hover:bg-muted/80 dark:hover:bg-[#252525] text-foreground dark:text-white/80 hover:text-foreground dark:hover:text-white text-xs font-medium px-3.5 py-2 rounded-xl ring-1 ring-inset ring-border/40 dark:ring-0 transition-colors flex items-center gap-2 cursor-pointer"
-        >
-          <Settings className="w-3.5 h-3.5 text-muted-foreground" />
-          <span>Package Settings</span>
-        </button>
-
-        <button 
-          onClick={handleCreateNewProject}
-          className="bg-[#FE5000] hover:bg-[#E04700] text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all outline outline-2 outline-transparent hover:outline-[#FE5000] hover:outline-offset-[3px] active:scale-95 duration-200 flex items-center gap-1.5"
-        >
-          <Plus className="w-4 h-4 shrink-0" />
-          <span>New MODPKG</span>
-        </button>
+        />
       </div>
 
     </div>

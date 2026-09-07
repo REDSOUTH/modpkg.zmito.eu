@@ -33,7 +33,7 @@ export function PathCopyBox({ value, showOpenLink = false, className = "" }: Pat
                 {isCopied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="border-0 shadow-xl text-xs py-1 px-2">
+            <TooltipContent side="top" className="shadow-xl text-xs py-1 px-2">
               {isCopied ? "Copied!" : "Copy path"}
             </TooltipContent>
           </Tooltip>
@@ -51,7 +51,7 @@ export function PathCopyBox({ value, showOpenLink = false, className = "" }: Pat
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
               </TooltipTrigger>
-              <TooltipContent side="top" className="border-0 shadow-xl text-xs py-1 px-2">
+              <TooltipContent side="top" className="shadow-xl text-xs py-1 px-2">
                 Open URL
               </TooltipContent>
             </Tooltip>

@@ -140,6 +140,8 @@ export interface InstalledItem {
   mcVersion?: string;
   loader?: string;
   targetPath?: string;
+  fileName?: string;
+  hashes?: Record<string, string>;
   storageLocation?: CustomStorageLocation;
   isPackageOnly?: boolean;
 }

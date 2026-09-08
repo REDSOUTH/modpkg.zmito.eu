@@ -1,7 +1,23 @@
-export function generateModpkgExport(packSettings, installedContent, customFiles) {
-  const modrinthContent = (installedContent || [])
-    .filter(i => i.provider === "modrinth")
-    .map(i => ({
+import { getPackData } from "@/lib/storage/package-storage";
+import type {
+  PackSettings,
+  InstalledItem,
+  CustomFileItem,
+  ModpkgExportFile,
+  ModpkgModrinthItem,
+  ModpkgCurseforgeItem,
+  ModpkgCustomItem,
+  ModpkgOverride,
+} from "@/types";
+
+export function generateModpkgExport(
+  packSettings: PackSettings,
+  installedContent?: InstalledItem[],
+  customFiles?: CustomFileItem[]
+): ModpkgExportFile {
+  const modrinthContent: ModpkgModrinthItem[] = (installedContent || [])
+    .filter((i) => i.provider === "modrinth")
+    .map((i) => ({
       id: i.id,
       name: i.name,
       type: i.contentType || "mod",
@@ -10,12 +26,12 @@ export function generateModpkgExport(packSettings, installedContent, customFiles
       fileName: i.fileName || (i.contentType === "resourcepack" ? `${i.name}.zip` : `${i.name}.jar`),
       url: i.downloadUrl || undefined,
       iconUrl: i.iconUrl || undefined,
-      hashes: i.hashes || undefined,
+      hashes: (i as any).hashes || undefined,
     }));
 
-  const curseforgeContent = (installedContent || [])
-    .filter(i => i.provider === "curseforge")
-    .map(i => ({
+  const curseforgeContent: ModpkgCurseforgeItem[] = (installedContent || [])
+    .filter((i) => i.provider === "curseforge")
+    .map((i) => ({
       id: i.id,
       name: i.name,
       type: i.contentType || "mod",
@@ -23,12 +39,12 @@ export function generateModpkgExport(packSettings, installedContent, customFiles
       fileName: i.fileName || (i.contentType === "resourcepack" ? `${i.name}.zip` : `${i.name}.jar`),
       url: i.downloadUrl || undefined,
       iconUrl: i.iconUrl || undefined,
-      hashes: i.hashes || undefined,
+      hashes: (i as any).hashes || undefined,
     }));
 
-  const customContent = (installedContent || [])
-    .filter(i => i.provider === "custom" || i.provider === "local_override")
-    .map(i => {
+  const customContent: ModpkgCustomItem[] = (installedContent || [])
+    .filter((i) => i.provider === "custom" || i.provider === "local_override")
+    .map((i) => {
       const fallbackExt = i.contentType === "resourcepack" ? "zip" : "jar";
       const fallbackFilename = i.downloadUrl
         ? i.downloadUrl.split("/").pop()?.split("?")[0] || `${i.name}.${fallbackExt}`
@@ -41,11 +57,11 @@ export function generateModpkgExport(packSettings, installedContent, customFiles
         url: i.downloadUrl || "",
         iconUrl: i.iconUrl || undefined,
         targetPath: i.targetPath || (i.contentType === "resourcepack" ? `resourcepacks/${fallbackFilename}` : `mods/${fallbackFilename}`),
-        hashes: i.hashes || undefined,
+        hashes: (i as any).hashes || undefined,
       };
     });
 
-  const overrides = (customFiles || []).map(f => {
+  const overrides: ModpkgOverride[] = (customFiles || []).map((f) => {
     const cleanPath = f.targetPath?.startsWith("/") ? f.targetPath.slice(1) : (f.targetPath || f.name);
     if (f.sourceUrl) {
       return {
@@ -63,7 +79,7 @@ export function generateModpkgExport(packSettings, installedContent, customFiles
     };
   });
 
-  const exportFile = {
+  const exportFile: ModpkgExportFile = {
     formatVersion: 1,
     generator: "MODPKG Web",
     exportedAt: new Date().toISOString(),
@@ -93,21 +109,23 @@ export function generateModpkgExport(packSettings, installedContent, customFiles
   return exportFile;
 }
 
-import { getPackData } from "@/lib/storage/package-storage";
-
-export function getSafePackageId(packSettings) {
+export function getSafePackageId(packSettings?: Partial<PackSettings>): string {
   return (packSettings?.id || packSettings?.slug || packSettings?.name || "modpack")
     .toLowerCase()
     .replace(/\s+/g, "-")
     .replace(/[^a-z0-9.-]/g, "");
 }
 
-export function generateModpkgProjectExport(packSettings, installedContent, customFiles) {
+export function generateModpkgProjectExport(
+  packSettings: PackSettings,
+  installedContent?: InstalledItem[],
+  customFiles?: CustomFileItem[]
+): Record<string, any> {
   const packId = packSettings?.id || "default";
   const packData = getPackData(packId);
   const currentVersion = packSettings.currentVersion || "v1.0.0";
 
-  const releases = { ...(packData?.releases || {}) };
+  const releases: Record<string, any> = { ...(packData?.releases || {}) };
   releases[currentVersion] = {
     releaseId: currentVersion,
     minecraft: packSettings.mcVersion,
@@ -164,7 +182,11 @@ export function generateModpkgProjectExport(packSettings, installedContent, cust
   };
 }
 
-export function downloadModpkgIndexFile(packSettings, installedContent, customFiles) {
+export function downloadModpkgIndexFile(
+  packSettings: PackSettings,
+  installedContent?: InstalledItem[],
+  customFiles?: CustomFileItem[]
+): ModpkgExportFile {
   const exportData = generateModpkgExport(packSettings, installedContent, customFiles);
   const jsonContent = JSON.stringify(exportData, null, 2);
   const blob = new Blob([jsonContent], { type: "application/json" });
@@ -182,7 +204,11 @@ export function downloadModpkgIndexFile(packSettings, installedContent, customFi
   return exportData;
 }
 
-export function downloadModpkgProjectFile(packSettings, installedContent, customFiles) {
+export function downloadModpkgProjectFile(
+  packSettings: PackSettings,
+  installedContent?: InstalledItem[],
+  customFiles?: CustomFileItem[]
+): Record<string, any> {
   const exportData = generateModpkgProjectExport(packSettings, installedContent, customFiles);
   const jsonContent = JSON.stringify(exportData, null, 2);
   const blob = new Blob([jsonContent], { type: "application/json" });

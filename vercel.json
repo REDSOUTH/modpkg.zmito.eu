@@ -1,5 +1,16 @@
 {
-   "rewrites":  [
-       {"source": "/(.*)", "destination": "/"}
-    ]
+  "rewrites": [
+    {
+      "source": "/api/curseforge/(.*)",
+      "destination": "/api/curseforge?endpoint=$1"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
+    {
+      "source": "/((?!api/.*).*)",
+      "destination": "/index.html"
+    }
+  ]
 }

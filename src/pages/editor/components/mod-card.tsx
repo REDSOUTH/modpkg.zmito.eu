@@ -21,6 +21,7 @@ import { AddCustomContentDialog } from "@/components/views/add-custom-content-di
 import notification from "@/functions/notification";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useTranslation } from "react-i18next";
+import { getCurseforgeProxyUrl } from "@/lib/api/curseforge";
 
 export type CardContentType = "mod" | "resourcepack" | "shader" | "datapack" | "world" | "override";
 export type CardProviderType = "modrinth" | "curseforge" | "custom" | "local_override" | "all";
@@ -140,6 +141,7 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
     setSelectedVersionId(val);
     if (mod.id && isAdded) {
       addContent({
+        ...(installedItem || {}),
         id: mod.id,
         name: mod.name,
         provider: normalizeProvider(mod.provider || "modrinth") as CardProviderType,
@@ -220,29 +222,27 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
 
       // Special handling for CurseForge if downloadUrl was not included in file list
       if (provider === "curseforge" && !downloadUrl) {
-        const apiKey = import.meta.env.VITE_CURSEFORGE_API_KEY;
-        if (apiKey) {
-          try {
-            const res = await fetch(`https://api.curseforge.com/v1/mods/${modId}/files/${targetVer.id}/download-url`, {
-              headers: { "x-api-key": apiKey }
-            });
-            if (res.ok) {
-              const resJson = await res.json();
-              if (resJson?.data) {
-                downloadUrl = resJson.data;
-              }
+        try {
+          const res = await fetch(getCurseforgeProxyUrl(`/v1/mods/${modId}/files/${targetVer.id}/download-url`));
+          if (res.ok) {
+            const resJson = await res.json();
+            if (resJson?.data) {
+              downloadUrl = resJson.data;
             }
-          } catch {
-            // fallback below
           }
+        } catch {
+          // fallback below
         }
       }
 
-      const ext = normalizeType(mod.type || "mod") === "resourcepack" ? "zip" : "jar";
+      const isResPack = normalizeType(mod.type || "mod") === "resourcepack";
+      const isWorld = normalizeType(mod.type || "mod") === "world";
+      const ext = isResPack || isWorld ? "zip" : "jar";
+      const cfSection = isWorld ? "worlds" : isResPack ? "texture-packs" : "mc-mods";
 
       // Fallback for Curseforge if direct download URL is restricted by author
       if (!downloadUrl && provider === "curseforge") {
-        const fallbackUrl = `https://www.curseforge.com/minecraft/mc-mods/${mod.slug || modId}/download/${targetVer.id}`;
+        const fallbackUrl = `https://www.curseforge.com/minecraft/${cfSection}/${mod.slug || modId}/download/${targetVer.id}`;
         triggerBrowserDownload(fallbackUrl, fileName || `${mod.name}.${ext}`);
         notification.success(t("toast.openingDownload", { name: mod.name, version: targetVer.name }));
         return;
@@ -282,9 +282,12 @@ export default function ModCard({ mod, onCategoryClick, onEditCustomItem }: ModC
     if (mod.websiteUrl) return mod.websiteUrl;
     const provider = normalizeProvider(mod.provider || "modrinth");
     const identifier = mod.slug || mod.id || mod.name.toLowerCase().replace(/ /g, "");
+    const isWorld = normalizeType(mod.type || "mod") === "world";
+    const isResPack = normalizeType(mod.type || "mod") === "resourcepack";
+    const cfSection = isWorld ? "worlds" : isResPack ? "texture-packs" : "mc-mods";
     
     if (provider === "curseforge") {
-      return `https://www.curseforge.com/minecraft/mc-mods/${identifier}`;
+      return `https://www.curseforge.com/minecraft/${cfSection}/${identifier}`;
     }
     return `https://modrinth.com/mod/${identifier}`;
   };

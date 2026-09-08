@@ -1,6 +1,7 @@
 import { CardContentType, CardProviderType, ModItemData } from "@/pages/editor/components/mod-card";
 import { ModVersion } from "@/types";
 import { MODRINTH_PROJECT_TYPES, CURSEFORGE_CLASS_IDS } from "./categories";
+import { getCurseforgeProxyUrl } from "./curseforge";
 
 // For modrinth sort string
 const modrinthSortMap: Record<string, string> = {
@@ -159,9 +160,6 @@ async function searchCurseForge(
   mcVersion?: string,
   loader?: string
 ): Promise<ModItemData[]> {
-  const apiKey = import.meta.env.VITE_CURSEFORGE_API_KEY;
-  if (!apiKey) return [];
-
   const classId = CURSEFORGE_CLASS_IDS[contentType] || 6;
   let sortField = curseforgeSortMap[sortBy];
   
@@ -171,7 +169,7 @@ async function searchCurseForge(
     sortField = 2;
   }
 
-  const url = new URL("https://api.curseforge.com/v1/mods/search");
+  const url = new URL(getCurseforgeProxyUrl("/v1/mods/search"), window.location.origin);
   url.searchParams.set("gameId", "432");
   url.searchParams.set("classId", classId.toString());
   if (query) url.searchParams.set("searchFilter", query);
@@ -194,9 +192,7 @@ async function searchCurseForge(
   url.searchParams.set("index", offset.toString());
 
   try {
-    const res = await fetch(url.toString(), {
-      headers: { "x-api-key": apiKey }
-    });
+    const res = await fetch(url.toString());
     if (!res.ok) return [];
     const json = await res.json();
     const data = json.data || [];
@@ -260,9 +256,10 @@ async function getModrinthVersions(
   const isShader = contentType === "shader" || contentType === "shaders";
   const isResourcePack = contentType === "resourcepack" || contentType === "textures" || contentType === "resourcepacks";
   const isDatapack = contentType === "datapack" || contentType === "datapacks";
+  const isWorld = contentType === "world" || contentType === "worlds" || contentType === "save" || contentType === "saves";
 
-  // Shaders, Resource Packs, and Datapacks do NOT have mod loaders (Fabric/Forge/NeoForge)
-  if (!isShader && !isResourcePack && !isDatapack && loader && loader !== "Any") {
+  // Shaders, Resource Packs, Datapacks, and Worlds do NOT have mod loaders (Fabric/Forge/NeoForge)
+  if (!isShader && !isResourcePack && !isDatapack && !isWorld && loader && loader !== "Any") {
     url.searchParams.set("loaders", JSON.stringify([loader.toLowerCase()]));
   }
   
@@ -283,7 +280,7 @@ async function getModrinthVersions(
     // fetch without game_versions so the user can still select versions of the resource!
     if (data.length === 0 && mcVersion) {
       const fallbackUrl = new URL(`https://api.modrinth.com/v2/project/${modId}/version`);
-      if (!isShader && !isResourcePack && !isDatapack && loader && loader !== "Any") {
+      if (!isShader && !isResourcePack && !isDatapack && !isWorld && loader && loader !== "Any") {
         fallbackUrl.searchParams.set("loaders", JSON.stringify([loader.toLowerCase()]));
       }
       const fallbackRes = await fetch(fallbackUrl.toString());
@@ -322,17 +319,15 @@ async function getCurseForgeVersions(
   loader: string,
   contentType?: string
 ): Promise<ModVersion[]> {
-  const apiKey = import.meta.env.VITE_CURSEFORGE_API_KEY;
-  if (!apiKey) return [];
-
   const isShader = contentType === "shader" || contentType === "shaders";
   const isResourcePack = contentType === "resourcepack" || contentType === "textures" || contentType === "resourcepacks";
   const isDatapack = contentType === "datapack" || contentType === "datapacks";
+  const isWorld = contentType === "world" || contentType === "worlds" || contentType === "save" || contentType === "saves";
 
-  const url = new URL(`https://api.curseforge.com/v1/mods/${modId}/files`);
+  const url = new URL(getCurseforgeProxyUrl(`/v1/mods/${modId}/files`), window.location.origin);
   
-  // Shaders, Resource Packs, and Datapacks do NOT have mod loaders on CurseForge
-  if (!isShader && !isResourcePack && !isDatapack && loader && loader !== "Any") {
+  // Shaders, Resource Packs, Datapacks, and Worlds do NOT have mod loaders on CurseForge
+  if (!isShader && !isResourcePack && !isDatapack && !isWorld && loader && loader !== "Any") {
     const modLoaderType = CF_LOADER_MAP[loader.toLowerCase()];
     if (modLoaderType !== undefined) {
       url.searchParams.set("modLoaderType", modLoaderType.toString());
@@ -345,11 +340,7 @@ async function getCurseForgeVersions(
   }
 
   try {
-    let res = await fetch(url.toString(), {
-      headers: {
-        "x-api-key": apiKey
-      }
-    });
+    let res = await fetch(url.toString());
     let files: any[] = [];
     if (res.ok) {
       const json = await res.json();
@@ -359,10 +350,8 @@ async function getCurseForgeVersions(
     // Fallback: If 0 files found (e.g. for shaders, resource packs, or mods missing exact patch tag),
     // query files without gameVersion or modLoaderType so files are returned
     if (files.length === 0) {
-      const fallbackUrl = new URL(`https://api.curseforge.com/v1/mods/${modId}/files`);
-      const fallbackRes = await fetch(fallbackUrl.toString(), {
-        headers: { "x-api-key": apiKey }
-      });
+      const fallbackUrl = new URL(getCurseforgeProxyUrl(`/v1/mods/${modId}/files`), window.location.origin);
+      const fallbackRes = await fetch(fallbackUrl.toString());
       if (fallbackRes.ok) {
         const json = await fallbackRes.json();
         files = json.data || [];

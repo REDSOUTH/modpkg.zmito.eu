@@ -1,6 +1,7 @@
 import JSZip from "jszip";
 import { InstalledItem, CustomFileItem, PackSettings } from "@/types";
 import { generateModpkgExport, generateModpkgProjectExport, getSafePackageId } from "./export-package";
+import { getCurseforgeProxyUrl } from "@/lib/api/curseforge";
 
 export interface ZipExportProgress {
   percentage: number;
@@ -72,9 +73,10 @@ async function resolveModrinthFile(
   const versions: any[] = await res.json();
 
   const isShader = item.contentType === "shader" || item.contentType === "shaders";
-  const isResourcePack = item.contentType === "resourcepack" || item.contentType === "textures";
+  const isResourcePack = item.contentType === "resourcepack" || item.contentType === "textures" || item.contentType === "resourcepacks";
   const isDatapack = item.contentType === "datapack" || item.contentType === "datapacks";
-  const loaderCheckNeeded = !isShader && !isResourcePack && !isDatapack;
+  const isWorld = item.contentType === "world" || item.contentType === "worlds" || item.contentType === "save" || item.contentType === "saves";
+  const loaderCheckNeeded = !isShader && !isResourcePack && !isDatapack && !isWorld;
 
   // Filter versions by loader & MC version
   const compatible = versions.filter((v: any) => {
@@ -99,7 +101,8 @@ async function resolveModrinthFile(
   const file = targetVersion.files?.find((f: any) => f.primary) || targetVersion.files?.[0];
   if (!file?.url) throw new Error(`No file found in target version for ${item.name}`);
 
-  return { url: file.url, fileName: file.filename || `${item.name}.jar` };
+  const defaultExt = isResourcePack || isWorld ? "zip" : "jar";
+  return { url: file.url, fileName: file.filename || `${item.name}.${defaultExt}` };
 }
 
 async function resolveCurseForgeFile(
@@ -107,31 +110,45 @@ async function resolveCurseForgeFile(
   mcVersion: string,
   loader: string
 ): Promise<{ url: string; fileName: string }> {
-  const apiKey = import.meta.env.VITE_CURSEFORGE_API_KEY;
-  if (!apiKey) throw new Error("CurseForge API Key not configured");
-
-  const headers = { "x-api-key": apiKey };
   const versionId = item.versionId;
   const isSpecificFile = versionId && versionId !== "latest" && versionId !== "latest-unstable" && versionId !== "custom";
+  const isShader = item.contentType === "shader" || item.contentType === "shaders";
+  const isResourcePack = item.contentType === "resourcepack" || item.contentType === "textures" || item.contentType === "resourcepacks";
+  const isDatapack = item.contentType === "datapack" || item.contentType === "datapacks";
+  const isWorld = item.contentType === "world" || item.contentType === "worlds" || item.contentType === "save" || item.contentType === "saves";
+  const defaultExt = isResourcePack || isWorld ? "zip" : "jar";
+
+  const getFileDownloadUrl = async (fileId: string | number, currentDownloadUrl?: string): Promise<string | undefined> => {
+    if (currentDownloadUrl) return currentDownloadUrl;
+    try {
+      const res = await fetch(getCurseforgeProxyUrl(`/v1/mods/${item.id}/files/${fileId}/download-url`));
+      if (res.ok) {
+        const json = await res.json();
+        if (json?.data) return json.data;
+      }
+    } catch {
+      // ignore and fallback
+    }
+    return undefined;
+  };
 
   if (isSpecificFile) {
-    const res = await fetch(`https://api.curseforge.com/v1/mods/${item.id}/files/${versionId}`, { headers });
+    const res = await fetch(getCurseforgeProxyUrl(`/v1/mods/${item.id}/files/${versionId}`));
     if (!res.ok) throw new Error(`CurseForge API error ${res.status}`);
     const json = await res.json();
     const data = json.data;
-    if (!data?.downloadUrl) {
+    const downloadUrl = await getFileDownloadUrl(versionId, data?.downloadUrl);
+    if (!downloadUrl) {
       throw new Error(`Curseforge file ${versionId} does not permit direct download (author restricted)`);
     }
-    return { url: data.downloadUrl, fileName: data.fileName || `${item.name}.jar` };
+    return { url: downloadUrl, fileName: data.fileName || `${item.name}.${defaultExt}` };
   }
 
   // Fetch files list
-  const url = new URL(`https://api.curseforge.com/v1/mods/${item.id}/files`);
-  const isShader = item.contentType === "shader" || item.contentType === "shaders";
-  const isResourcePack = item.contentType === "resourcepack" || item.contentType === "textures";
-  const isDatapack = item.contentType === "datapack" || item.contentType === "datapacks";
+  const url = new URL(getCurseforgeProxyUrl(`/v1/mods/${item.id}/files`), window.location.origin);
 
-  if (!isShader && !isResourcePack && !isDatapack && loader && loader !== "Any") {
+  // Worlds, Shaders, Resource Packs, and Datapacks do NOT have mod loaders on CurseForge
+  if (!isShader && !isResourcePack && !isDatapack && !isWorld && loader && loader !== "Any") {
     const modLoaderType = CF_LOADER_MAP[loader.toLowerCase()];
     if (modLoaderType !== undefined) {
       url.searchParams.set("modLoaderType", modLoaderType.toString());
@@ -141,10 +158,22 @@ async function resolveCurseForgeFile(
     url.searchParams.set("gameVersion", mcVersion);
   }
 
-  const res = await fetch(url.toString(), { headers });
-  if (!res.ok) throw new Error(`CurseForge API error ${res.status}`);
-  const json = await res.json();
-  const files: any[] = json.data || [];
+  let res = await fetch(url.toString());
+  let files: any[] = [];
+  if (res.ok) {
+    const json = await res.json();
+    files = json.data || [];
+  }
+
+  // Fallback: If 0 files found with strict version/loader, query without gameVersion or loader
+  if (files.length === 0) {
+    const fallbackUrl = new URL(getCurseforgeProxyUrl(`/v1/mods/${item.id}/files`), window.location.origin);
+    const fallbackRes = await fetch(fallbackUrl.toString());
+    if (fallbackRes.ok) {
+      const json = await fallbackRes.json();
+      files = json.data || [];
+    }
+  }
 
   let targetFile: any;
   if (versionId === "latest-unstable") {
@@ -155,11 +184,13 @@ async function resolveCurseForgeFile(
   }
 
   if (!targetFile) throw new Error(`No compatible file found on CurseForge for ${item.name}`);
-  if (!targetFile.downloadUrl) {
+
+  const downloadUrl = await getFileDownloadUrl(targetFile.id, targetFile.downloadUrl);
+  if (!downloadUrl) {
     throw new Error(`CurseForge mod ${item.name} does not allow third-party API download`);
   }
 
-  return { url: targetFile.downloadUrl, fileName: targetFile.fileName || `${item.name}.jar` };
+  return { url: downloadUrl, fileName: targetFile.fileName || `${item.name}.${defaultExt}` };
 }
 
 export async function exportModpkgZip(

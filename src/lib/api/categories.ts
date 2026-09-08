@@ -1,4 +1,5 @@
 import { CardContentType } from "@/pages/editor/components/mod-card";
+import { getCurseforgeProxyUrl } from "./curseforge";
 
 export interface UnifiedCategory {
   id: string; // our internal unified id (usually the modrinth name)
@@ -116,22 +117,15 @@ export async function fetchCategories(contentType: string, provider: string): Pr
 
     let filteredCF: any[] = [];
     if (provider === "all" || provider === "curseforge") {
-      const apiKey = import.meta.env.VITE_CURSEFORGE_API_KEY;
-      if (apiKey) {
-        try {
-          const cfRes = await fetch(`https://api.curseforge.com/v1/categories?gameId=432`, {
-            headers: {
-              "x-api-key": apiKey
-            }
-          });
-          if (cfRes.ok) {
-            const cfJson = await cfRes.json();
-            const cfData = cfJson.data || [];
-            filteredCF = cfData.filter((c: any) => c.classId === cfClassId);
-          }
-        } catch (err) {
-          console.warn("Failed to fetch CurseForge categories", err);
+      try {
+        const cfRes = await fetch(getCurseforgeProxyUrl("/v1/categories?gameId=432"));
+        if (cfRes.ok) {
+          const cfJson = await cfRes.json();
+          const cfData = cfJson.data || [];
+          filteredCF = cfData.filter((c: any) => c.classId === cfClassId);
         }
+      } catch (err) {
+        console.warn("Failed to fetch CurseForge categories", err);
       }
     }
 
